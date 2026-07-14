@@ -1,0 +1,17 @@
+{
+  "id": "/admin.html",
+  "name": "WordCraft 관제실",
+  "short_name": "관제실",
+  "description": "WordCraft 학습 관제 시스템 (보호자용)",
+  "start_url": "/admin.html",
+  "scope": "/admin.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#182536",
+  "theme_color": "#182536",
+  "icons": [
+    { "src": "/admin-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/admin-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/admin-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
