@@ -712,115 +712,51 @@ button:focus-visible, a:focus-visible { outline: none; box-shadow: var(--wc-focu
   background: var(--wc-redstone); border-radius: var(--wc-r-1); padding: 1px 5px; vertical-align: middle; }
 
 /* ============================================================
-   WordCraft 스플래시 (learner: 광산 모험 / admin: 관제실 부팅)
-   순수 CSS · 외부 의존성 0 · prefers-reduced-motion 존중
+   WordCraft 스플래시 v4 — 실제 아이콘 이미지 사용 (반응형)
    ============================================================ */
-.splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
-  overflow:hidden;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;
-  font-family:inherit;opacity:1;transition:opacity .5s ease, transform .5s ease}
-.splash-leave{opacity:0;transform:scale(1.08)}
-.splash-skip{position:absolute;right:16px;bottom:16px;z-index:5;background:rgba(255,255,255,.08);
-  color:#9fb0c3;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 14px;
-  font-size:13px;letter-spacing:.02em;cursor:pointer;backdrop-filter:blur(4px);transition:background .2s}
+.splash{position:fixed;inset:0;z-index:9999;overflow:hidden;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:min(3.6vh,28px);cursor:pointer;user-select:none;
+  -webkit-tap-highlight-color:transparent;opacity:1;transition:opacity .5s ease, transform .5s ease}
+.splash-leave{opacity:0;transform:scale(1.06)}
+.splash-learner{background:radial-gradient(120% 95% at 50% 32%,#20344c 0%,#141d2a 46%,#0a0f17 100%)}
+.splash-admin{background:radial-gradient(120% 95% at 50% 20%,#0e211b 0%,#0a1512 46%,#060b0a 100%)}
+.splash-skip{position:absolute;right:16px;bottom:16px;z-index:6;background:rgba(255,255,255,.08);color:#9fb0c3;
+  border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer;backdrop-filter:blur(4px)}
 .splash-skip:hover{background:rgba(255,255,255,.16);color:#e8eef5}
-.sp-stage{position:relative;width:100%;height:100%;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:6px}
+.sp-star{position:absolute;width:min(2vw,8px);height:min(2vw,8px);border-radius:2px;background:#cfe4ff;opacity:0;
+  box-shadow:0 0 10px 2px rgba(180,215,255,.7);animation:spTwinkle 2.6s ease-in-out infinite;z-index:0}
+.sp-star:nth-child(2){animation-delay:.6s}.sp-star:nth-child(3){animation-delay:1.1s}.sp-star:nth-child(4){animation-delay:1.7s}
+@keyframes spTwinkle{0%,100%{opacity:.12;transform:scale(.7)}50%{opacity:.9;transform:scale(1.12)}}
 
-/* ---------- LEARNER: 광산 모험 ---------- */
-.splash-learner{background:
-  radial-gradient(120% 90% at 50% 8%, #1b2a3d 0%, #141d29 42%, #0c1119 100%)}
-.splash-learner::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(60% 40% at 50% 78%, rgba(255,176,60,.16), transparent 70%);
-  animation:spTorch 2.4s ease-in-out infinite alternate}
-@keyframes spTorch{from{opacity:.55}to{opacity:1}}
-.sp-cave{position:absolute;inset:0;pointer-events:none}
-.sp-star{position:absolute;width:3px;height:3px;border-radius:1px;background:#cfe4ff;opacity:0;
-  box-shadow:0 0 6px 1px rgba(180,215,255,.8);animation:spTwinkle 2.6s ease-in-out infinite}
-.sp-star:nth-child(2){animation-delay:.4s}.sp-star:nth-child(3){animation-delay:.9s}
-.sp-star:nth-child(4){animation-delay:1.3s}.sp-star:nth-child(5){animation-delay:1.7s}
-@keyframes spTwinkle{0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:.95;transform:scale(1.15)}}
+.sp-iconwrap{position:relative;width:min(64vw,268px);height:min(64vw,268px);flex:0 0 auto;display:flex;align-items:center;justify-content:center;z-index:2}
+.sp-iconglow{position:absolute;width:132%;height:132%;border-radius:50%;opacity:0;
+  background:radial-gradient(circle,rgba(120,220,255,.34),rgba(120,220,255,.07) 46%,transparent 70%);
+  animation:spGlowIn .8s ease .1s both, spGlowPulse 2.6s ease-in-out 1s infinite}
+.splash-admin .sp-iconglow{background:radial-gradient(circle,rgba(90,240,170,.3),rgba(90,240,170,.06) 46%,transparent 70%)}
+@keyframes spGlowIn{0%{opacity:0;transform:scale(.6)}55%{opacity:1;transform:scale(1.05)}100%{opacity:.65;transform:scale(1)}}
+@keyframes spGlowPulse{0%,100%{opacity:.45}50%{opacity:.8}}
+.sp-iconbox{position:relative;width:100%;height:100%;border-radius:23%;overflow:hidden;opacity:0;
+  filter:drop-shadow(0 12px 22px rgba(0,0,0,.4));animation:spIconIn .72s cubic-bezier(.2,1.42,.4,1) .1s both}
+@keyframes spIconIn{0%{opacity:0;transform:scale(.32) rotate(-8deg)}58%{opacity:1;transform:scale(1.08) rotate(2deg)}78%{transform:scale(.97) rotate(-1deg)}100%{opacity:1;transform:none}}
+.sp-icon{width:100%;height:100%;display:block;-webkit-user-drag:none}
+.sp-shine{position:absolute;top:-50%;left:0;width:34%;height:200%;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:spShine 1s ease .85s both}
+@keyframes spShine{0%{opacity:0;transform:rotate(20deg) translateX(-320%)}22%{opacity:1}80%{opacity:1;transform:rotate(20deg) translateX(640%)}100%{opacity:0;transform:rotate(20deg) translateX(640%)}}
+.sp-burst{position:absolute;left:50%;top:50%;width:0;height:0;z-index:3}
+.sp-spark{position:absolute;left:0;top:0;width:min(2.2vw,9px);height:min(2.2vw,9px);border-radius:50%;
+  background:radial-gradient(circle,#fff,#9fe8f5);opacity:0;animation:spSpark .6s ease-out both}
+.splash-admin .sp-spark{background:radial-gradient(circle,#fff,#8ff0c4)}
+@keyframes spSpark{0%{opacity:0;transform:rotate(var(--a)) translateX(24%) scale(.6)}15%{opacity:1}
+  100%{opacity:0;transform:rotate(var(--a)) translateX(clamp(82px,28vw,140px)) scale(.2)}}
 
-.sp-logo{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;z-index:3}
-.sp-blocks{display:flex;gap:5px;align-items:center;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
-.sp-blk{--fg:#e9f0f8;display:inline-flex;align-items:center;justify-content:center;
-  width:42px;height:52px;font-weight:900;font-size:26px;color:var(--fg);
-  border-radius:8px;background:linear-gradient(#33455c,#233246);
-  box-shadow:inset 0 3px 0 rgba(255,255,255,.16), inset 0 -4px 0 rgba(0,0,0,.34), 0 2px 0 #0c1119;
-  opacity:0;transform:translateY(-46px) rotateX(60deg);animation:spDrop .5s cubic-bezier(.2,1.4,.5,1) forwards}
-.sp-blk-gold{--fg:#0e1520;background:linear-gradient(#ffd257,#f0a52a);
-  box-shadow:inset 0 3px 0 rgba(255,255,255,.5), inset 0 -4px 0 rgba(150,80,0,.5), 0 2px 0 #7a4a08}
-@keyframes spDrop{0%{opacity:0;transform:translateY(-46px) rotateX(60deg)}
-  70%{opacity:1;transform:translateY(6px) rotateX(0)}100%{opacity:1;transform:translateY(0)}}
-.sp-blk-pick{position:relative;overflow:visible;background:linear-gradient(#3a2c1a,#241a0f)}
-.sp-pick{font-size:26px;display:inline-block;transform-origin:70% 70%;
-  animation:spSwing .5s ease-in-out .95s 2}
-@keyframes spSwing{0%{transform:rotate(-42deg)}45%{transform:rotate(14deg)}100%{transform:rotate(-42deg)}}
-.sp-crack{position:absolute;inset:0;border-radius:8px;opacity:0;
-  background:
-   linear-gradient(115deg,transparent 46%,rgba(0,0,0,.55) 47%,rgba(0,0,0,.55) 49%,transparent 50%),
-   linear-gradient(70deg,transparent 55%,rgba(0,0,0,.5) 56%,rgba(0,0,0,.5) 58%,transparent 59%);
-  animation:spCrack .3s ease 1.35s forwards}
-@keyframes spCrack{to{opacity:1}}
-.sp-spark{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;
-  background:radial-gradient(circle,#fff6c8,#ffb43c);opacity:0;
-  animation:spSpark .55s ease-out 1.4s 1}
-@keyframes spSpark{0%{opacity:1;transform:translate(-50%,-50%) rotate(var(--a)) translateX(0) scale(1)}
-  100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--a)) translateX(46px) scale(.2)}}
-
-.sp-title{font-weight:900;font-size:clamp(38px,11vw,64px);letter-spacing:.01em;
-  background:linear-gradient(#fff,#ffd257 55%,#f0a52a);-webkit-background-clip:text;background-clip:text;
-  color:transparent;opacity:0;transform:scale(.7);
-  animation:spTitle .6s cubic-bezier(.2,1.5,.4,1) 1.55s forwards, spGlow 2.2s ease-in-out 2.1s infinite}
-@keyframes spTitle{to{opacity:1;transform:scale(1)}}
-@keyframes spGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(255,200,80,.25))}
-  50%{filter:drop-shadow(0 0 16px rgba(255,200,80,.65))}}
-.sp-sub{color:#9fb6d2;font-size:clamp(14px,4vw,18px);font-weight:700;opacity:0;
-  animation:spFadeUp .5s ease 1.9s forwards}
-@keyframes spFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.sp-xp{width:min(240px,62vw);height:12px;border-radius:999px;background:#1a2534;overflow:hidden;
-  box-shadow:inset 0 2px 4px rgba(0,0,0,.5);opacity:0;animation:spFadeUp .4s ease 2.05s forwards;margin-top:2px}
-.sp-xp>i{display:block;height:100%;width:0;border-radius:999px;
-  background:linear-gradient(90deg,#43c06a,#8fe36b);box-shadow:0 0 10px rgba(120,220,120,.6);
-  animation:spFill 1s ease 2.15s forwards}
-@keyframes spFill{to{width:100%}}
-.sp-hero{position:absolute;bottom:6%;font-size:clamp(40px,13vw,68px);opacity:0;z-index:2;
-  filter:drop-shadow(0 6px 10px rgba(0,0,0,.6));
-  animation:spHero .7s ease 1.3s forwards, spBob 1.8s ease-in-out 2.1s infinite}
-@keyframes spHero{from{opacity:0;transform:translateY(40px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes spBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-
-/* ---------- ADMIN: 관제실 부팅 ---------- */
-.splash-admin{background:radial-gradient(120% 90% at 50% 0%, #0c1a16 0%, #0a1512 45%, #060b0a 100%)}
-.sp-stage-admin{gap:16px}
-.sp-scan{position:absolute;inset:0;pointer-events:none;opacity:.5;
-  background:repeating-linear-gradient(rgba(60,255,180,.05) 0 2px, transparent 2px 4px);
-  animation:spScanMove 6s linear infinite}
-@keyframes spScanMove{to{background-position:0 200px}}
-.sp-radar{position:absolute;top:12%;width:132px;height:132px;border-radius:50%;
-  border:1px solid rgba(70,240,170,.35);overflow:hidden;opacity:.9;
-  box-shadow:0 0 30px rgba(50,220,150,.18) inset}
-.sp-radar>i{position:absolute;inset:22%;border:1px solid rgba(70,240,170,.25);border-radius:50%}
-.sp-radar>i:last-of-type{inset:40%}
-.sp-radar-sweep{position:absolute;inset:0;border-radius:50%;
-  background:conic-gradient(from 0deg, rgba(70,240,170,.55), transparent 70%);
-  animation:spSweep 1.6s linear infinite}
-@keyframes spSweep{to{transform:rotate(360deg)}}
-.sp-term{position:relative;z-index:2;margin:96px 0 0;padding:0;width:min(360px,84vw);
-  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.75;
-  color:#5df2b0;text-shadow:0 0 8px rgba(60,240,170,.35)}
-.sp-term-line{display:block;white-space:pre;opacity:0;transform:translateX(-8px);
-  animation:spType .28s steps(1) forwards}
-.sp-term-line::after{content:"▌";margin-left:2px;opacity:.0;animation:spCursor .8s step-end infinite}
-@keyframes spType{to{opacity:1;transform:translateX(0)}}
-@keyframes spCursor{50%{opacity:.9}}
-.sp-title-admin{background:linear-gradient(#eafff6,#5df2b0 60%,#28c98a);-webkit-background-clip:text;
-  background-clip:text;color:transparent;font-size:clamp(34px,10vw,54px);margin-top:8px;
-  animation:spTitle .6s cubic-bezier(.2,1.5,.4,1) 1.85s forwards, spGlowG 2.2s ease-in-out 2.3s infinite}
-@keyframes spGlowG{0%,100%{filter:drop-shadow(0 0 4px rgba(60,240,170,.25))}
-  50%{filter:drop-shadow(0 0 16px rgba(60,240,170,.6))}}
-.sp-sub-admin{color:#6f9a89;letter-spacing:.18em;text-transform:uppercase;font-size:12px;
-  animation-delay:2.1s}
-
-@media (prefers-reduced-motion: reduce){
-  .splash{display:none}
-}
+.sp-titlewrap{display:flex;flex-direction:column;align-items:center;gap:min(1.4vh,8px);z-index:4}
+.sp-title{font-weight:900;font-size:clamp(38px,12vw,64px);letter-spacing:.01em;line-height:1;
+  background:linear-gradient(#fff,#ffd257 55%,#f0a52a);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 12px rgba(255,200,80,.45));opacity:0;animation:spTitleIn .6s cubic-bezier(.2,1.5,.4,1) 1s both}
+.sp-title-admin{background:linear-gradient(#eafff6,#5df2b0 60%,#28c98a);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 2px 12px rgba(60,240,170,.45))}
+.sp-sub{color:#9fb6d2;font-weight:700;font-size:clamp(13px,3.8vw,18px);opacity:0;animation:spFadeUp .5s ease 1.35s both}
+.sp-sub-admin{color:#6f9a89;letter-spacing:.16em;text-transform:uppercase;font-size:clamp(11px,3vw,13px)}
+@keyframes spTitleIn{0%,25%{opacity:0;transform:scale(.7) translateY(8px)}100%{opacity:1;transform:none}}
+@keyframes spFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.splash{display:none}}
