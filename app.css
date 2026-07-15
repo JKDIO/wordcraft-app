@@ -936,3 +936,45 @@ button:focus-visible, a:focus-visible { outline: none; box-shadow: var(--wc-focu
 .pv-wrong { font-size: 12px; font-weight: 700; color: var(--wc-text-lo); padding: 5px 9px; background: var(--wc-bg-raised);
   border: 2px solid var(--wc-surface-border); border-radius: var(--wc-r-2); cursor: pointer; }
 .pv-wrong.on { color: var(--wc-on-accent); background: var(--wc-redstone); border-color: var(--wc-redstone-deep); }
+
+/* ═══════════ v1.2.0 — 복습 50:50 개편 + 뱃지 조건 공개 + 월드5 ═══════════ */
+/* 복습 광산: XP 안내·콤보 미터 */
+.mine-xp-note { background: rgba(97, 218, 251, .10); border: 1.5px solid var(--diamond); border-radius: var(--radius); padding: 8px 10px; margin: 8px 0 10px; font-size: 13px; line-height: 1.5; }
+.mine-xp-note b { color: var(--gold); }
+.combo-meter { font-size: 13px; color: var(--text-2); margin: 2px 0 8px; }
+.combo-meter em { font-style: normal; opacity: .75; }
+
+/* 월드맵: 오늘의 학습 밸런스 미터 (모험 vs 복습, 목표 50:50) */
+.balance-meter { background: var(--surface); border: 2px solid var(--stone); border-radius: var(--radius); padding: 10px 12px; margin: 10px 0; }
+.balance-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
+.balance-head span { color: var(--text-2); font-size: 12px; }
+.balance-bar { position: relative; display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--bg-2); }
+.balance-bar i.course { background: var(--gold); }
+.balance-bar i.review { background: var(--diamond); }
+.balance-bar em.mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(255,255,255,.55); }
+.balance-msg { font-size: 12.5px; color: var(--text-2); margin: 6px 0 0; }
+
+/* 월드맵: 복습 배너 버튼화 */
+button.due-banner.clickable { display: block; width: 100%; text-align: left; color: inherit; font-family: inherit; cursor: pointer; }
+button.due-banner.clickable:active { transform: translateY(1px); }
+
+/* 뱃지 도감: 잠긴 뱃지 탭 → 조건·진행도 공개 */
+.wc-dex-hint { font-size: 12.5px; color: var(--text-2); margin: -2px 0 8px; }
+button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
+.badge-card.silhouette.revealed { opacity: 1; border-color: var(--diamond); background: rgba(97, 218, 251, .08); }
+.badge-card.silhouette.revealed .badge-emoji { filter: grayscale(.6) brightness(.8); }
+.badge-hint { display: block; font-size: 11px; line-height: 1.45; color: var(--text-1); margin-top: 2px; }
+.badge-prog { position: relative; display: block; height: 10px; margin-top: 5px; border-radius: 5px; background: var(--bg-2); overflow: hidden; }
+.badge-prog i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--diamond); border-radius: 5px; }
+.badge-prog em { position: relative; font-style: normal; font-size: 9px; line-height: 10px; display: block; text-align: center; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.badge-desc.dim { opacity: .6; font-size: 10.5px; }
+
+/* 관제실: 학습 밸런스 패널 */
+.adm-balance-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; }
+.adm-balance-row .lbl { width: 52px; color: var(--text-2); flex: none; }
+.adm-balance-bar { position: relative; flex: 1; display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--bg-2); }
+.adm-balance-bar i.c { background: var(--gold); }
+.adm-balance-bar i.r { background: var(--diamond); }
+.adm-balance-bar em { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 2px; background: rgba(255,255,255,.5); }
+.adm-balance-row .nums { font-size: 11.5px; color: var(--text-2); flex: none; }
+.adm-balance-none { color: var(--text-2); font-size: 12px; }
