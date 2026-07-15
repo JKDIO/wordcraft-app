@@ -978,3 +978,9 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
 .adm-balance-bar em { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 2px; background: rgba(255,255,255,.5); }
 .adm-balance-row .nums { font-size: 11.5px; color: var(--text-2); flex: none; }
 .adm-balance-none { color: var(--text-2); font-size: 12px; }
+
+/* v1.2.1 — 관제실 새 버전 감지 배너 */
+.adm-update { display: block; width: 100%; text-align: left; background: rgba(97, 218, 251, .12); border: 2px solid var(--diamond); border-radius: var(--radius); padding: 10px 12px; margin: 0 0 10px; font-size: 13.5px; color: var(--text-1); font-family: inherit; cursor: pointer; }
+.adm-update b { color: var(--diamond); }
+.adm-update:active { transform: translateY(1px); }
+.adm-update-notes { color: var(--text-2); font-size: 12px; }
