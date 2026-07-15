@@ -9,6 +9,14 @@
 
 ---
 
+## v1.2.1 — 2026-07-15 밤 (관제실 업데이트 감지 배너 + 옛 배포 주소 은퇴)
+- **배경**: v1.2.0 배포 후 Dio님 폰이 구버전으로 보임 → 원인 2개 발견. ① 오래 열려 있던 관제실 탭은 새 코드를 스스로 불러오지 않음(학습자 앱과 달리 업데이트 알림 장치 부재) ② 7/12 옛 배포(wordcraft-eosin.vercel.app, Vercel 프로젝트 'wordcraft')가 살아 있어 옛 APK/북마크가 구버전을 계속 서빙받음.
+- **관제실 (아빠 앱)**: /version.json을 25초 주기로 확인 → 새 버전이면 상단에 "🔄 새 버전 도착! 누르면 업데이트" 배너(location.reload). 헤더에 현재 버전 v표시 추가.
+- **예한이 앱**: 변경 없음 (기존 정보 탭 업데이트 체계 그대로).
+- **인프라**: 옛 Vercel 프로젝트 'wordcraft'(eosin 도메인)에 리다이렉트 페이지 배포(MCP 직접 배포, 해시 라우트 보존 location.replace) → 옛 주소 접속 시 wordcraft-app으로 자동 이동. 라이브 확인 완료.
+- **배포물**: main.js + app.css + version.json (content.json 변경 없음) / 소스 스냅샷 wordcraft_src_v1.2.1.tgz
+- **연동 영향**: 없음(읽기 전용 버전 체크). 교훈: 옛 배포 URL은 반드시 은퇴(리다이렉트) 처리 — LESSONS L15.
+
 ## v1.2.0 — 2026-07-15 저녁 (콘텐츠 대확장 + 복습 50:50 개편 + 뱃지 정합 전수 감사)
 - **배포물**: main.js(275KB) + app.css(74KB) + **content.json(430KB — 신규 8모듈 포함)** + version.json / GitHub `JKDIO/wordcraft-app` → Vercel
 - **소스 스냅샷**: `06_RELEASES/src_snapshots/wordcraft_src_v1.2.0.tgz` / GitHub `_dev_github/wordcraft_src_v1.2.0.tgz`
