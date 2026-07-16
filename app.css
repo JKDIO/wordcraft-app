@@ -1672,3 +1672,10 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
   0%,100%{border-color:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,.35), 0 4px 0 rgba(0,0,0,.35);}
   50%{border-color:#f5c542;box-shadow:0 0 16px rgba(245,197,66,.45), 0 4px 0 rgba(0,0,0,.35);}
 }
+
+/* v1.4.1 — 라운드/전투/메뉴 뒤로가기 배치 */
+.arcade-head h2 { display: flex; align-items: center; gap: 6px; }
+.arcade-head .btn-back { font-size: 20px; padding: 0 6px 2px 0; }
+.quiz-top .btn-back { padding: 0 8px 2px 0; font-size: 20px; }
+.ghost-topbar { gap: 8px; }
+.ghost-topbar .btn-back { font-size: 20px; padding: 0 6px 2px 0; }
