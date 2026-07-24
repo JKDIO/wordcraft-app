@@ -2,12 +2,80 @@
 
 > **철칙 (2026-07-15 제정, Dio님 지시)**
 > 1. **모든 배포는 이 파일에 기록한 뒤에만 한다.** 예한이 앱(학습자)과 관제실(아빠 앱)은 한 번들(main.js)이므로, 릴리스 항목은 **반드시 두 앱의 변경·영향을 함께** 적는다. 한쪽만 적힌 릴리스 기록은 불완전한 것으로 간주한다.
-> 2. **소스 SSOT = 노트북 `03_APP/wordcraft/`.** 어떤 세션이든 코드를 바꾸면 배포 전에 노트북 소스에 먼저 반영한다. 클라우드 컨테이너에서만 고치고 배포하는 것 금지 (7/15 기능 유실 사고의 원인).
-> 3. 배포할 때마다 `06_RELEASES/src_snapshots/v{버전}_{날짜}/`에 소스 전체 스냅샷을 남긴다.
+> 2. **소스 SSOT = 노트북 `03_APP/wordcraft/`.** 어떤 세션이든 코드를 바꾸면 배포 전에 노트북 소스에 먼저 반영한다. 클라우드 컨테이너에서만 고치고 배포하는 것 금지 (7/15 기능 유실 사고의 원인). *(2026-07-23 갱신: 노트북 SSOT 유실·재구성 → 현재 SSOT = `_dev_github/src_v1.4.7/` + `wordcraft_src_v1.4.7.tgz`.)*
+> 3. 배포할 때마다 `06_RELEASES/src_snapshots/v{버전}_{날짜}/`에 소스 전체 스냅샷을 남긴다. *(현재: `_dev_github/`에 tgz로 로컬·GitHub 동시 보존 — L20.)*
 > 4. `src/lib/version.ts`의 APP_VERSION과 `dist/version.json`의 version을 **같이 올린다** (다르면 정보 화면 업데이트 알림이 오작동).
 > 5. 앱–DB 연동 규칙은 `03_APP/연동계약_CONTRACT.md`를 따른다. 스키마·XP 규칙·기록 방식을 바꾸면 계약 문서와 양쪽 앱 코드를 같은 릴리스에서 함께 수정한다.
 
 ---
+
+## v1.4.7 — 2026-07-23 (다가구 확장 A: 인증 상태별 앱 라우팅)
+- **배경**: 다가구(지인 가족) 확장 Phase 2-C 완결. 앞서 완료된 Phase 0·1(families·memberships·learners.family_id, 예한이=Family#1 `YEHAN-7264`)·2-A(구글/익명 OAuth 설정)·2-B(RPC)·2-C 코어(Auth 세션·Connect 화면) 위에, **인증 상태로 앱이 자동으로 갈라지도록** 하는 라우팅을 통합. 원칙: additive(L17)·예한이 기존 흐름 무손실·RLS는 Phase 3.
+- **예한이 앱 (학습자)**
+  - [신규] **인증 상태별 3분기 라우팅** (App.tsx): 앱 시작 시 `getAuthUser()`로 판별 → **legacy**(세션無 = 기존 예한이 기기, 100% 종전 동작) / **device**(익명 로그인 = 아이 기기, `myDeviceLearner`로 바인딩된 아이 로드) / **guardian**(구글 로그인 = 보호자, `#/family`로 이동). 예한이 기기는 세션이 없어 `getAuthUser`가 네트워크 없이 즉시 null → **기존 학습 흐름 완전 보존**.
+  - [신규] **아이 연결 화면** `#/connect`(Connect.tsx): 부모(구글 로그인) / 아이(가족 코드 → 프로필 선택 → 익명 로그인 + wc_join_family). 기존 앱엔 이 화면으로 가는 버튼을 **의도적으로 넣지 않음**(예한이 학습 보존 + 아이 기기 오조작 방지) — 새 보호자·가족은 `#/connect` 링크로 진입(Dio님 결정 2026-07-23).
+  - guardian 세션은 학습 세션·하트비트 미생성(보호자 열람 시간이 예한이 학습시간으로 잡히지 않도록 가드).
+- **관제실 (아빠 앱)**
+  - [신규] **가족 대시보드** (FamilyDashboard.tsx, `#/family`): 보호자 구글 로그인 후 진입. 가족 미가입 시 가족 코드로 guardian 연결(`joinFamily(code,'guardian',관계)`) → 가족 아이 목록 → 아이 선택 시 **그 아이의 관제실**(AdminPage에 learner 전달, PIN 생략).
+  - [변경] AdminPage가 `{learner?, onExit?}` props 수용 — learner 주어지면 PIN 생략·헤더에 아이 이름·← 버튼. **레거시 `/admin` PIN 경로·집계 로직은 완전 불변**(props 없으면 종전과 동일).
+- **연동 영향 (CONTRACT)**: **스키마·XP 산식·기록 방식 변경 0**. 신규 조회 헬퍼(supabase.ts: fetchLearnerById·myDeviceLearner·myFamilyLearners)와 Learner.family_id(옵셔널, additive)뿐. 계약 개정 불요(다가구 스키마 계약 v1.5는 Phase 3 RLS 후).
+- **빌드·검증**: tsc 0에러 · `bun build --production`(L16) · main.js 328K/gzip 106KB. **playwright 렌더 스모크 6라우트**(`/ /connect /family /admin /review /profile`) — 전부 렌더 + 비-404 JS 런타임 에러 0. 신규 #/connect·#/family 정상, **레거시 예한이 흐름(#/·#/admin·#/review·#/profile) 비파괴 확인**.
+- **배포 완료(7/23)**: Dio님 GitHub `JKDIO/wordcraft-app` 루트 드래그(main.js+version.json 2파일, content.json·app.css 불변) → Vercel 자동배포. **라이브 검증**: `version.json` 캐시버스터 = 1.4.7 확인 + 실제 Chrome에서 `#/connect` 화면 정상 렌더(백지 아님, JS 에러 0).
+- **검증 한계 (정직 보고)**: ① 실제 **구글 로그인 왕복**(보호자 로그인→#/family→가족코드 연결→아이 관제실)·아이 코드 연결·Supabase Users 신규 유저 생성은 **아직 실측 미완**(Dio님 브라우저·구글 계정 필요 — 후속). ② 실기기(갤럭시 A24 WebView) 미확인. ③ Phase 3(RLS) 전이라 현재 정책은 anon 전개방 — **가족 데이터 격리는 아직 없음**(다른 가족을 실제로 들이기 전 Phase 3 필수).
+- **기록**: 로컬 SSOT = `_dev_github/src_v1.4.7/` + `wordcraft_src_v1.4.7.tgz`(tgz→클린빌드 main.js md5 `36ac102e…` 동일 검증). L20 동반 업로드로 이 릴리스에 RELEASE_LOG·START_HERE·소스 스냅샷을 GitHub `_dev_github/`에 동기화(밀린 v1.4.1~1.4.6 기록 유실 위험 해소).
+
+## v1.4.6 — 2026-07-18 (수정 동굴 음성 봉합 마무리 — 매치 게임 클립 재생)
+- **결함(P0, 학습자 앱)**: 수정 동굴 '소리 쌍둥이' 매치 게임(`MatchGame.tsx`)이 타일 재생 시 `speak(p.tts)` 네이티브 TTS만 호출 → 예한이 폰 WebView에서 TTS 보이스가 비어 **조용히 실패**(무음). v1.4.5 라이브 계측 검증 중 발견(타일 클릭 → 클립 아닌 TTS 호출 확인).
+- **수정**: `MatchGame`이 `playClip(p)`(audio_url 우선, 실패·부재 시 tts 폴백)로 재생하도록 변경. 매치 페어의 audio_url은 v1.4.5 content.json에 이미 주입돼 있어 **main.js·version.json 2파일만 재배포**(content.json 불변).
+- **관제실**: 변경 없음.
+- **검증(라이브 실측)**: R0 '소리 쌍둥이' 4개 타일(sea/no/sun/I) 클릭 → 각자 자기 클립(sea_see·no_know·sun_son·i_eye_nova.mp3) 재생, `playing`. tsc 0 · bun --production. (초고속 연타 시 2건 tts 폴백은 테스트 아티팩트 — 단일 탭은 클린.)
+- **교훈**: 오디오 계약을 건드리는 작업은 **모든 재생 호출부를 전수 감사**해야 한다(L19). 한 컴포넌트만 playClip이고 나머지가 speak()면 무음이 남는다 — 자체 검증만으로 못 잡고 라이브 실측이 잡았다.
+
+## v1.4.5 — 2026-07-18 (수정 동굴 무음 항목 전면 클립화)
+- **검증 계기**: Dio님 지시 "수정동굴에서 소리가 안나는 문제들 전체 검증·수정". 진단 결과 — R0~R9 재생 항목 중 **`voice` 필드 없이 작성된 85개**(게임·퀴즈·speak·룬)가 build_content.py의 audio_url 주입 대상에서 빠져 네이티브 TTS로 폴백 → 폰 WebView에서 무음. (다른 월드 A~T는 애초에 클립 0 = 전부 TTS라 대비되어 수정 동굴에서만 "일부는 소리 나고 일부는 안 남"으로 체감.)
+- **수정 ①(빌드)**: `build_content.py` inject에 `default_voice` 추가 — 수정 동굴(R*) 재생 항목은 voice 누락 시 **nova 기본 주입**(CONTRACT §9 'nova = 기본(단어·문장·미션)' 준수). 이미 audio_url 있으면 미덮어씀(룬 명시 주입 보존).
+- **수정 ②(코드)**: `SpeakView`가 `speak()` 대신 `playClip()`으로 말하기 미션 음성 재생.
+- **음원**: 빌드 후 매니페스트 400→475(신규 75개, 전부 nova 단어·최소대립쌍·미션문장 — 음소단독 없음). tts_clips 원장 insert + tts-batch 실행 → Storage 475/475 업로드, 누락 0·손상 0. content.json의 audio_url 475개 전부 Storage 존재 확인.
+- **배포물**: main.js + content.json + version.json (콘텐츠 변경 → content.json 포함 3파일). `06_RELEASES/wc_upload_v1.4.5/`. 스냅샷 wordcraft_src_v1.4.5.tgz.
+- **검증**: tsc 0 · bun --production · 로컬 playwright 계측(모든 R0 항목이 올바른 클립 URL로 Audio.play 호출 — 이전 무음 항목 sun/moon/sea,see/know/ship 포함). 라이브 실측: 학습카드 클립 6개 `playing`·tts 0.
+- **남은 관련 항목(범위 밖·Dio님 판단)**: 복습 광산 `ReviewMine.tsx` 플래시카드 뒤집기도 `speak()` 네이티브 TTS-only. 다만 review_cards는 클라이언트 생성이라 audio_url이 없어 별도 시딩 설계 필요 — 수정 동굴 범위 밖이라 보류 보고.
+
+## v1.4.4 — 2026-07-17 새벽 (간격 반복 정합 수정 — 같은 날 재채굴 차단 등 3건)
+- **검증 계기**: Dio님 지시 "복습(간격 반복)이 현재 날짜에 맞게 작동하는지 상세 검증". 실데이터에서 이상 확인 — **7/16 복습 313회 / 실제 카드 158장 = 카드당 평균 1.98회** (같은 카드를 하루 ~2번 재채굴).
+- **결함 ① (P0) 같은 날 재채굴 = 간격 반복 무력화 + XP 파밍**: ReviewMine이 카드 목록을 마운트 시 1회만 fetch → 채굴 후 "광산 입구로" 복귀 시 낡은 목록(옛 due)이 그대로 남아, 방금 맞힌 카드가 다시 '오늘 캘 카드'로 표시·재채굴 가능(+10 XP 반복). 수정: ① 입구 진입 시마다 서버 재조회(learnerId 지연 도착 시에도 재조회) ② "오늘 맞힌 카드" 로컬 기록(wordcraft_daily... → wordcraft_review_done_v1, KST 일 단위)으로 서버 반영이 늦어도 재출현 차단 — 2중 안전망. **오답 카드는 기록하지 않아 당일 리스폰(의도된 동작)은 보존.**
+- **결함 ② review_count 미증가**: 채점 UPDATE에 review_count가 빠져 전부 0(START_HERE 잔여 확인사항이던 항목 — 원인 확정). 수정: 채점 시 +1. 과거 누락분은 소급하지 않음(0에서 시작 — 정직 기록).
+- **결함 ③ 모듈 완료 카드 D+1 시드의 UTC 버그**: toISOString 기반이라 KST 00~09시에 모듈을 클리어하면 카드가 '내일'이 아닌 '당일' due로 시드됨. 수정: kstTomorrowStr(KST) 사용.
+- **정상 확인(수정 불필요)**: 박스 주기(1=오늘/2=2일/4/7/14 — CONTRACT §1과 일치, 코드 주석만 낡아 정정) · 승급/강등(정답 +1칸·오답 박스1) · due 판정 KST 문자열 비교 · 오답 리스폰 W: 카드 · 박스5 상한 · 이중 채점에 의한 박스 과승급 없음(당시 낡은 box 기준이라 결과적으로 1칸만 이동 — DB 교정 불필요, 현 카드 분포 박스1=9·박스2=208 정합).
+- **관제실**: 변경 없음. (복습 탭 review_count 지표는 v1.4.4부터 채워짐)
+- **검증**: tsc 0에러 · --production · playwright 최악 조건 재현(서버가 계속 낡은 목록 반환) — 정답 2장 재출현 차단 ✓ / 오답 1장 당일 리스폰 ✓ / PATCH 4회에 review_count 포함 ✓ / JS 에러 0.
+- **데이터 여파(정직 보고)**: 7/16~17 새벽의 중복 복습 XP(약 1,500~2,000)는 이미 지급된 그대로 둠(L17 — 회수 없음, 예한이 잘못 아님·설계 결함). 향후 데이터부터 정상.
+- **배포물**: main.js + version.json — `06_RELEASES/wc_upload_v1.4.4/`. 스냅샷 wordcraft_src_v1.4.4.tgz.
+- **배포 완료(7/17)**: Dio님 GitHub 드래그 커밋 → Vercel 자동 → 라이브 version.json 1.4.4(캐시버스터) + 실렌더 검증 통과. 같은 날 유령 첫 출몰(D+2 규칙) 라이브 배너·월드1 표시 확인.
+
+## v1.4.3 — 2026-07-16 밤 (기기 간 동일 표시: 밸런스 게이지·출석 칩·오늘 학습분 서버 동기화)
+- **현상 (Dio님 발견)**: 아빠 폰에 최신 앱을 깔아도 월드맵 상단 "오늘의 밸런스" 게이지가 안 보임 (예한이 폰에선 정상).
+- **원인**: 게이지의 원천인 dailyXp(+주간 출석 칩 attendance, "오늘 n분" 활성시간)가 **localStorage(기기별 저장소)**에만 있었음. 게이지는 오늘 XP 합이 0이면 숨는 설계라, 학습 기록이 로컬에 없는 새 기기에선 항상 숨었다. 같은 계정이어도 기기마다 다르게 보이는 구조적 허점.
+- **수정**: 앱 시작 시 `syncSharedDaily()`(store.ts 신설)가 서버에서 파생해 로컬과 병합 — ① 오늘의 밸런스: answer_events(오늘, KST) + 모듈/진단/유령 보너스 + 복습 콤보를 **관제실 xpOf와 1:1 산식**으로 계산 ② 주간 출석 칩: 최근 14일 sessions 일별 합 ≥15분 = 출석일(출석 계약 v1.2와 동일 기준), 로컬과 합집합 ③ 오늘 활성시간: 서버 세션 합이 로컬보다 크면 채택. 병합은 항목별 max/합집합이라 로컬 즉시 반영분 보존(L17 additive). repairStreak도 병합된 출석 이력을 쓰므로 더 정확해짐.
+- **관제실**: 변경 없음 (읽기 전용 파생 추가 — 스키마·XP·기록 방식 불변).
+- **검증**: tsc 0에러 · --production · playwright — 서버 REST를 모킹해 "빈 localStorage 새 기기" 재현: 게이지가 모험 185·복습 130으로 표시(기대 산식 정확 일치), 출석 칩·"오늘 출석 완료" 표시, JS 에러 0.
+- **검증 한계**: 실기기(Dio님 폰) 최종 확인 필요. 오프라인 시작 시엔 종전처럼 로컬 기준(온라인 되면 다음 시작 때 동기화).
+- **배포물**: main.js + version.json — `06_RELEASES/wc_upload_v1.4.3/`. 스냅샷 wordcraft_src_v1.4.3.tgz.
+
+## v1.4.2 — 2026-07-16 밤 (소환진 정확성 수정: 문장 그대로 실행 + 버튼 배치)
+- **버그 ① (Dio님 발견)**: 실험실에서 "The dog explodes" → 강아지 대신 폭탄몬이 소환돼 터짐 / "The cake eats ~" → 목적어와 무관하게 항상 미니 케이크를 먹음. 원인 = 시안 데모의 연출 편의(explode=붐붐 자동 소환, eat=고정 케이크 소품)가 본 게임에 그대로 포팅됨 — **"조립한 문장이 그대로 실행된다" 원칙 위반**. 수정 = explode는 문장의 주어가 직접 폭발 후 리스폰, eat은 목적어 배역을 먹잇감 스프라이트(축소 스케일+배역 팔레트 부스러기)로 렌더(목적어 없으면 기본 케이크 유지).
+- **추가**: 대상 블록에 'the monster'(폭탄몬) 정식 추가 — 실험실 시도 사례 반영. (missions 콘텐츠 무변경)
+- **버그 ②**: ⚡소환 버튼이 팔레트 아래에 있어 누른 뒤 무대까지 되감아 올라와야 애니메이션을 봄. 수정 = 버튼·피드백을 조립 슬롯 바로 아래로 이동(무대·슬롯·버튼·피드백이 한 화면), 블록 풀은 그 아래로.
+- **관제실**: 변경 없음 (연동 영향 없음 — XP·스키마·콘텐츠 불변).
+- **검증**: tsc 0에러 · --production 빌드 · playwright 계측 — The dog explodes=강아지 픽셀 확인(붐붐 아님) / The cake eats the dog=먹잇감이 강아지 팔레트 / hugs the monster=파트너 폭탄몬 / 자동사 eats=기본 케이크 / 레이아웃 slots(269)<버튼(283)<팔레트(349) / JS 에러 0. 스크린샷 2장 증거.
+- **배포물**: main.js + version.json (app.css·content.json 변경 없음) — `06_RELEASES/wc_upload_v1.4.2/`. 스냅샷 wordcraft_src_v1.4.2.tgz.
+
+## v1.4.1 — 2026-07-16 밤 (핫픽스: 듣기 이중 재생 + 라운드 뒤로가기)
+- **버그 ① (Dio님 실기기 발견)**: 소리 훈련소 지령 미션에서 🔊 버튼을 누르면 남/여 목소리가 동시 재생. 원인 = `stopClip()`이 이전 오디오 엘리먼트의 src를 비울 때 error 이벤트가 발생 → **이전 문항의 tts 폴백(웹 TTS, 여성)이 오발동**하며 새 클립(echo, 남성)과 겹침. 수정 = 정지 전에 onerror/onplaying 핸들러 해제 + 재생이 시작된 클립은 늦은 에러여도 폴백 금지(started 플래그) + stopClip이 진행 중 폴백 TTS도 함께 정지(tts.ts에 stopSpeak 신설).
+- **버그 ②**: 지령 미션·에코 사냥 라운드 및 유령 전투 화면에 나가기 버튼 부재. 수정 = 훈련소 메뉴/라운드·유령 전투 상단에 ← 뒤로가기 추가 (진도 손해 없음 — 이미 푼 문항 기록 유지).
+- **관제실**: 변경 없음 (연동 영향 없음 — 코드/스키마/XP 불변).
+- **검증**: tsc 0에러 · --production 빌드 · playwright — (a) 클립 성공 재현(로컬 mp3 라우트 주입) 상태에서 자동재생+연타 6회+문항 전환에도 TTS 폴백 발동 0회(이중 재생 회귀 없음) (b) 뒤로가기 3종(라운드→메뉴→월드맵, 유령 전투→월드맵) 동작 (c) JS 에러 0.
+- **검증 한계**: 실기기(A24) 재확인 필요 — 특히 네이티브 TTS 폴백 경로의 정지(stopSpeak)는 WebView에서만 실동작 확인 가능.
+- **배포물**: main.js + app.css + version.json (content.json 변경 없음) — `06_RELEASES/wc_upload_v1.4.1/`. 스냅샷 wordcraft_src_v1.4.1.tgz.
 
 ## v1.4.0 — 2026-07-16 저녁 (문장 소환진 🔮 오픈 — 시안 승인 즉시 구현)
 - **배경**: v1.3.0 릴리스 직후 Dio님이 소환진 애니메이션 시안 v0.1을 **승인** → CONTRACT §12 확정(v1.4) 후 엔진 구현. v1.3.0이 아직 미배포 상태였으므로 **v1.4.0 하나로 모아서 1회 배포** (L1).
@@ -27,85 +95,47 @@
 - **배경**: 7/16 기획 확정(`00_GOVERNANCE/기획_20260716_2차확장_승인.md`)에 따른 2차 학습 기능 확장. 예한이 진도 분석 결과 "장기기억 검증 0회" 해답 = 유령 보스. 개발 순서 P1~P7 준수, CONTRACT v1.3 선개정, DB는 L17 additive만.
 - **예한이 앱 (학습자)**
   - [신규] **유령 보스 리매치 👻**: 모듈 클리어 D+2(첫 도전)·D+7(별<3 리매치)에 월드맵 완료 카드에 유령 출몰(동시 최대 3, 오래된 완료 순). 신규 응용 문항 9개(변형4·응용3·함정2, 총 162문항 — 기존 문항 재사용 0) 축약 보스전. 정답률 60/75/90% → ★~★★★, 통과 시 status='mastered'+최초 +50 XP(reason `ghost_boss`). 오답은 W: 리스폰 카드(기존 규칙). 보스 등장 대사 onyx 음성 클립.
-  - [신규] **월드 1.5 수정 동굴 💎 (R0~R9, 10챕터)**: 발음기호(소리의 룬, GA 사전 표기) 마스터 과정 — ough 쇼(R0)→단모음/장모음/이중모음(R1~R3)→자음(R4~R6)→강세(R7)→블렌딩(R8)→최종 보스 "소리를 여는 자"(R9). 정규 모듈(진행·복습카드·보스 동일 규칙), 잠금 = A4 클리어, **본선(C0~) 진도 비차단**(R 모듈은 잠금 체인에서 건너뜀 + 진단 배정 자동해제 제외). 입모양 SVG 15종(runeArt.ts), 룬 41종.
-  - [신규] **룬 도감** (#/runes): 완료된 R 챕터의 룬 수집·열람(입모양+예시 단어 음성).
-  - [신규] **소리 훈련소 🎧** (#/listen): 에코 사냥(최소대립쌍 12세트 96문항, HVPT — 같은 단어를 nova/shimmer/alloy/echo 다중 음성으로) + 지령 미션(listen-and-do 40개, echo 음성). 하루 단위 결정적 로테이션 10문항 라운드.
-  - [신규] **진짜 음성 재생**: 콘텐츠 audio_url(Storage 공개 클립) 우선 재생, 실패/부재 시 기존 네이티브 TTS 폴백(L8 안전). 듣기 문항에 🐢 천천히(0.75x) 토글.
-  - [신규] 뱃지 17종째 `world1.5_clear`(💎 수정 동굴 정복 — 월드 클리어 템플릿 자동 정합).
-- **관제실 (아빠 앱)**: MODULE_NAMES에 R0~R9·ECHO·CMD 추가, 활동 로그 'ghost' 라벨(👻유령)·보스 필터에 유령 포함, 모듈 마스터리에 👻별 표시, XP 파생에 유령 보너스 포함(mastered_at 귀속 +50 — 앱 reason `ghost_boss`와 1:1).
-- **연동 영향 (CONTRACT v1.2 → v1.3)**: module_progress ADD COLUMN `stars`·`mastered_at`(additive) · status 'mastered' = 유령 통과 의미 확정 · answer_events 신규 activity_type 'ghost' · xp_events 신규 reason 'ghost_boss' · 신규 테이블 tts_clips(파이프라인 원장) · Storage 버킷 tts-audio(공개 읽기) · content.json에 ghost/listening 섹션 추가. **기존 행·컬럼·의미 변경 0 (L17)**.
-- **음원 파이프라인 (P3)**: Edge Function `tts-batch` v3(자기 연쇄, gpt-4o-mini-tts→tts-1 폴백, 중복 스킵, tts_clips 원장) 배포. 클립 390개(nova156/echo64/shimmer69/alloy62/onyx18/fable21) 생성. 경로 규약 `tts-audio/<scope>/<slug>_<voice>.mp3`, audio_url은 build_content.py가 콘텐츠에 결정적 주입.
-- **콘텐츠 품질 공정**: 병렬 저작 18에이전트 → 독립 교차 검수 4팀(P0 253건·P1 83건 수정 — 대부분 "엔진 tts 자동재생/버튼이 정답을 유출"하는 상호작용 결함과 듣기 문항 자동재생 트리거 누락) → 전역 정합 스캔(id 1,578개 중복 0) → **외부 벤더 교차 검증(OpenAI gpt-4o + Qwen): 영어 오류 0, IPA 사전 표기 정확** (지적 사항은 전부 표기 관행 차이 또는 의도적 오답 문장으로 판정).
-- **문장 소환진 (P4)**: 애니메이션 시안 v0.1(배역 5종 픽셀아트 × 동사 12종 수제 keyframe + 3단 피드백 연출) 제작·Critic 스크린샷 검수 완료 → **Dio님 승인 게이트 대기. 승인 전 엔진 미구현·예한이 노출 없음** (계약 §12에 XP 규칙만 예약).
-- **빌드·검증**: tsc 0에러, `bun build --production`(L16), playwright 스모크 — 정적 7라우트 + 시드 상태 인터랙티브(유령 출몰·전투·수정동굴 잠금해제·에코 라운드·입모양 아트) 렌더 확인, JS 에러 0.
-- **검증 한계 (정직 보고)**: ① 생성 음원의 실제 청취 품질(장단 대비·강세·한국어 보스 대사) 미청취 — Dio님 샘플 청취 필요 ② 실기기(갤럭시 A24 WebView) 오디오 재생 미확인(폴백은 설계됨) ③ 예한이 실반응·체감 난이도 미검증 ④ 라이브 배포 전 상태(GitHub 업로드 = Dio님 드래그 대기).
-- **배포물**: main.js(297KB) + app.css + content.json(848KB) + version.json — `06_RELEASES/wc_upload_v1.3.0/`. 소스 스냅샷 wordcraft_src_v1.3.0.tgz.
+  - [신규] **월드 1.5 수정 동굴 💎 (R0~R9, 10챕터)**: 발음기호(소리의 룬, GA 사전 표기) 마스터 과정. 정규 모듈, 잠금 = A4 클리어, 본선 진도 비차단. 입모양 SVG 15종(runeArt.ts), 룬 41종.
+  - [신규] **룬 도감** (#/runes) · **소리 훈련소 🎧** (#/listen: 에코 사냥·지령 미션) · **진짜 음성 재생**(audio_url 우선+TTS 폴백) · 뱃지 17종째 `world1.5_clear`.
+- **관제실 (아빠 앱)**: MODULE_NAMES R0~R9·ECHO·CMD, 활동 로그 'ghost' 라벨, 모듈 마스터리 👻별, XP 파생 유령 보너스(mastered_at 귀속 +50).
+- **연동 영향 (CONTRACT v1.2 → v1.3)**: module_progress ADD `stars`·`mastered_at` · status 'mastered' · answer_events 'ghost' · xp_events 'ghost_boss' · 신규 tts_clips · Storage tts-audio · content.json ghost/listening. 기존 변경 0(L17).
+- **음원 파이프라인**: Edge Function tts-batch v3, 클립 390개. 병렬 저작 18에이전트 + 교차검수 4팀(P0 253·P1 83 수정) + 외부 벤더 교차검증(영어 오류 0, IPA 정확).
+- **빌드·검증**: tsc 0 · bun --production · playwright 스모크(7라우트+시드 인터랙티브), JS 에러 0.
+- **검증 한계**: 생성 음원 청취 품질 미청취 · 실기기 오디오 미확인 · 예한이 실반응 미검증 · 라이브 배포 전 상태.
+- **배포물**: main.js(297KB) + app.css + content.json(848KB) + version.json. 스냅샷 wordcraft_src_v1.3.0.tgz.
 
 ## v1.2.2 — 2026-07-16 오전 (출석 규칙 15분 기준 + 스트릭 오전 리셋 버그 수정)
-- **배경**: 7/16 오전 예한이 학습 후 연속 출석일이 2일이 아닌 1일로 표시(달력은 정상). 원인 = touchStreak의 "어제" 계산이 toISOString(UTC) 기준이라 KST 오전 9시 이전 학습 시 어제가 이틀 전으로 계산돼 스트릭 리셋 (todayStr만 KST로 고친 R-10 봉합의 잔재). + Dio님 지시로 출석 인정 기준을 "하루 15분 이상 학습"으로 변경.
-- **예한이 앱 (학습자)**
-  - [수정] 스트릭 "어제"를 KST 기준으로 계산(kstYesterdayStr) — 오전 학습 시 리셋 버그 봉합
-  - [변경] **출석 인정 = 하루 활성 학습 15분 이상** (ATTENDANCE_MIN_SEC=900). XP 획득 시 즉시 출석 처리하던 touchStreak 제거 → 30초 하트비트가 일일 활성시간(localStorage 별도 키 wordcraft_daily_active_v1, KST 일 단위) 누적, 15분 도달 순간 markAttendance(스트릭+출석 칩+learners 서버 반영)
-  - [신규] 스트릭 자가 복구(repairStreak): 출석 이력(14일 캡 미달)으로 연속일 재계산해 과거 버그로 낮게 저장된 값 상향 교정 (앱 시작 시 1회)
-  - [안내] 내 정보 스트릭 히어로에 15분 규칙 + 오늘 진행분 표시("오늘 n분 채굴 중 — m분만 더 캐면 출석 도장 쾅! ⛏️") · 월드맵 🔥칩 툴팁
-- **관제실 (아빠 앱)**: 개요 타일 "연속 출석 (15분↑)" 라벨 + 기준 툴팁. 캘린더는 answer_events 파생 그대로(변경 없음)
-- **연동 영향**: learners.streak_days·last_active_date의 의미가 "마지막 학습일" → **"마지막 출석일(15분 충족일)"**로 변경. learners 갱신 경로가 recordXp → markAttendance/repairStreak로 이동(xp·level은 recordXp가 계속 갱신). 스키마 변경 없음
-- **데이터 조치(Supabase 직접)**: learners.streak_days 1→2 교정 (7/15 133분·7/16 42분 — 새 기준으로도 양일 출석 충족 확인 후)
-- **검증 한계**: 15분 도달 순간의 실기기 동작은 예한이 오늘 세션에서 확인 필요(코드 경로는 tsc+빌드 검증). 오늘(7/16) 출석은 구버전이 이미 인정한 것을 유지(소급 회수 없음)
-- **배포물**: main.js + version.json (app.css·content.json 변경 없음) / 소스 스냅샷 wordcraft_src_v1.2.2.tgz
-- **⚠️ 배포 사고와 재배포 (같은 날 오전)**: 1차 main.js가 라이브에서 화면 백지(TypeError: U is not a function). 원인 = 이 세션 컨테이너의 bun 1.3.13은 `NODE_ENV=production`+`--define`만으로는 JSX를 production 런타임으로 전환하지 않음 → jsxDEV(개발용)로 컴파일됐고 react production 번들에선 jsxDEV가 undefined. **`bun build --production`으로 재빌드** 후 playwright 헤드리스로 3개 화면(월드맵·관제실·내정보) 렌더 스모크 테스트 통과 확인하고 재배포, 라이브 검증 완료(관제실 v1.2.2·🔥2, 학습자 2일 연속). 다운타임 약 10분. → 교훈 L16 제정: 배포 전 번들 스모크 테스트 의무 + bun --production 명시.
+- 스트릭 "어제"를 KST(kstYesterdayStr)로 봉합 + 출석 인정 = 하루 활성 학습 15분 이상(ATTENDANCE_MIN_SEC=900). 하트비트가 일일 활성시간 누적→15분 도달 시 markAttendance. 스트릭 자가복구(repairStreak).
+- **연동 영향**: learners.streak_days·last_active_date 의미 = "마지막 출석일(15분 충족일)". 스키마 불변.
+- **데이터 조치**: learners.streak_days 1→2 교정(양일 출석 충족 확인 후).
+- **⚠️ 배포 사고와 재배포**: 1차 백지(TypeError, jsxDEV) → `bun build --production` 재빌드 + playwright 3화면 스모크 후 재배포. 다운타임 ~10분. → 교훈 L16 제정.
+- **배포물**: main.js + version.json. 스냅샷 wordcraft_src_v1.2.2.tgz.
 
 ## v1.2.1 — 2026-07-15 밤 (관제실 업데이트 감지 배너 + 옛 배포 주소 은퇴)
-- **배경**: v1.2.0 배포 후 Dio님 폰이 구버전으로 보임 → 원인 2개 발견. ① 오래 열려 있던 관제실 탭은 새 코드를 스스로 불러오지 않음(학습자 앱과 달리 업데이트 알림 장치 부재) ② 7/12 옛 배포(wordcraft-eosin.vercel.app, Vercel 프로젝트 'wordcraft')가 살아 있어 옛 APK/북마크가 구버전을 계속 서빙받음.
-- **관제실 (아빠 앱)**: /version.json을 25초 주기로 확인 → 새 버전이면 상단에 "🔄 새 버전 도착! 누르면 업데이트" 배너(location.reload). 헤더에 현재 버전 v표시 추가.
-- **예한이 앱**: 변경 없음 (기존 정보 탭 업데이트 체계 그대로).
-- **인프라**: 옛 Vercel 프로젝트 'wordcraft'(eosin 도메인)에 리다이렉트 페이지 배포(MCP 직접 배포, 해시 라우트 보존 location.replace) → 옛 주소 접속 시 wordcraft-app으로 자동 이동. 라이브 확인 완료.
-- **배포물**: main.js + app.css + version.json (content.json 변경 없음) / 소스 스냅샷 wordcraft_src_v1.2.1.tgz
-- **연동 영향**: 없음(읽기 전용 버전 체크). 교훈: 옛 배포 URL은 반드시 은퇴(리다이렉트) 처리 — LESSONS L15.
+- **관제실**: /version.json 25초 폴링 → 새 버전 시 상단 배너(location.reload) + 헤더 버전 표시.
+- **인프라**: 옛 Vercel 프로젝트 'wordcraft'(eosin)에 리다이렉트 배포(해시 라우트 보존). 교훈 L15.
+- **배포물**: main.js + app.css + version.json. 스냅샷 wordcraft_src_v1.2.1.tgz.
 
 ## v1.2.0 — 2026-07-15 저녁 (콘텐츠 대확장 + 복습 50:50 개편 + 뱃지 정합 전수 감사)
-- **배포물**: main.js(275KB) + app.css(74KB) + **content.json(430KB — 신규 8모듈 포함)** + version.json / GitHub `JKDIO/wordcraft-app` → Vercel
-- **소스 스냅샷**: `06_RELEASES/src_snapshots/wordcraft_src_v1.2.0.tgz` / GitHub `_dev_github/wordcraft_src_v1.2.0.tgz`
-- **콘텐츠 (8개 신규 챕터, 챕터당 채점 문항 38~42개 = 기존의 ~2배)**
-  - 문법 성 +C7 '일반동사 행동 부대' (3단현 -s·don't/doesn't·Do/Does — GIU Basic 선행, C5/C6과 점층 연결)
-  - 동사 사냥터 +B22a(이동·행동 동사 20)·+B22b(생각·감정 동사 12 + 구동사 8 — 중학 선행)
-  - 생존 캠프 +D2S '미국 상륙 작전'(식당·가게·계산대 실전)·+D3S '미국 친구 사귀기 대작전'(또래 스몰토크·뉘앙스) — 미국 실사용 표현, 점층 난이도
-  - **월드 5 '시제 시간여행' 정식 오픈**: T1 과거로 GO!·T2 미래로 GO!·T3 지금 이 순간, LIVE! (중1 선행)
-  - 전 문항 3중 검증: 구조 검증기(validate.js) + 의미 검수(정답 인덱스·영어 자연성·뉘앙스) + 결함 15건 수정 완료
-- **예한이 앱 (학습자)**
-  - [복습 개편] 복습 정답 +5→**+10 XP** + 하루 10장마다 **콤보 +20** + 채굴 완료 리포트 · 복습 답변을 answer_events(activity 'review')로 기록 시작(기존 미기록 버그 봉합)
-  - [신규] **오답 자동 리스폰**: 월드에서 틀린 모든 문제(quiz/boss/choice/listen/order)가 즉시 복습 카드(W:모듈:문항)로 광산에 추가 (과거 오답 15건 DB 백필 완료)
-  - [신규] 월드맵 '오늘의 밸런스' 미터(모험 vs 복습 XP, 50:50 목표) + 복습 배너 버튼화(예상 XP 표시)
-  - [신규] 뱃지 도감: 잠긴 뱃지 탭 → 획득 조건+진행도 공개 · 신규 뱃지 5종(2주 무정지·견습 광부·전설의 광부·황금 밸런스·시간의 지배자)
-  - [수정] 뱃지 판정을 lib/badges.ts로 일원화 + **앱 시작 시 소급 지급(syncBadges)** — 풀 스캔 미지급 버그 근본 봉합(진단 이력을 서버 progress에서도 복원) · 보스 승리 이력 서버 복원
-  - [수정] 모듈 재플레이 시 복습 카드 박스가 1로 리셋되던 결함 → ignore-duplicates upsert로 성취 보존
-- **관제실 (아빠 앱)**
-  - XP 산식 v2 동기화(복습 10 + 콤보 — 복습 이벤트는 v1.2.0부터 존재하므로 소급 불일치 없음) · 복습 탭 '학습 밸런스' 패널(오늘/이번 주 모험:복습)
-  - 신규 8모듈 한글 별명 · 월드5 로드맵 졸업(FUTURE_WORLDS 6~10만 유지) · 뱃지 도감 16종+미획득 조건 표시 · 퍼펙트 뱃지가 진단 100%로 오인되던 파생 버그 수정
-- **연동 영향**: review_cards에 card_back 컬럼 추가(마이그레이션 적용됨) · answer_events에 activity_type 'review' 신설 · XP 계약 v2 — CONTRACT v1.1 참조
-- **데이터 조치(Supabase 직접)**: 유실 뱃지 3종 소급 지급(first_module·diag_all·boss_slayer) + 과거 오답 15문항 복습 카드 백필
-- **검증**: tsc 통과 · 전 모듈 구조 검증 통과 · Playwright 렌더 12장면(월드 6·타일 18·뱃지 공개·관제실 6탭·신규 모듈 로드) 통과 · 배포 후 라이브 검증 예정
+- **콘텐츠 8신규 챕터**(C7·B22a/b·D2S·D3S·T1~T3, 챕터당 38~42문항) 3중 검증.
+- **예한이 앱**: 복습 +10/콤보+20 + 채굴 리포트 + 복습 answer_events 기록 · 오답 자동 리스폰(W: 카드) · 밸런스 미터 · 뱃지 도감/소급(syncBadges) · 재플레이 박스 보존.
+- **관제실**: XP v2 동기화 · 밸런스 패널 · 신규 8모듈 별명 · 월드5 졸업 · 뱃지 16종.
+- **연동 영향**: review_cards card_back · answer_events 'review' · XP 계약 v2.
+- **데이터 조치**: 유실 뱃지 3종 소급 + 과거 오답 15문항 백필.
+- **배포물**: main.js(275KB) + app.css(74KB) + content.json(430KB) + version.json.
 
 ## v1.1.0 — 2026-07-15 (이전 릴리스)
-- **배포물**: main.js(260KB) + app.css(70KB) + version.json / GitHub `JKDIO/wordcraft-app` → Vercel 자동배포
-- **소스 스냅샷**: `06_RELEASES/src_snapshots/v1.1.0_20260715/`
-- **예한이 앱 (학습자)**
-  - [복구] 7/15 오전 유실됐던 기능 전부 소스로 재구성: ℹ️ **정보 메뉴**(아빠의 메시지 + 버전/원격 업데이트), **스플래시 2종**(광산 모험/관제실), **네이티브 TTS**(Capacitor, APK 소리 문제 해결), **단일 content.json 로더**(챕터 이름 정상화)
-  - [신규] 사용시간 기록 체계: 30초 하트비트 + 백그라운드 전환 시 확정 기록 (기존: pagehide 의존 → 모바일에서 시간 유실)
-  - [수정] 동기화 큐 레이스 봉합 — XP·뱃지·복습카드가 서버에서 사라지던 근본 원인
-- **관제실 (아빠 앱)**
-  - [신규] v2 전면 개편: 탭 6개(개요/활동/복습/분석/진행/보상), 학습 캘린더 히트맵, 오답만 필터, 복습 성취 상세, 심층 분석(취약영역·유형별·반응속도·반복오답·마스터리), 향후 월드 5~10 로드맵, 뱃지 도감(데이터 파생)
-  - [수정] XP 산식을 예한이 앱(StepRunner)과 동일하게 통일 → "오늘 XP=누적 XP"(같은 날) 일치. 학습시간은 세션과 활동로그 중 큰 값(구버전 기기에도 정확)
-- **연동 영향**: sessions.duration 기록 방식 변경(하트비트) — 관제실 집계와 짝 맞춤 / XP 규칙 계약 준수 / 스키마 변경 없음
-- **데이터 조치(Supabase 직접)**: 7/15 세션 duration 백필, learners.xp=1290·level=3·streak=1 복원
-- **검증**: tsc 통과, 컨테이너 Playwright 렌더 확인(월드맵 챕터명·정보화면·내비 4버튼), 배포 후 라이브 확인 예정
+- **예한이 앱**: 유실 기능 재구성(정보 메뉴·스플래시 2종·네이티브 TTS·단일 content.json 로더) · 하트비트 사용시간 · 동기화 큐 레이스 봉합.
+- **관제실**: v2 전면 개편(6탭·캘린더 히트맵·심층 분석·로드맵·뱃지 도감) · XP 산식 통일.
+- **연동 영향**: sessions.duration 하트비트 · XP 규칙 준수 · 스키마 불변.
+- **데이터 조치**: 7/15 세션 duration 백필, learners.xp=1290·level=3·streak=1 복원.
 
 ## v1.0.0 — 2026-07-15 오전 (이전 세션, deploy_v2)
-- 정보 화면(아빠 메시지+버전) 추가, 자동 원격 업데이트 체크, 네이티브 TTS, 스플래시 아이콘판
-- **사고 기록**: 이 릴리스의 소스가 노트북에 반영되지 않음 → 7/15 오후 관제실 v2 배포 때 기능 유실 발생. 컴파일본(deploy_v2/main.js)에서 역추출로 복원. → 철칙 2·3 제정 계기
+- 정보 화면·자동 원격 업데이트·네이티브 TTS·스플래시 아이콘판.
+- **사고 기록**: 이 릴리스의 소스가 노트북에 미반영 → 7/15 오후 관제실 v2 배포 때 기능 유실. 컴파일본에서 역추출 복원. → 철칙 2·3 제정 계기.
 
 ## (기록 소급) 2026-07-14 — 배포 파이프라인 + 콘텐츠 평탄화 + APK
-- GitHub `JKDIO/wordcraft-app` + Vercel 자동배포 확립, content.json 평탄화, 스플래시 1차(CSS판), APK(Capacitor, live URL 방식 — **예한이 폰은 라이브 사이트를 직접 로드**하므로 웹 배포=폰 즉시 반영)
+- GitHub `JKDIO/wordcraft-app` + Vercel 자동배포 확립, content.json 평탄화, 스플래시 1차, APK(Capacitor, live URL — 웹 배포=폰 즉시 반영).
 
 ## (기록 소급) 2026-07-12 — v1 최초 배포
-- 진단 4종 + 월드 1~4 + 관제실 v1 + Supabase 연동
+- 진단 4종 + 월드 1~4 + 관제실 v1 + Supabase 연동.
