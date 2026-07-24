@@ -9,6 +9,24 @@
 
 ---
 
+## v1.4.9 (+v1.4.8) — 2026-07-23 (다가구 Phase 3: 기기 무중단 세션 이관 + 가족 데이터 격리 RLS)
+- **배경**: v1.4.7로 보호자·아이 라우팅이 동작하나, 모든 테이블이 전면개방(격리 없음)이라 다른 가족을 들이면 서로 데이터가 보임. Phase 3 = **① 모든 기기에 인증 세션 부여 + ② 예한이 기존 기기 무중단 이관 + ③ 멤버십 기반 RLS**. (예한이 검도대회 출전으로 다운타임 허용 창에서 진행 — Dio님 승인.)
+- **예한이 앱 (학습자)**
+  - **v1.4.8**: App 시작 시 세션 없는 레거시 기기(로컬 learnerId 보유=예한 기존 기기)는 **자동 익명 로그인 + 그 learner에 device 바인딩**(`signInAnonymously`+`bindLegacyDevice`→신규 RPC `wc_bind_legacy_device`, SECURITY DEFINER). → RLS 격리 후에도 자기 데이터 접근 유지. 실패 시 레거시 폴백.
+  - **v1.4.9**: `#/admin`(PIN 관제실) 경로도 **인증 세션을 확보**하도록(학습 세션은 여전히 미생성) — 격리 후 관제실이 anon으로 빈 데이터가 되는 것 방지.
+- **관제실 (아빠 앱)**: 코드 변경은 세션 확보뿐(집계·화면 불변). 보호자 세션/바인딩된 device 세션으로 데이터 read.
+- **연동 영향 / DB (마이그레이션)**
+  - `phase3_wc_bind_legacy_device_rpc`: 레거시 기기 무중단 바인딩 RPC.
+  - `phase3_membership_rls_isolation`: 전면개방(anon_all_*) 정책 폐기 → **멤버십 기반 격리**. 헬퍼(SECURITY DEFINER) `wc_my_family_ids`·`wc_my_learner_ids`·`wc_device_learner`. 정책: 읽기=내 가족의 learner 행 / 쓰기=device는 자기 learner만(WITH CHECK) / answer_events·xp_events는 insert만(삭제·수정 불가=계약 준수) / parent_rewards는 가족 아이 대상 지급. **롤백 = anon_all_* 재생성(USING true).**
+  - additive(L17): 기존 행·컬럼·의미 불변, 접근 제어만 강화.
+- **빌드·검증**: tsc 0 · bun --production · playwright 6라우트 스모크(JS에러0). **라이브 격리 실측(서버 재현)**:
+  - 예한 기기(익명 세션+device 바인딩): 자기 learner/answer_events read OK · 자기 세션 write OK(201) · **다른 가족 read=빈값 · 다른 learner write=403**. 앱 화면에 예한(Lv.11·17,823XP·복습15장) 정상 로드.
+  - 별도 테스트 가족 B 기기: 자기 read/write OK · **예한 learner/answer_events read=빈값 · 예한 write=403**.
+  - 레거시 무중단 이관 재현: 세션 없던 기기가 자동 익명+바인딩 후 예한 정상 로드 확인.
+- **검증 한계 (정직 보고)**: ① 예한이 **실기기(갤럭시 A24 WebView)** 에서의 1.4.9 자동 이관은 미확인(서버·데스크톱 재현만) — 예한이 복귀 후 실폰 첫 로드 시 자동 바인딩·학습 정상 확인 필요. ② 관제실 가족·아이별 UI 분리는 기존 AdminPage(learner 지정) 재사용 수준(전용 UI는 후속). ③ device 바인딩 위조 방지(learnerId 신뢰)는 후순위 하드닝.
+- **배포**: v1.4.8·v1.4.9 각각 main.js+version.json GitHub 루트 업로드(클로드 직접 file_upload)→Vercel. 라이브 version.json 1.4.9 확인.
+- **기록**: 소스 SSOT = `_dev_github/src_v1.4.9/` + `wordcraft_src_v1.4.9.tgz`. DB 마이그레이션 3건 Supabase 원장 기록.
+
 ## v1.4.7 — 2026-07-23 (다가구 확장 A: 인증 상태별 앱 라우팅)
 - **배경**: 다가구(지인 가족) 확장 Phase 2-C 완결. 앞서 완료된 Phase 0·1(families·memberships·learners.family_id, 예한이=Family#1 `YEHAN-7264`)·2-A(구글/익명 OAuth 설정)·2-B(RPC)·2-C 코어(Auth 세션·Connect 화면) 위에, **인증 상태로 앱이 자동으로 갈라지도록** 하는 라우팅을 통합. 원칙: additive(L17)·예한이 기존 흐름 무손실·RLS는 Phase 3.
 - **예한이 앱 (학습자)**
@@ -21,8 +39,12 @@
 - **연동 영향 (CONTRACT)**: **스키마·XP 산식·기록 방식 변경 0**. 신규 조회 헬퍼(supabase.ts: fetchLearnerById·myDeviceLearner·myFamilyLearners)와 Learner.family_id(옵셔널, additive)뿐. 계약 개정 불요(다가구 스키마 계약 v1.5는 Phase 3 RLS 후).
 - **빌드·검증**: tsc 0에러 · `bun build --production`(L16) · main.js 328K/gzip 106KB. **playwright 렌더 스모크 6라우트**(`/ /connect /family /admin /review /profile`) — 전부 렌더 + 비-404 JS 런타임 에러 0. 신규 #/connect·#/family 정상, **레거시 예한이 흐름(#/·#/admin·#/review·#/profile) 비파괴 확인**.
 - **배포 완료(7/23)**: Dio님 GitHub `JKDIO/wordcraft-app` 루트 드래그(main.js+version.json 2파일, content.json·app.css 불변) → Vercel 자동배포. **라이브 검증**: `version.json` 캐시버스터 = 1.4.7 확인 + 실제 Chrome에서 `#/connect` 화면 정상 렌더(백지 아님, JS 에러 0).
-- **검증 한계 (정직 보고)**: ① 실제 **구글 로그인 왕복**(보호자 로그인→#/family→가족코드 연결→아이 관제실)·아이 코드 연결·Supabase Users 신규 유저 생성은 **아직 실측 미완**(Dio님 브라우저·구글 계정 필요 — 후속). ② 실기기(갤럭시 A24 WebView) 미확인. ③ Phase 3(RLS) 전이라 현재 정책은 anon 전개방 — **가족 데이터 격리는 아직 없음**(다른 가족을 실제로 들이기 전 Phase 3 필수).
-- **기록**: 로컬 SSOT = `_dev_github/src_v1.4.7/` + `wordcraft_src_v1.4.7.tgz`(tgz→클린빌드 main.js md5 `36ac102e…` 동일 검증). L20 동반 업로드로 이 릴리스에 RELEASE_LOG·START_HERE·소스 스냅샷을 GitHub `_dev_github/`에 동기화(밀린 v1.4.1~1.4.6 기록 유실 위험 해소).
+- **✅ 라이브 구글 로그인 왕복 검증 (2026-07-23, Dio님 폰)**: 배포된 앱에서 보호자 구글 로그인 → `#/family` → 가족코드 `YEHAN-7264`(관계 아빠) → **예한이 목록 등장 → 예한이 관제실(진도·정답률·복습·유령별) 정상 표시** 확인. 서버측 재현으로도 예한이(Lv.11·17,823XP) 반환 확인.
+- **후속 DB 수정 2건 (재배포 불필요 — DB만 변경, 앱 코드 불변)**:
+  1. `widen_memberships_relation_check_korean_labels` — `memberships.relation` 체크 제약이 영문('grandparent','mom','dad')만 허용 → 앱이 보내는 한글('아빠·엄마·할아버지·할머니') 거부(에러 23514, guardian 연결 실패)였음. 제약을 넓혀 한글 4종 추가(기존 영문·null 유지). additive.
+  2. `extend_anon_open_policies_to_authenticated` — 앱 10개 테이블의 전면개방 RLS 정책이 **`{anon}` 역할 전용**이라 **로그인 세션(authenticated=보호자 구글/아이 익명)으로는 읽기·쓰기 불가** → guardian 연결(SECURITY DEFINER RPC)은 됐으나 직후 "내 가족·아이" 조회가 빈 결과로 화면이 안 넘어감. 정책 역할을 `anon,authenticated`로 확장(qual `true` 그대로). **이 정책들은 Phase 3에서 멤버십 기반 격리 정책으로 교체 예정.** ⚠️ 이 잠재결함은 아이 기기(익명 세션) 학습 기록에도 동일 영향이었을 것(수정으로 해소).
+- **검증 한계 (정직 보고)**: ① 아이(device) 연결 흐름 실기기 미검증(서버 재현은 예정) · 실기기(갤럭시 A24 WebView) 미확인. ② Phase 3(RLS) 전이라 현재 정책은 anon+authenticated 전개방 — **가족 데이터 격리는 아직 없음**(다른 가족을 실제로 들이기 전 Phase 3 필수).
+- **기록**: 로컬 SSOT = `_dev_github/src_v1.4.7/` + `wordcraft_src_v1.4.7.tgz`(tgz→클린빌드 main.js md5 `36ac102e…` 동일 검증). L20 동반 업로드로 이 릴리스에 RELEASE_LOG·START_HERE·소스 스냅샷을 GitHub `_dev_github/`에 동기화(밀린 v1.4.1~1.4.6 기록 유실 위험 해소). DB 마이그레이션 2건은 Supabase에 적용됨(apply_migration 원장 기록).
 
 ## v1.4.6 — 2026-07-18 (수정 동굴 음성 봉합 마무리 — 매치 게임 클립 재생)
 - **결함(P0, 학습자 앱)**: 수정 동굴 '소리 쌍둥이' 매치 게임(`MatchGame.tsx`)이 타일 재생 시 `speak(p.tts)` 네이티브 TTS만 호출 → 예한이 폰 WebView에서 TTS 보이스가 비어 **조용히 실패**(무음). v1.4.5 라이브 계측 검증 중 발견(타일 클릭 → 클립 아닌 TTS 호출 확인).
