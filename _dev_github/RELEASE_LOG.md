@@ -9,6 +9,13 @@
 
 ---
 
+## v1.4.13 — 2026-07-23 (부모 대시보드 개선 — 아이 이름수정·삭제 + 설치안내 정리 + 슈퍼 바로가기)
+- **배경(Dio님 피드백)**: ① `#/family`에 자기 가족(예한이네)이 뜨는 게 헷갈림 → 소유자는 다른 가족 관리를 `#/super`에서. ② 아이마다 설치 안내 버튼은 중복. ③ 이름 오타·아이 삭제 등 수정 기능 부재.
+- **FamilyDashboard**: ① 소유자면 헤더·조인화면에 **"🛠️ 슈퍼" 바로가기**(내 가족 vs 전체관리 구분). ② 설치 안내를 아이별 → **상단 1회 토글**로 정리. ③ 아이별 **✏️ 이름 수정**(인라인)·**🗑️ 삭제**(2단계 확인).
+- **DB (마이그레이션 `phase5c_guardian_rename_remove_learner`)**: wc_guardian_rename_learner(id,nick)·wc_guardian_remove_learner(id). 둘 다 내 가족 한정. **삭제는 학습기록(answer_events) 없는 아이만 허용**(실수 방지·데이터 보호) — 있으면 'has learning data' 예외.
+- **검증**: tsc 0 · bun --production · 스모크. 라이브 서버 왕복 — 이름 수정 200(반영 확인) · 빈 아이 삭제 200(사라짐) · **학습기록 있는 아이 삭제 400('has learning data', 보존 확인)**. 테스트 잔여물 정리.
+- **개념 정리**: `#/family`=내가 부모인 우리 가족 / `#/super`=소유자가 모든 가족 관리. 진영 초대링크는 진영 구글로 들어가야 진영이네가 보임(로그인 계정 기준).
+
 ## v1.4.12 — 2026-07-23 (부모 셀프서비스 — 부모/자녀 구분 + 아이별 링크 + 설치 가이드)
 - **배경(Dio님 피드백)**: ① 부모(친구)와 자녀를 구분해 표시 ② 가족 등록만 소유자 승인 → 이후 **부모가 직접 아이 등록·코드/링크 관리** ③ 아이에게 줄 **복사 가능한 링크**(카톡 X=음성 안남, **문자 O**) ④ 설치까지 쉬운 가이드.
 - **DB (마이그레이션 `phase5b_parent_name_and_guardian_selfserve`)**: families.**parent_name** 컬럼. RPC — wc_admin_create_family(name,code,**parent_name**)·wc_admin_list_families(부모명 포함)·**wc_guardian_family()**(부모 대시보드: 가족+아이)·**wc_guardian_add_learner(nickname)**(부모가 자기 가족에 아이 추가, guardian 게이트).
