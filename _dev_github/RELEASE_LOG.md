@@ -9,6 +9,17 @@
 
 ---
 
+## v1.4.11 — 2026-07-23 (다가구 Phase 5: 가족 생성 콘솔 = 슈퍼관리실 + PWA)
+- **배경**: 지금까지 새 가족/아이/코드 생성이 SQL(관리자 수동)이라 자가운영 불가 → **소유자(Dio)가 앱 안에서 직접 가족·아이·코드를 만드는 콘솔** 추가로 자가운영 완성.
+- **신규 화면 `#/super` (SuperConsole.tsx)**: 소유자 전용. ① 구글 로그인 게이트(비소유자=권한없음) ② 새 가족 만들기(이름+공유코드) ③ 가족별 아이 추가 ④ 전체 가족·아이·코드 목록 + **코드/초대문구 복사**(공유용). 학습 세션 미생성.
+- **App.tsx**: `#/super` 라우트 + 슈퍼 경로는 자동 device 바인딩 안 함(소유자 구글 필요) + 로그인 복귀 시 `wc_after_login='super'`로 슈퍼로 재진입. noLearnerChrome 포함.
+- **supabase.ts**: isOwner·adminListFamilies·adminCreateFamily·adminAddLearner.
+- **DB (마이그레이션 `phase5_superadmin_console_rpcs`)**: `wc_owners` 테이블(소유자=Dio uid 시드) + SECURITY DEFINER 소유자게이트 RPC 4종(wc_is_owner·wc_admin_list_families·wc_admin_create_family·wc_admin_add_learner). RLS 우회로 소유자만 전체 가족 관리.
+- **PWA (index.html)**: manifest 링크 + apple-touch-icon·mobile-web-app 태그 → "홈 화면에 추가" 시 앱 아이콘·이름 정상. 타이틀 "WordCraft — 영어 모험"(다가구 반영).
+- **검증**: tsc 0 · bun --production · playwright 7라우트(+/super) 스모크 JS에러0. **소유자 RPC 실측**(Dio uid 시뮬레이션): is_owner=true, 가족 목록에 예한이네·진영이네 정상 반환. 라이브 `#/super` 렌더(구글 로그인 게이트) 확인. 라이브 version.json 1.4.11.
+- **온보딩 완성형**: 소유자 `#/super`에서 가족+아이+코드 생성 → 그 가족에게 `#/connect` 링크+코드 전달 → 아이(코드 연결)·부모(구글+코드) 각자 사용. 가족 간 데이터는 RLS로 격리.
+- **검증 한계**: 콘솔의 실브라우저 생성/추가 왕복은 Dio님 구글 로그인 실행 필요(RPC·렌더는 검증됨). PWA 오프라인(서비스워커)은 미도입(홈화면 추가·아이콘만).
+
 ## v1.4.10 — 2026-07-23 (라운드 중 나가기 버튼 복원 — 재구성 회귀 봉합)
 - **결함(회귀)**: 소스 재구성(v1.4.6_recon)이 v1.4.1 델타를 누락 → 그 소스로 빌드한 v1.4.7~1.4.9 배포가 **유령 전투·소리 훈련소 라운드 중 나가기 버튼을 유실**(아이가 라운드에 갇힘). Dio님이 원래 v1.4.1에서 보고·수정했던 UX.
 - **수정(학습자 앱)**: GhostBattle 전투 phase 상단 ghost-topbar + ListenArcade 라운드 quiz-top에 ← 나가기 버튼 재적용(인라인 스타일, app.css 무변경). GhostBattle→onExit(월드맵), ListenArcade→setMode('menu')(훈련소 입구). 진도 손해 없음.
