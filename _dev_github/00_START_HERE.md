@@ -1,17 +1,17 @@
 # 🚩 START HERE — WordCraft 개발 현황 (새 세션 최초 필독)
 
-> **현재 상태 스탬프 → 라이브 v1.4.13 (2026-07-23, 다가구 완성형 = 부모 셀프서비스 + 아이 수정/삭제). `#/family`=내 가족(내가 부모) / `#/super`=소유자 전체 가족 관리. 부모 대시보드에 아이 이름수정·삭제(학습기록 보호)·설치안내 1회·소유자 슈퍼 바로가기. 흐름: 소유자 `#/super`에서 가족+부모명+코드 생성 → 부모 초대문구 전달 → 부모가 `#/family`에서 아이 등록·아이별 문자링크(`#/connect?kid=&name=` 원터치) 전달 → 아이 연결+설치가이드. 소유자는 가족 승인만. 진영이네(부모 진영, 아이 찬영·호영, 코드 JINYOUNG-3607) 준비됨.**
+> **현재 상태 스탬프 → 라이브 v1.4.14 (2026-07-29, ★음성 이중 재생 전면 봉합 = 단일 오디오 채널★). 예한이가 룬 파트 3단계(수정 동굴 R2)에서 "여자 목소리와 남자 목소리가 동시에" 난다고 신고 → 앱 전 영역 음성 호출부 전수 감사 → `lib/audio.ts`를 세대(generation) 토큰 기반 단일 채널로 재설계 + `lib/tts.ts` 네이티브↔웹 이중 발화 차단 + 화면 이탈·백그라운드 전역 정지. 계측 대조: v1.4.13 = 1/7 · 0/4 · 8/10 → v1.4.14 = **7/7 · 4/4 · 10/10**. ⚠️ **예한이 실폰 실청취는 아직 미확인 — 아침에 Dio님/예한이 확인 필요.**
+> (이전 스탬프) 라이브 v1.4.13 (2026-07-23, 다가구 완성형 = 부모 셀프서비스 + 아이 수정/삭제). `#/family`=내 가족(내가 부모) / `#/super`=소유자 전체 가족 관리. 부모 대시보드에 아이 이름수정·삭제(학습기록 보호)·설치안내 1회·소유자 슈퍼 바로가기. 흐름: 소유자 `#/super`에서 가족+부모명+코드 생성 → 부모 초대문구 전달 → 부모가 `#/family`에서 아이 등록·아이별 문자링크(`#/connect?kid=&name=` 원터치) 전달 → 아이 연결+설치가이드. 소유자는 가족 승인만. 진영이네(부모 진영, 아이 찬영·호영, 코드 JINYOUNG-3607) 준비됨.**
 > (이하 이전 스탬프) 라이브 v1.4.10까지: 다가구 A~Phase3 완료 + 라운드 나가기 복원. ✅ 보호자 구글 왕복(→예한 관제실) 실검증 + 아이 흐름 서버검증 + **Phase 3 가족 데이터 격리(RLS) 적용·양방향 격리 실측 완료**(예한 기기 정상 read/write, 다른 가족 상호 read=빈값·write=403). 예한 기존 기기는 무중단 자동 이관(익명 세션+device 바인딩). v1.4.10에서 유령전투/소리훈련소 라운드 ← 나가기 복원(재구성 회귀 봉합). 🏗️ 남은 것 = ① 예한 실폰 첫 로드 자동이관 확인(복귀 후) · ② v1.4.2 소환진 픽셀 델타(별도 세션·라이브 대조) · ③ Phase 4(설치) · ④ 관제실 가족·아이별 전용 UI.**
 > ⚠️ DB 마이그레이션 3건(relation 한글허용 · anon→authenticated 확장 · **멤버십 RLS 격리**)은 Supabase apply_migration 원장에 기록. 롤백은 anon_all_* 정책 재생성(USING true).
-> ⚠️ 소스 SSOT = **노트북 로컬 `Word Craft/wordcraft-app/_dev_github/src_v1.4.7/`(+ 같은 폴더 `wordcraft_src_v1.4.7.tgz`)**. (폴더 `src_v1.4.6_recon`는 낡은 사본 — Dio님이 _to_delete로 정리 가능.) GitHub `_dev_github`엔 v1.4.7 배포 회차에 RELEASE_LOG·이 문서·tgz 동반 업로드로 동기화(L20 밀린 v1.4.1~1.4.6 기록 해소).
+> ⚠️ 소스 SSOT = **노트북 로컬 `Word Craft/wordcraft-app/_dev_github/src_v1.4.14/`(+ 같은 폴더 `wordcraft_src_v1.4.14.tgz`)**. (폴더 `src_v1.4.6_recon`는 낡은 사본 — Dio님이 _to_delete로 정리 가능.) GitHub `_dev_github`엔 v1.4.7 배포 회차에 RELEASE_LOG·이 문서·tgz 동반 업로드로 동기화(L20 밀린 v1.4.1~1.4.6 기록 해소).
 
-## ⚡ 지금 최우선 — 다가구 마무리 & Phase 3 (2026-07-23)
-**새 세션은 `앱개발/진행상황_20260723_다가구_A라우팅_v1.4.7.md`를 먼저 읽어라(A 완료 + 배포 내역). 그 전 컨텍스트는 `진행상황_20260723_다가구_Phase1_DB.md`.**
-- 승인된 청사진: `claude/기획_20260723_다가구확장_구글로그인_배포체계.md` + 데스크톱 아티팩트 "wordcraft-multifamily-blueprint".
-- **완료**: Phase 0·1(스키마·예한이 Family#1 `YEHAN-7264` 무손실)·2-A(OAuth 설정)·2-B(RPC)·2-C(Auth·Connect)·**✅ A 인증상태별 라우팅(v1.4.7, App 3분기·FamilyDashboard·AdminPage 아이별화)**·**✅ 배포(라이브 1.4.7, #/connect 실렌더 확인)**.
-- **다음**: ① **구글 로그인 왕복 실측** — Dio님이 PC 크롬에서 `wordcraft-app.vercel.app/#/connect` → 부모 구글 로그인 → `#/family` → 가족코드 `YEHAN-7264`(관계 아빠) → 예한 목록 → 예한 관제실 / 아이: #/connect → 아이 → 코드 → 프로필 → 연결. Supabase Authentication→Users 신규 유저 확인. ② Phase 3.
-- **설계 결정(2026-07-23)**: 기존 예한이·아빠 앱엔 `#/connect` 진입 버튼을 **넣지 않는다**(학습 보존 + 아이 기기 오조작 방지). 새 보호자·가족은 `#/connect` **링크 전달**로 온보딩.
-- **함정**: Supabase 설정/Users 페이지는 클로드 자동화 브라우저에서 스켈레톤(먹통) → Dio님 브라우저로. 마운트 덮어쓰기 잠금(L18)→신규 폴더/rename-swap. 04_CONTENT 유실(content.json 산출물만).
+## ⚡ 지금 최우선 — 예한이 실폰에서 음성 확인 (2026-07-29)
+**이번 세션(7/29 새벽)은 v1.4.14를 배포했다. 상세는 RELEASE_LOG v1.4.14 + `claude/개발_영구교훈_LESSONS.md` L21.**
+- **① (Dio님) 예한이 폰에서 룬 파트 3단계(수정 동굴 R2) 실청취** — 자동재생 직후 다음 문항으로 빠르게 넘기기 + 🔊 연타 + 🐢 천천히 토글. 목소리가 하나만 들리면 최종 PASS. (컨테이너에서는 supabase.co가 막혀 실제 mp3 소리를 검증할 수 없다 — L16 보강.)
+- **② 라이브 실측(선택)**: claude-in-chrome 계측으로 실제 Storage 클립 재생 시 AUDIO.play→playing, TTS 호출 0 확인.
+- **③ 이월 과제**: v1.4.2 소환진 explode/eat 픽셀 델타(별도 세션·라이브 대조) · Phase 4(PWA 서비스워커·설치) · 관제실 가족·아이별 전용 UI · 예한 실폰 다가구 자동이관 확인.
+- **오디오 불변 규칙(신설)**: 소리를 내는 코드는 **반드시 `lib/audio.ts`의 `playClip()`/`speakText()`만** 쓴다. 화면에서 `import { speak } from '../lib/tts'`가 보이면 그 자체가 결함이다(`grep -rn "from '.*tts'" src/`로 매 릴리스 확인).
 
 ## 0. ⚠️ 이 문서는 낡을 수 있다 — 신뢰 순서 (먼저 읽기)
 이 문서는 **"지도 + 마지막 세션 스냅샷"**이다. 위 스탬프가 실제와 다르면 이 문서가 낡은 것.
@@ -47,9 +47,9 @@
 ## 4. 파일 지도
 | 위치 | 내용 |
 |---|---|
-| 로컬 `wordcraft-app/` | GitHub 배포 저장소 클론. 루트 main.js·version.json = **v1.4.7(md5 36ac102e…)** |
-| `_dev_github/src_v1.4.7/` | **소스 SSOT(v1.4.7)** — App.tsx(인증 라우팅)·screens/(+Connect·+FamilyDashboard)·lib/{store,supabase,…,version}·engine 등 |
-| `_dev_github/wordcraft_src_v1.4.7.tgz` | 소스 스냅샷(컨테이너 복구용). tgz→클린빌드 main.js md5 동일 검증됨 |
+| 로컬 `wordcraft-app/` | GitHub 배포 저장소 클론. 루트 main.js·version.json = **v1.4.14(md5 9b91f58a…)** |
+| `_dev_github/src_v1.4.14/` | **소스 SSOT(v1.4.14)** — App.tsx(인증 라우팅)·screens/(+Connect·+FamilyDashboard)·lib/{store,supabase,…,version}·engine 등 |
+| `_dev_github/wordcraft_src_v1.4.14.tgz` | 소스 스냅샷(컨테이너 복구용). tgz→클린빌드 main.js md5 `9b91f58a…` 동일 검증됨 |
 | `_dev_github/src_v1.4.6_recon/` + `..._recon.tgz` | v1.4.6 시점 사본(낡음 — 정리 대상) |
 | `_dev_github/RELEASE_LOG.md` (GitHub) | v1.4.7 회차부터 프로젝트 메모리와 동기화 |
 | Supabase `gbynvzxgbpmoqdsriowz` | DB + Auth(구글·익명) + Storage(tts-audio) + Edge(tts-batch) |
@@ -59,7 +59,7 @@
 ```
 # device_stage_files로 _dev_github/wordcraft_src_v1.4.7.tgz 스테이징
 mkdir -p /home/claude/wcbuild && cd /home/claude/wcbuild
-tar xzf "/mnt/user-data/uploads/.../wordcraft_src_v1.4.7.tgz"
+tar xzf "/mnt/user-data/uploads/.../wordcraft_src_v1.4.14.tgz"
 ln -sfn /home/claude/.npm-global/lib/node_modules node_modules   # react 19.2.6 전역
 /home/claude/.npm-global/bin/tsc -p tsconfig.json
 NODE_ENV=production bun build src/main.tsx --outdir dist --minify --production   # ★--production(L16)
@@ -68,6 +68,7 @@ NODE_ENV=production bun build src/main.tsx --outdir dist --minify --production  
 배포: main.js(+version.json, 콘텐츠 변경 시 content.json·app.css) → SendUserFile→device_commit→ **사용자가 GitHub 업로드 드래그** → Vercel → 라이브 검증. (v1.4.7 배포는 이 경로로 완료.)
 
 ## 6. 다음 작업
+- **⓪ 최우선: 예한이 실폰에서 v1.4.14 음성 실청취 확인(위 ⚡ 섹션).**
 - **① 구글 로그인 왕복 실측(후속·Dio님)**: `#/connect` 링크로 부모 구글 로그인 → `#/family` → 가족코드 `YEHAN-7264` → 예한 목록/관제실 / 아이 코드 연결 / Supabase Users 확인. 되면 이 스탬프에 "구글 왕복 확인" 추가.
 - **② Phase 3(RLS 가족 격리)**: anon 전개방 정책 폐기 → 멤버십 기반 RLS + 관제실 가족·아이별 분리 + CONTRACT v1.5. ⚠️ 모든 DB 호출부 세션 이관 전수감사(누락 시 빈 데이터). **다른 가족을 실제로 들이기 전 필수.**
 - **③ 잔여 재구성 델타(가족 롤아웃 전 재적용)**: v1.4.1 뒤로가기 버튼·v1.4.2 소환진 explode/eat 픽셀(라이브 대조). 로그인 테스트엔 무해.
