@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WordCraft 음원 전수 감사 (AUDIO QA)</title>
+<style>
+ :root{color-scheme:dark}
+ body{margin:0;padding:20px;background:#0d1117;color:#e6edf3;font-family:-apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif}
+ h1{font-size:20px;margin:0 0 4px}
+ .sub{color:#8b949e;font-size:13px;line-height:1.7;margin-bottom:16px}
+ .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+ input[type=text]{flex:1 1 340px;min-width:240px;background:#161b22;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:10px 12px;font-size:13px}
+ button.go{background:#238636;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer}
+ button.go:disabled{background:#30363d;color:#8b949e;cursor:default}
+ #verdict{font-size:22px;font-weight:800;padding:16px;border-radius:12px;margin:14px 0;display:none}
+ .pass{background:#12261a;border:1px solid #2ea043;color:#3fb950}
+ .fail{background:#2b1211;border:1px solid #f85149;color:#ff7b72}
+ .bar{height:8px;background:#21262d;border-radius:99px;overflow:hidden;margin:8px 0 4px}
+ .bar > i{display:block;height:100%;background:#2ea043;width:0}
+ .prog{font-size:12px;color:#8b949e;font-variant-numeric:tabular-nums}
+ h2{font-size:15px;margin:22px 0 8px;color:#e6edf3}
+ table{width:100%;border-collapse:collapse;font-size:12px}
+ th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #21262d;vertical-align:top}
+ th{color:#8b949e;font-weight:600;position:sticky;top:0;background:#0d1117}
+ td.num{font-variant-numeric:tabular-nums;color:#adbac7}
+ tr.bad td{background:#2b1211}
+ .play{background:#21262d;border:1px solid #30363d;color:#e6edf3;border-radius:6px;padding:3px 9px;cursor:pointer}
+ .note{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.75;color:#adbac7}
+ .note b{color:#e6edf3}
+ .pill{display:inline-block;background:#21262d;border-radius:99px;padding:2px 10px;margin-right:6px;font-size:12px;color:#adbac7}
+</style>
+</head>
+<body>
+<h1>🎧 WordCraft 음원 전수 감사 (AUDIO QA)</h1>
+<div class="sub">
+  <b>이 도구는 배포 전 필수 관문이다 (LESSONS L22).</b><br>
+  content.json의 <b>모든 audio_url을 실제로 내려받아 디코딩</b>해 파형을 측정한다.
+  "파일이 존재한다"는 검수는 <b>무음 클립을 통과시킨다</b> — 2026-08-01에 실제로 10개가 그렇게 새어나가
+  예한이가 학습 중 소리 없는 문항을 만났다. 그래서 판정 기준은 <b>파형(RMS·peak)</b>이다.
+</div>
+
+<div class="row">
+  <input type="text" id="url" value="https://wordcraft-app.vercel.app/content.json">
+  <button class="go" id="run">전수 감사 시작</button>
+</div>
+<div class="bar"><i id="fill"></i></div>
+<div class="prog" id="prog">대기 중</div>
+
+<div id="verdict"></div>
+
+<h2>❌ 결함 클립 (무음 · 404 · 디코딩 실패)</h2>
+<table><thead><tr><th>파일</th><th>사유</th><th>peak</th><th>RMS</th><th>길이</th><th></th></tr></thead><tbody id="badbody"><tr><td colspan="6" style="color:#8b949e">아직 실행 전</td></tr></tbody></table>
+
+<h2>⚠️ 음원 없이 폰 TTS에 의존하는 항목</h2>
+<div class="note" id="ttsonly" style="margin-bottom:10px">아직 실행 전</div>
+
+<h2>📊 하위 15개 (가장 작은 소리)</h2>
+<table><thead><tr><th>파일</th><th>peak</th><th>RMS</th><th>발화길이</th><th>바이트</th><th></th></tr></thead><tbody id="lowbody"><tr><td colspan="6" style="color:#8b949e">아직 실행 전</td></tr></tbody></table>
+
+<h2 style="margin-top:26px">판정 기준</h2>
+<div class="note">
+  <span class="pill">무음</span> peak &lt; 0.05 또는 RMS &lt; 0.01 → <b>결함</b><br>
+  <span class="pill">초단축</span> 무음 구간을 뺀 발화 길이 &lt; 0.15초 → <b>결함</b><br>
+  <span class="pill">부재</span> HTTP 200이 아니거나 디코딩 실패 → <b>결함</b><br>
+  <span class="pill">TTS 의존</span> 재생 텍스트(tts)는 있는데 audio_url이 없음 → <b>위험</b>
+  (예한이 폰 APK WebView는 TTS 보이스가 비어 조용히 실패한 전력이 있다 — L19)<br><br>
+  <b>참고(2026-08-01 v1.4.15 기준선)</b>: 정상 클립의 최저값은 peak 0.237 / RMS 0.0231이었고,
+  무음 클립은 peak 0.000~0.003이었다. 두 집단이 완전히 갈리므로 이 문턱값은 안전하다.<br>
+  <b>이 도구가 잡지 못하는 것</b>: "소리는 나는데 <u>다른 단어</u>를 말한다"는 사람이 들어야 한다.
+  결함 0을 확인한 뒤에도 새로 만든 클립은 표본 청취를 할 것.
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let audio = null;
+function playRow(u){ if(audio) audio.pause(); audio = new Audio(u); audio.play(); }
+
+$('run').onclick = async () => {
+  const btn = $('run'); btn.disabled = true;
+  $('verdict').style.display='none';
+  let content;
+  try {
+    content = await fetch($('url').value + (($('url').value.includes('?'))?'&':'?') + 'cb=' + Date.now()).then(r=>r.json());
+  } catch(e) { $('prog').textContent = 'content.json을 불러오지 못했습니다: ' + e; btn.disabled=false; return; }
+
+  const urls = new Set(); let ttsOnly = 0; const ttsOnlySample = [];
+  (function walk(o){
+    if (Array.isArray(o)) return o.forEach(walk);
+    if (o && typeof o === 'object') {
+      if (o.audio_url) urls.add(o.audio_url);
+      else if (typeof o.tts === 'string' && o.tts.trim()) { ttsOnly++; if(ttsOnlySample.length<8) ttsOnlySample.push(o.tts.trim()); }
+      for (const k in o) walk(o[k]);
+    }
+  })(content);
+
+  $('ttsonly').innerHTML = ttsOnly === 0
+    ? '✅ <b>0개</b> — 앱의 모든 재생 항목이 실제 음원 파일을 가지고 있습니다. 폰 TTS 의존 없음.'
+    : '⚠️ <b>' + ttsOnly + '개</b>가 음원 없이 폰 TTS로만 소리를 냅니다. 예: ' +
+      ttsOnlySample.map(s=>'<code>'+s.replace(/</g,'&lt;')+'</code>').join(', ');
+
+  const list = [...urls];
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  const all = [], bad = [];
+  let n = 0, i = 0;
+  const tick = () => { $('fill').style.width = (n/list.length*100)+'%';
+    $('prog').textContent = n + ' / ' + list.length + '  ·  결함 ' + bad.length + '개'; };
+
+  async function worker(){
+    while (i < list.length) {
+      const u = list[i++]; const name = u.split('/').pop();
+      try {
+        const r = await fetch(u, {cache:'reload'});
+        if (!r.ok) { bad.push({name,u,why:'HTTP '+r.status,peak:'-',rms:'-',dur:'-'}); n++; tick(); continue; }
+        const buf = await r.arrayBuffer();
+        const ab = await ctx.decodeAudioData(buf.slice(0));
+        const d = ab.getChannelData(0);
+        let sum=0, peak=0;
+        for (let j=0;j<d.length;j++){ const v=Math.abs(d[j]); sum+=v*v; if(v>peak)peak=v; }
+        const rms = Math.sqrt(sum/d.length);
+        const th = Math.max(0.01, peak*0.05);
+        let s=0, e=d.length-1;
+        while(s<d.length && Math.abs(d[s])<th) s++;
+        while(e>s && Math.abs(d[e])<th) e--;
+        const voiced = (e-s)/ab.sampleRate;
+        const rec = {name,u,bytes:buf.byteLength,dur:+ab.duration.toFixed(2),voiced:+voiced.toFixed(2),rms:+rms.toFixed(4),peak:+peak.toFixed(3)};
+        all.push(rec);
+        if (rms<0.01 || peak<0.05) bad.push({...rec, why:'무음'});
+        else if (voiced<0.15) bad.push({...rec, why:'초단축('+rec.voiced+'초)'});
+      } catch(err) {
+        bad.push({name,u,why:'디코딩 실패',peak:'-',rms:'-',dur:'-'});
+      }
+      n++; tick();
+    }
+  }
+  await Promise.all(Array.from({length:8}, worker));
+
+  const bb = $('badbody'); bb.innerHTML = '';
+  if (!bad.length) bb.innerHTML = '<tr><td colspan="6" style="color:#3fb950">✅ 결함 0개</td></tr>';
+  bad.sort((a,b)=>(a.peak===('-')?-1:a.peak)-(b.peak===('-')?-1:b.peak)).forEach(r=>{
+    const tr = document.createElement('tr'); tr.className='bad';
+    tr.innerHTML = '<td>'+r.name+'</td><td>'+r.why+'</td><td class="num">'+r.peak+'</td><td class="num">'+r.rms+'</td><td class="num">'+(r.dur||'-')+'</td><td><button class="play">▶</button></td>';
+    tr.querySelector('.play').onclick = () => playRow(r.u);
+    bb.appendChild(tr);
+  });
+
+  const lb = $('lowbody'); lb.innerHTML='';
+  all.sort((a,b)=>a.peak-b.peak).slice(0,15).forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+r.name+'</td><td class="num">'+r.peak+'</td><td class="num">'+r.rms+'</td><td class="num">'+r.voiced+'초</td><td class="num">'+r.bytes+'</td><td><button class="play">▶</button></td>';
+    tr.querySelector('.play').onclick=()=>playRow(r.u);
+    lb.appendChild(tr);
+  });
+
+  const v = $('verdict'); v.style.display='block';
+  const pass = bad.length===0 && ttsOnly===0;
+  v.className = pass ? 'pass' : 'fail';
+  v.textContent = (pass ? '✅ PASS — ' : '❌ FAIL — ')
+    + '클립 ' + list.length + '개 검사 · 결함 ' + bad.length + '개 · TTS 의존 항목 ' + ttsOnly + '개';
+  $('prog').textContent = '완료: ' + n + ' / ' + list.length;
+  btn.disabled = false;
+};
+</script>
+</body>
+</html>

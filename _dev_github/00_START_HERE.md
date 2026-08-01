@@ -1,84 +1,89 @@
 # 🚩 START HERE — WordCraft 개발 현황 (새 세션 최초 필독)
 
-> **현재 상태 스탬프 → 라이브 v1.4.14 (2026-07-29, ★음성 이중 재생 전면 봉합 = 단일 오디오 채널★). 예한이가 룬 파트 3단계(수정 동굴 R2)에서 "여자 목소리와 남자 목소리가 동시에" 난다고 신고 → 앱 전 영역 음성 호출부 전수 감사 → `lib/audio.ts`를 세대(generation) 토큰 기반 단일 채널로 재설계 + `lib/tts.ts` 네이티브↔웹 이중 발화 차단 + 화면 이탈·백그라운드 전역 정지. 계측 대조: v1.4.13 = 1/7 · 0/4 · 8/10 → v1.4.14 = **7/7 · 4/4 · 10/10**. ⚠️ **예한이 실폰 실청취는 아직 미확인 — 아침에 Dio님/예한이 확인 필요.**
-> (이전 스탬프) 라이브 v1.4.13 (2026-07-23, 다가구 완성형 = 부모 셀프서비스 + 아이 수정/삭제). `#/family`=내 가족(내가 부모) / `#/super`=소유자 전체 가족 관리. 부모 대시보드에 아이 이름수정·삭제(학습기록 보호)·설치안내 1회·소유자 슈퍼 바로가기. 흐름: 소유자 `#/super`에서 가족+부모명+코드 생성 → 부모 초대문구 전달 → 부모가 `#/family`에서 아이 등록·아이별 문자링크(`#/connect?kid=&name=` 원터치) 전달 → 아이 연결+설치가이드. 소유자는 가족 승인만. 진영이네(부모 진영, 아이 찬영·호영, 코드 JINYOUNG-3607) 준비됨.**
-> (이하 이전 스탬프) 라이브 v1.4.10까지: 다가구 A~Phase3 완료 + 라운드 나가기 복원. ✅ 보호자 구글 왕복(→예한 관제실) 실검증 + 아이 흐름 서버검증 + **Phase 3 가족 데이터 격리(RLS) 적용·양방향 격리 실측 완료**(예한 기기 정상 read/write, 다른 가족 상호 read=빈값·write=403). 예한 기존 기기는 무중단 자동 이관(익명 세션+device 바인딩). v1.4.10에서 유령전투/소리훈련소 라운드 ← 나가기 복원(재구성 회귀 봉합). 🏗️ 남은 것 = ① 예한 실폰 첫 로드 자동이관 확인(복귀 후) · ② v1.4.2 소환진 픽셀 델타(별도 세션·라이브 대조) · ③ Phase 4(설치) · ④ 관제실 가족·아이별 전용 UI.**
-> ⚠️ DB 마이그레이션 3건(relation 한글허용 · anon→authenticated 확장 · **멤버십 RLS 격리**)은 Supabase apply_migration 원장에 기록. 롤백은 anon_all_* 정책 재생성(USING true).
-> ⚠️ 소스 SSOT = **노트북 로컬 `Word Craft/wordcraft-app/_dev_github/src_v1.4.14/`(+ 같은 폴더 `wordcraft_src_v1.4.14.tgz`)**. (폴더 `src_v1.4.6_recon`는 낡은 사본 — Dio님이 _to_delete로 정리 가능.) GitHub `_dev_github`엔 v1.4.7 배포 회차에 RELEASE_LOG·이 문서·tgz 동반 업로드로 동기화(L20 밀린 v1.4.1~1.4.6 기록 해소).
+> **현재 상태 스탬프 → 라이브 v1.4.15 (2026-08-01, ★무음 음원 전면 봉합 + 폰 TTS 의존 완전 제거★). 예한이가 R4 스피드런·R5 불의 룬에서 "소리가 안 난다" 신고 → Storage 클립을 전부 디코딩해 파형을 측정하는 전수 감사 도입 → **완전 무음 클립 11개** 적발·재생성 + 여태 폰 TTS로만 소리내던 재생 항목 **1,470개(유니크 1,011)를 전부 실제 음원으로 교체**. 라이브 최종 감사 = **1,430/1,430 통과 · 무음 0 · 404 0 · TTS 의존 항목 0**. ⚠️ **예한이 실폰 실청취 + 재생성 11개의 "맞는 단어인지" 청취 확인은 아직 미완 — Dio님 확인 필요.**
+> (이전 스탬프) 라이브 v1.4.14 (2026-07-29, 음성 이중 재생 전면 봉합 = 단일 오디오 채널). `lib/audio.ts` 세대(generation) 토큰 재설계 + `lib/tts.ts` 네이티브↔웹 이중 발화 차단 + 화면 이탈·백그라운드 전역 정지. 계측 1/7·0/4·8/10 → **7/7·4/4·10/10**.
+> (이전) v1.4.13 다가구 완성형(부모 셀프서비스 + 아이 수정/삭제). `#/family`=내 가족 / `#/super`=소유자 전체 관리. 진영이네(부모 진영, 아이 찬영·호영, 코드 JINYOUNG-3607) 준비됨.
+> (이전) v1.4.9~1.4.10 Phase 3 가족 데이터 격리(RLS) 적용·양방향 격리 실측 완료 + 라운드 나가기 복원.
+> ⚠️ DB 마이그레이션 원장은 Supabase apply_migration에 기록. RLS 롤백은 anon_all_* 정책 재생성(USING true).
+> ⚠️ 소스 SSOT = **노트북 `Word Craft/wordcraft-app/_dev_github/src_v1.4.15/`(+ 같은 폴더 `wordcraft_src_v1.4.15.tgz`)**. **콘텐츠 SSOT = 같은 폴더 `wordcraft_content_v1.4.15.json`**(L20 ② 이행 시작). GitHub `_dev_github`에 같은 회차로 동반 업로드.
 
-## ⚡ 지금 최우선 — 예한이 실폰에서 음성 확인 (2026-07-29)
-**이번 세션(7/29 새벽)은 v1.4.14를 배포했다. 상세는 RELEASE_LOG v1.4.14 + `claude/개발_영구교훈_LESSONS.md` L21.**
-- **① (Dio님) 예한이 폰에서 룬 파트 3단계(수정 동굴 R2) 실청취** — 자동재생 직후 다음 문항으로 빠르게 넘기기 + 🔊 연타 + 🐢 천천히 토글. 목소리가 하나만 들리면 최종 PASS. (컨테이너에서는 supabase.co가 막혀 실제 mp3 소리를 검증할 수 없다 — L16 보강.)
-- **② 라이브 실측(선택)**: claude-in-chrome 계측으로 실제 Storage 클립 재생 시 AUDIO.play→playing, TTS 호출 0 확인.
-- **③ 이월 과제**: v1.4.2 소환진 explode/eat 픽셀 델타(별도 세션·라이브 대조) · Phase 4(PWA 서비스워커·설치) · 관제실 가족·아이별 전용 UI · 예한 실폰 다가구 자동이관 확인.
-- **오디오 불변 규칙(신설)**: 소리를 내는 코드는 **반드시 `lib/audio.ts`의 `playClip()`/`speakText()`만** 쓴다. 화면에서 `import { speak } from '../lib/tts'`가 보이면 그 자체가 결함이다(`grep -rn "from '.*tts'" src/`로 매 릴리스 확인).
+## ⚡ 지금 최우선 — 예한이 실폰 청취 확인 (2026-08-01)
+**이번 세션은 v1.4.15를 배포했다. 상세는 RELEASE_LOG v1.4.15 + `claude/개발_영구교훈_LESSONS.md` L22.**
+- **① (Dio님) 재생성한 11개 클립이 "맞는 단어"를 말하는지 청취** — bag · three · so · cough · sofa · feel · fill · show · sick · though · the. 세션에서 전달한 `음원복구_확인표.html`로 30초면 확인 가능. **소리 유무는 계측으로 증명됐지만 단어가 맞는지는 사람만 판정할 수 있다.**
+- **② (Dio님) 예한이 폰(갤럭시 A24)에서 A~T 월드·유령 보스 듣기 문항 실청취** — 여기가 이번에 새로 클립화된 영역이다. 특히 유령 보스 문항(90개)은 v1.4.14까지 폰에서 무음이었을 가능성이 높다.
+- **③ 이월 과제**: `public/app.css`(110,693B) ↔ 배포본 `app.css`(111,045B) **크기 불일치 확인**(app.css를 배포하는 순간 회귀 위험) · v1.4.2 소환진 explode/eat 픽셀 델타 · Phase 4(PWA 서비스워커·설치) · 관제실 가족·아이별 전용 UI · 예한 실폰 다가구 자동이관 확인.
+- **오디오 불변 규칙**:
+  - (코드) 소리를 내는 코드는 **반드시 `lib/audio.ts`의 `playClip()`/`speakText()`만** 쓴다. 화면에서 `import { speak } from '../lib/tts'`가 보이면 그 자체가 결함(`grep -rn "from '.*tts'" src/`).
+  - (콘텐츠) **재생 항목은 예외 없이 `audio_url`을 가진다.** `tts`만 있는 항목 = 폰에서 무음이 될 수 있는 항목이다.
+  - (검수) **배포 전 `tools/음원감사_AUDIO_QA.html`를 돌려 PASS를 받는다(L22). 파일 존재 확인은 검수가 아니다.**
 
 ## 0. ⚠️ 이 문서는 낡을 수 있다 — 신뢰 순서 (먼저 읽기)
 이 문서는 **"지도 + 마지막 세션 스냅샷"**이다. 위 스탬프가 실제와 다르면 이 문서가 낡은 것.
 **낡지 않는 진실:**
-1. **프로젝트 메모리 `RELEASE_LOG.md`** (append-only, 맨 위=최신 = v1.4.7). ⚠️ GitHub `_dev_github/RELEASE_LOG.md`는 v1.4.7 배포 회차부터 동기화됨(그 전 낡음 이력).
-2. 라이브 `https://wordcraft-app.vercel.app/version.json` (WebFetch 시 캐시버스터 `?cb=...` 필수). 현재 **1.4.7**.
-3. 소스 `APP_VERSION` = 로컬 `src_v1.4.7/src/lib/version.ts` = '1.4.7'.
+1. **프로젝트 메모리 `RELEASE_LOG.md`** (append-only, 맨 위=최신 = **v1.4.15**).
+2. 라이브 `https://wordcraft-app.vercel.app/version.json` (WebFetch 시 캐시버스터 `?cb=...` 필수). 현재 **1.4.15**.
+3. 소스 `APP_VERSION` = 로컬 `src_v1.4.15/src/lib/version.ts` = '1.4.15'.
 
 **세션 종료 시(필수):** 코드/배포 변경 시 ① RELEASE_LOG 항목 추가 ② 이 문서 스탬프·다음작업 갱신 ③ **기록 3종 동기화(L14·L20: 프로젝트 메모리 + 로컬 + GitHub) — 미루지 말 것.**
 
 ## 1. 지금 상태
 - **제품**: 예한이(초6) 영어 학습 웹앱 "WordCraft". 한 번들(main.js)에 두 앱 — 학습자 앱(예한이) + 관제실(아빠, `/#/admin`, PIN 7351).
-- **라이브 v1.4.7**: 기존 학습(유령 보스·수정 동굴·소리 훈련소·문장 소환진·복습 라이트너·출석 15분) + **다가구 인증 라우팅**(보호자 구글→가족 대시보드에서 아이별 관제실 / 아이기기 익명+가족코드→바인딩 아이 학습 / 세션無→레거시 예한). RLS 가족 격리는 Phase 3.
-- **예한이 폰(갤럭시 A24)**: APK지만 `server.url=wordcraft-app.vercel.app` 라이브 직접 로드 → **웹 배포 = 폰 즉시 반영**.
-- **DB**: Supabase `gbynvzxgbpmoqdsriowz`. families·memberships·learners.family_id·wc_join_family·wc_family_learners (전부 additive, RLS는 아직 anon 전개방 = Phase 3 관문).
+- **라이브 v1.4.15**: 학습(유령 보스·수정 동굴·소리 훈련소·문장 소환진·복습 라이트너·출석 15분) + 다가구 인증 라우팅 + 가족 RLS 격리 + **전 재생 항목 음원화**.
+- **예한이 폰(갤럭시 A24)**: APK지만 `server.url=wordcraft-app.vercel.app` 라이브 직접 로드 → **웹 배포 = 폰 즉시 반영**. 음원은 Storage 직접 로드(`cache-control: no-cache` → 교체 즉시 반영, 앱 배포 불필요).
+- **DB**: Supabase `gbynvzxgbpmoqdsriowz`. families·memberships·learners·answer_events·xp_events·review_cards·module_progress·sessions·tts_clips. Storage `tts-audio` = **1,448 클립 / 55.5MB**. Edge: `tts-batch`(v4) · `tts-seed`(v1).
 
 ## 2. 🔒 철칙 (어기면 사고 재발)
-1. **소스 SSOT = 로컬 `_dev_github/src_v1.4.7/`(+ `wordcraft_src_v1.4.7.tgz`).** 컨테이너에서만 고쳐 배포 금지.
+1. **소스 SSOT = 로컬 `_dev_github/src_v1.4.15/`(+ tgz), 콘텐츠 SSOT = `wordcraft_content_v1.4.15.json`.** 컨테이너에서만 고쳐 배포 금지.
 2. **두 앱 공동 기록** (RELEASE_LOG에 예한이 앱+관제실+연동 함께).
-3. **연동 계약 준수**(`앱개발/연동계약_CONTRACT_v1.md` v1.4 — 다가구 스키마 계약 v1.5는 Phase 3 RLS 후. v1.4.7 라우팅은 스키마/XP/기록 불변 = 개정 불요).
+3. **연동 계약 준수**(`앱개발/연동계약_CONTRACT_v1.md`). v1.4.15는 스키마·XP·기록 방식 불변 = 개정 불요.
 4. **배포는 모아서 1회 + 스냅샷**(L1). 대용량은 모델 문맥 무통과(SendUserFile·device_commit — L0/L7).
 5. **answer_events 절대 삭제 금지.** 모든 변경 additive(L17).
 6. **기록 3종 동기화(L14·L20)** — 프로젝트 메모리+로컬+GitHub, 미루지 말 것.
-7. 옛 배포 URL 은퇴(L15). WebView≠크롬(L8). 배포 전 --production+playwright 스모크(L16). 오디오 계약 건드리면 재생 호출부 전수감사(L19).
-8. **GitHub/웹 작업은 클로드가 직접 브라우저로(L20 Dio님 선호).** 단 파일 드래그·비밀키 입력·민감 설정은 Dio님.
+7. 옛 배포 URL 은퇴(L15). WebView≠크롬(L8). 배포 전 --production+playwright 스모크(L16). 오디오 계약 건드리면 재생 호출부 전수감사(L19). 오디오는 세대로 관리(L21). **음원은 파형으로 검수(L22).**
+8. **GitHub/웹 작업은 클로드가 직접 브라우저로(L20 Dio님 선호).** 단 비밀키 입력·민감 설정은 Dio님.
 
 ## 3. 구조 & 데이터 흐름 (요약 — 상세는 RELEASE_LOG·CONTRACT)
 - 학습자 앱: 스플래시→월드맵(월드1·1.5수정동굴·2~5·소리훈련소·유령출몰)→모듈세션/유령전투/소리훈련소/소환진→복습광산→룬도감→내정보→정보. + `#/connect` 연결 화면.
-- **인증 라우팅(v1.4.7, App.tsx)**: 시작 시 getAuthUser → legacy(세션無=예한 하위호환)/device(익명=바인딩 아이)/guardian(구글=가족 대시보드 `#/family`). guardian은 학습 세션·하트비트 미생성.
-- 오디오: audio_url(Storage 공개클립) 우선 + 네이티브 TTS 폴백(lib/audio.ts). 재생 playClip 일원화(L19).
+- **인증 라우팅(App.tsx)**: 시작 시 getAuthUser → legacy(세션無=예한 하위호환)/device(익명=바인딩 아이)/guardian(구글=가족 대시보드 `#/family`).
+- **오디오(v1.4.15)**: 재생 항목 **전부** `audio_url`(Storage 공개 클립). `lib/audio.ts` 단일 채널 + 세대 토큰. TTS는 **비상 폴백으로만 존재**(클립 404 시 무음 방지 — 절대 제거 금지, L19·L21⑤).
 - 커리큘럼(28모듈): A1~A4/R0~R9/C0·C5·C6·C7/B21a·b·B22a·b/D1S·D2S·D3S/T1·T2·T3 + FORGE.
 
 ## 4. 파일 지도
 | 위치 | 내용 |
 |---|---|
-| 로컬 `wordcraft-app/` | GitHub 배포 저장소 클론. 루트 main.js·version.json = **v1.4.14(md5 9b91f58a…)** |
-| `_dev_github/src_v1.4.14/` | **소스 SSOT(v1.4.14)** — App.tsx(인증 라우팅)·screens/(+Connect·+FamilyDashboard)·lib/{store,supabase,…,version}·engine 등 |
-| `_dev_github/wordcraft_src_v1.4.14.tgz` | 소스 스냅샷(컨테이너 복구용). tgz→클린빌드 main.js md5 `9b91f58a…` 동일 검증됨 |
-| `_dev_github/src_v1.4.6_recon/` + `..._recon.tgz` | v1.4.6 시점 사본(낡음 — 정리 대상) |
-| `_dev_github/RELEASE_LOG.md` (GitHub) | v1.4.7 회차부터 프로젝트 메모리와 동기화 |
-| Supabase `gbynvzxgbpmoqdsriowz` | DB + Auth(구글·익명) + Storage(tts-audio) + Edge(tts-batch) |
+| 로컬 `Word Craft/wordcraft-app/` | GitHub 배포 저장소 클론. 루트 main.js(md5 `45ae38e7…`)·content.json(md5 `1531260…`)·version.json = **v1.4.15** |
+| `_dev_github/src_v1.4.15/` | **소스 SSOT** — App.tsx·screens/·engine/·lib/{audio,tts,store,supabase,version}·**tools/음원감사_AUDIO_QA.html** |
+| `_dev_github/wordcraft_src_v1.4.15.tgz` | 소스 스냅샷. tgz→클린빌드 main.js md5 동일 검증됨 |
+| `_dev_github/wordcraft_content_v1.4.15.json` | **콘텐츠 SSOT 스냅샷**(L20 ②) |
+| `_dev_github/RELEASE_LOG.md` / `00_START_HERE.md` | 개발 원장·현황(GitHub 동반 업로드) |
+| Supabase `gbynvzxgbpmoqdsriowz` | DB + Auth(구글·익명) + Storage(tts-audio 1,448) + Edge(tts-batch v4, tts-seed) |
 | GitHub `JKDIO/wordcraft-app` | 배포 저장소 → Vercel 자동배포 |
 
 ## 5. 빌드 & 배포 퀵스타트 (컨테이너 — 빈 컨테이너 전제)
 ```
-# device_stage_files로 _dev_github/wordcraft_src_v1.4.7.tgz 스테이징
+# device_stage_files로 _dev_github/wordcraft_src_v1.4.15.tgz 스테이징
 mkdir -p /home/claude/wcbuild && cd /home/claude/wcbuild
-tar xzf "/mnt/user-data/uploads/.../wordcraft_src_v1.4.14.tgz"
-ln -sfn /home/claude/.npm-global/lib/node_modules node_modules   # react 19.2.6 전역
+tar xzf "/mnt/user-data/uploads/.../wordcraft_src_v1.4.15.tgz"
+ln -sfn /home/claude/.npm-global/lib/node_modules node_modules   # react 전역
 /home/claude/.npm-global/bin/tsc -p tsconfig.json
 NODE_ENV=production bun build src/main.tsx --outdir dist --minify --production   # ★--production(L16)
-# 스모크: main.js+정적자산을 serve/에 → http.server + playwright로 #/·#/connect·#/family·#/admin 렌더+JS에러0
+# 스모크: dist+public을 serve/에 → http.server + playwright로 10라우트 렌더+JS에러0
 ```
-배포: main.js(+version.json, 콘텐츠 변경 시 content.json·app.css) → SendUserFile→device_commit→ **사용자가 GitHub 업로드 드래그** → Vercel → 라이브 검증. (v1.4.7 배포는 이 경로로 완료.)
+배포: main.js(+version.json, 콘텐츠 변경 시 content.json·app.css) → SendUserFile→`/mnt/user-data/outputs/`→ **claude-in-chrome file_upload로 GitHub 루트 업로드·커밋** → Vercel → 라이브 검증(version.json + 실렌더 + **음원 감사 PASS**).
 
-## 6. 다음 작업
-- **⓪ 최우선: 예한이 실폰에서 v1.4.14 음성 실청취 확인(위 ⚡ 섹션).**
-- **① 구글 로그인 왕복 실측(후속·Dio님)**: `#/connect` 링크로 부모 구글 로그인 → `#/family` → 가족코드 `YEHAN-7264` → 예한 목록/관제실 / 아이 코드 연결 / Supabase Users 확인. 되면 이 스탬프에 "구글 왕복 확인" 추가.
-- **② Phase 3(RLS 가족 격리)**: anon 전개방 정책 폐기 → 멤버십 기반 RLS + 관제실 가족·아이별 분리 + CONTRACT v1.5. ⚠️ 모든 DB 호출부 세션 이관 전수감사(누락 시 빈 데이터). **다른 가족을 실제로 들이기 전 필수.**
-- **③ 잔여 재구성 델타(가족 롤아웃 전 재적용)**: v1.4.1 뒤로가기 버튼·v1.4.2 소환진 explode/eat 픽셀(라이브 대조). 로그인 테스트엔 무해.
-- **④ Phase 4**: 설치/업데이트(PWA 서비스워커·제네릭 APK·업데이트 배너).
+## 6. 음원 파이프라인 (v1.4.15 기준 — 새 콘텐츠를 만들 때 반드시 이 순서)
+1. 콘텐츠에 `tts`(재생 텍스트)와 `voice`를 넣는다. **voice 누락 시 nova 기본**(CONTRACT §9).
+2. `tts-seed` Edge Function 호출(`x-wc-gate` 헤더 필요, pg_net `net.http_post`로 컨테이너에서 호출 가능) → 라이브 content.json을 읽어 클립 경로를 산출하고 `tts_clips`에 pending 시딩. `{"dry":true}`로 먼저 개수·sha256 확인.
+3. `tts-batch` 호출(`{"hop":0}`) → 자기 연쇄로 전량 생성. 손상 복구는 `{"force":true}` + 해당 행 `status='pending'`.
+4. `build_content.py`(또는 동일 규칙 주입)로 content.json에 audio_url 반영.
+5. **`tools/음원감사_AUDIO_QA.html`로 전수 파형 감사 → PASS 아니면 배포 금지(L22).**
+6. 신규 클립은 표본 청취(단어가 맞는지)까지 하고 릴리스한다.
 
 ## 7. 세션 시작 체크리스트
-1. 이 문서 + `진행상황_20260723_다가구_A라우팅_v1.4.7.md` 읽기.
-2. 진실 확인: 라이브 version.json(캐시버스터=1.4.7) · 프로젝트 메모리 RELEASE_LOG 맨 위(v1.4.7) · 로컬 `src_v1.4.7` APP_VERSION.
-3. 컨테이너 비었으면 §5로 소스 복구·빌드(tgz = v1.4.7).
+1. 이 문서 + `claude/개발_영구교훈_LESSONS.md` 읽기.
+2. 진실 확인: 라이브 version.json(캐시버스터=1.4.15) · RELEASE_LOG 맨 위(v1.4.15) · 로컬 `src_v1.4.15` APP_VERSION.
+3. 컨테이너 비었으면 §5로 소스 복구·빌드(tgz = v1.4.15).
 4. 작업 후: RELEASE_LOG·이 문서 갱신 + 기록 3종 동기화(L14·L20).
 
 ---
-*교훈: `개발_영구교훈_LESSONS.md` (L0~L20 — 특히 L18 신규폴더/rename-swap, L19 오디오 전수감사, L20 로컬↔GitHub 동시기록·SSOT 유실 방지).*
+*교훈: `개발_영구교훈_LESSONS.md` (L0~L22 — 특히 L19 오디오 전수감사, L20 로컬↔GitHub 동시기록, L21 오디오 세대 관리, **L22 음원은 파형으로 검수**).*
