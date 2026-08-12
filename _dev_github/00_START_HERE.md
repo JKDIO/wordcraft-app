@@ -1,21 +1,28 @@
 # 🚩 START HERE — WordCraft 개발 현황 (새 세션 최초 필독)
 
-> **현재 상태 스탬프 → 라이브 v1.4.15 (2026-08-01, ★무음 음원 전면 봉합 + 폰 TTS 의존 완전 제거★). 예한이가 R4 스피드런·R5 불의 룬에서 "소리가 안 난다" 신고 → Storage 클립을 전부 디코딩해 파형을 측정하는 전수 감사 도입 → **완전 무음 클립 11개** 적발·재생성 + 여태 폰 TTS로만 소리내던 재생 항목 **1,470개(유니크 1,011)를 전부 실제 음원으로 교체**. 라이브 최종 감사 = **1,430/1,430 통과 · 무음 0 · 404 0 · TTS 의존 항목 0**. ⚠️ **예한이 실폰 실청취 + 재생성 11개의 "맞는 단어인지" 청취 확인은 아직 미완 — Dio님 확인 필요.**
-> (이전 스탬프) 라이브 v1.4.14 (2026-07-29, 음성 이중 재생 전면 봉합 = 단일 오디오 채널). `lib/audio.ts` 세대(generation) 토큰 재설계 + `lib/tts.ts` 네이티브↔웹 이중 발화 차단 + 화면 이탈·백그라운드 전역 정지. 계측 1/7·0/4·8/10 → **7/7·4/4·10/10**.
-> (이전) v1.4.13 다가구 완성형(부모 셀프서비스 + 아이 수정/삭제). `#/family`=내 가족 / `#/super`=소유자 전체 관리. 진영이네(부모 진영, 아이 찬영·호영, 코드 JINYOUNG-3607) 준비됨.
-> (이전) v1.4.9~1.4.10 Phase 3 가족 데이터 격리(RLS) 적용·양방향 격리 실측 완료 + 라운드 나가기 복원.
-> ⚠️ DB 마이그레이션 원장은 Supabase apply_migration에 기록. RLS 롤백은 anon_all_* 정책 재생성(USING true).
-> ⚠️ 소스 SSOT = **노트북 `Word Craft/wordcraft-app/_dev_github/src_v1.4.15/`(+ 같은 폴더 `wordcraft_src_v1.4.15.tgz`)**. **콘텐츠 SSOT = 같은 폴더 `wordcraft_content_v1.4.15.json`**(L20 ② 이행 시작). GitHub `_dev_github`에 같은 회차로 동반 업로드.
+> **현재 상태 스탬프 → 라이브 v1.4.16 (2026-08-12, ★단어 대륙 엔진 상륙 + 월드맵 접기 + 가족 세션 봉합★).**
+> ① **단어 대륙 🗺️(`#/vocab`)** — GIU 전체 + 중학 전 과정 **2,400단어(10티어 × 20팩 × 12단어)** 어휘 엔진. 사전 스캔·게임 5종 교차·힌트 3단계·라이트너 자동 시드. **입구는 `version.json`의 `vocab_ready`로 여닫는다 — 현재 false(음원 미생성).**
+> ② **월드맵 월드별 접기** — 문서 높이 3,562→2,159px(-39%), 접힌 상태에서도 진행률·별·유령 표시.
+> ③ **가족 P0 3건 봉합** — 세션 만료를 로그아웃으로 오판해 **익명 계정이 33개까지 증식**하던 결함(L23) + 보호자 기기가 아이 기기로 강등되던 경로 + 아이 딥링크 재방문 시 새 계정. 슈퍼 관리실에 **보호자 연결 현황**, 보호자 대시보드에 **아이별 한눈 요약** 추가.
+> ⚠️ **다음 세션 최우선 2건 — 이게 끝나야 예한이에게 단어 대륙을 열 수 있다.**
+>   **(1) 어휘 콘텐츠 교차 검수** — 검수팀 5팀이 세션 한도로 전원 중단됐다. 40팩만 부분 수정됨. 뜻·IPA·예문·오답 타당성 미검증(콘텐츠 헌법 5: 검수 없는 콘텐츠 노출 금지).
+>   **(2) 음원 4,799개 생성 + 파형 전수 감사(L22)** — 현재 0개. PASS 후 `version.json`의 `vocab_ready`를 true로 올리면 앱 재배포 없이 입구가 열린다.
+> (이전 스탬프) v1.4.15 (2026-08-01, 무음 음원 전면 봉합 + 폰 TTS 의존 완전 제거). 라이브 음원 감사 1,430/1,430 통과.
+> ⚠️ 소스 SSOT = 노트북 `Word Craft/wordcraft-app/_dev_github/src_v1.4.16/`(+ `wordcraft_src_v1.4.16.tgz`). **콘텐츠 SSOT = `wordcraft_content_v1.4.15.json`(불변) · 어휘 SSOT = `wordcraft_vocab_v1.4.16.json` + `vocab_master_v1.json` + `vocab_packs_v1.tgz`(저작 원본 200팩·SPEC·스켈레톤).**
 
-## ⚡ 지금 최우선 — 예한이 실폰 청취 확인 (2026-08-01)
-**이번 세션은 v1.4.15를 배포했다. 상세는 RELEASE_LOG v1.4.15 + `claude/개발_영구교훈_LESSONS.md` L22.**
-- **① (Dio님) 재생성한 11개 클립이 "맞는 단어"를 말하는지 청취** — bag · three · so · cough · sofa · feel · fill · show · sick · though · the. 세션에서 전달한 `음원복구_확인표.html`로 30초면 확인 가능. **소리 유무는 계측으로 증명됐지만 단어가 맞는지는 사람만 판정할 수 있다.**
-- **② (Dio님) 예한이 폰(갤럭시 A24)에서 A~T 월드·유령 보스 듣기 문항 실청취** — 여기가 이번에 새로 클립화된 영역이다. 특히 유령 보스 문항(90개)은 v1.4.14까지 폰에서 무음이었을 가능성이 높다.
-- **③ 이월 과제**: `public/app.css`(110,693B) ↔ 배포본 `app.css`(111,045B) **크기 불일치 확인**(app.css를 배포하는 순간 회귀 위험) · v1.4.2 소환진 explode/eat 픽셀 델타 · Phase 4(PWA 서비스워커·설치) · 관제실 가족·아이별 전용 UI · 예한 실폰 다가구 자동이관 확인.
-- **오디오 불변 규칙**:
-  - (코드) 소리를 내는 코드는 **반드시 `lib/audio.ts`의 `playClip()`/`speakText()`만** 쓴다. 화면에서 `import { speak } from '../lib/tts'`가 보이면 그 자체가 결함(`grep -rn "from '.*tts'" src/`).
-  - (콘텐츠) **재생 항목은 예외 없이 `audio_url`을 가진다.** `tts`만 있는 항목 = 폰에서 무음이 될 수 있는 항목이다.
-  - (검수) **배포 전 `tools/음원감사_AUDIO_QA.html`를 돌려 PASS를 받는다(L22). 파일 존재 확인은 검수가 아니다.**
+## ⚡ 지금 최우선 (2026-08-12)
+1. **어휘 2,400단어 교차 검수 완료** — `vocab_packs_v1.tgz` 안 `packs/*.json` 200개. 표제어(`w`)는 바꾸지 말 것(전역 중복 검증이 끝난 상태 — 바꾸면 충돌 재발). 고칠 대상은 ko·ipa·ex·ex_ko·hint_ko·distractors.
+2. **음원 생성** — `vocab_clip_manifest.json`(4,799 경로, scope=`vocab`, voice=`nova`) 기준으로 tts_clips 시딩 → `tts-batch` → `tools/음원감사_AUDIO_QA.html`로 파형 전수 감사 → PASS면 `version.json` `vocab_ready:true`.
+3. **가족 봉합 실기기 확인** — 예한이 폰에서 한 시간 이상 뒤 재실행 시 **새 익명 계정이 더 안 생기는지**(DB `auth.users` 수 비교). 진영이네 부모 실제 로그인 왕복.
+4. **데이터 정리(Dio님 승인 필요)** — 예한이네 `parent_name` null 채우기(이제 `#/super`에서 가능) · 테스트 잔여 학습자 "아이 1"(학습기록 0, `#/family`에서 삭제 가능) · 누적 익명 계정 33개와 중복 device 멤버십 17행 정리.
+5. **이월 과제** — `public/app.css`(110,693B) ↔ 배포본 `app.css`(111,045B) 크기 불일치 · v1.4.2 소환진 픽셀 델타 · Phase 4(PWA 서비스워커) · CONTRACT v1.5 §13(어휘 계약) 문서화 · v1.4.15 재생성 클립 11개 청취 확인.
+
+## 🗺️ 단어 대륙 구조 (신규 — 새 세션 필독)
+- 데이터: 루트 `/vocab.json`(1.44MB, 지연 로드). `{version, audio_ready, tiers[10], packs{200}}`. 팩 = `{pack_id:'V3-07', tier, theme_ko, title_ko, emoji, intro_ko, words[12]}`. 단어 = `{w, ko, pos, ipa, ex, ex_ko, hint_ko, distractors[3], tags, tts, audio_url, audio_ex_url}`.
+- 코드: `src/lib/vocab.ts`(잠금 규칙·문항 생성·셔플·복습 시드) + `src/screens/VocabContinent.tsx`(지도 + 세션 4단계).
+- 잠금: 티어1 항상 열림 / 티어N은 N-1을 80%(16/20) 정복 시 / 팩은 미완료 중 앞 3개가 동시에 열림(자율성).
+- 기록: `answer_events.activity_type='vocab'`, `module_id=<pack_id>`, xp reason `vocab_correct(+5)`·`vocab_pack(+30)`·`vocab_perfect(+15)`. 복습 카드 `card_id='vocab:<단어>'`. **스키마 변경 0**.
+- 오디오 규약: 단어 클립 `audio_url`, 예문 클립 `audio_ex_url`. 경로 = `vocab/<slug>_<sha1앞6>_nova.mp3` (build_content.py의 `slug_of`와 동일 규칙).
 
 ## 0. ⚠️ 이 문서는 낡을 수 있다 — 신뢰 순서 (먼저 읽기)
 이 문서는 **"지도 + 마지막 세션 스냅샷"**이다. 위 스탬프가 실제와 다르면 이 문서가 낡은 것.
@@ -86,4 +93,4 @@ NODE_ENV=production bun build src/main.tsx --outdir dist --minify --production  
 4. 작업 후: RELEASE_LOG·이 문서 갱신 + 기록 3종 동기화(L14·L20).
 
 ---
-*교훈: `개발_영구교훈_LESSONS.md` (L0~L22 — 특히 L19 오디오 전수감사, L20 로컬↔GitHub 동시기록, L21 오디오 세대 관리, **L22 음원은 파형으로 검수**).*
+*교훈: `개발_영구교훈_LESSONS.md` (L0~L24 — 특히 L19 오디오 전수감사, L20 로컬↔GitHub 동시기록, L21 오디오 세대 관리, **L22 음원은 파형으로 검수**, **L23 세션 만료 오판 = 계정 증식**, **L24 4지선다 정답 위치 분포 계측**).*
