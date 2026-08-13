@@ -67,6 +67,7 @@
 | `_dev_github/src_v1.4.19/` | **소스 SSOT** — App.tsx·screens/{…,VocabContinent,WordDex}·engine/·lib/{audio,tts,store,supabase,version,**vocab,wordmon**}·**tools/음원감사_AUDIO_QA.html** |
 | `_dev_github/wordcraft_src_v1.4.19.tgz` | 소스 스냅샷. tgz→클린빌드 main.js md5 동일 검증됨(`dad9d9a6f50266b50715b839d876f832`) |
 | `_dev_github/wordcraft_content_v1.4.15.json` | **콘텐츠 SSOT 스냅샷**(L20 ②) |
+| ⚠️ `Desktop/YEHAN/Education/Yehan_English_App/_dev_github/` | **미끼 폴더 — 절대 SSOT로 쓰지 말 것.** v1.4.6(7/16)에서 멈춰 있다. 폴더 안에 경고 표지 파일을 넣어뒀다(2026-08-13). 이력 보관용으로만 남긴다 |
 | `_dev_github/wordcraft_vocab_v1.4.16_final.json` + `vocab_packs_v3_final.tgz` | **어휘 SSOT 스냅샷** — 200팩 2,400단어 + 저작 원본 |
 | `_dev_github/RELEASE_LOG.md` / `00_START_HERE.md` | 개발 원장·현황(GitHub 동반 업로드) |
 | Supabase `gbynvzxgbpmoqdsriowz` | DB + Auth(구글·익명) + Storage(tts-audio 1,448) + Edge(tts-batch v4, tts-seed) |
