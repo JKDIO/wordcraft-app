@@ -20,14 +20,16 @@ export interface SlotDef {
 
 /** 배치 순서 = 화면 그리드(폭에 맞춰 자동 줄바꿈). 왼쪽 위부터.
  *  ⚠️ 카테고리가 늘면 여기에 슬롯을 **한 줄만** 추가하면 된다 — 그림은 다시 안 그린다. */
+/** ★순서는 BadgeGroup 선언 순서 = 뱃지 도감 순서와 반드시 같아야 한다★ (Dio님 지적 2026-08-14)
+ *  장비칸과 도감 칸이 다른 순서로 놓이면 아이가 "이 장비가 어느 분야인지"를 매번 다시 찾아야 한다. */
 export const LOADOUT_SLOTS: SlotDef[] = [
   { group: '정복',        part: '흉갑',   emoji: '🛡️' },
+  { group: '소리와 철자',  part: '귀걸이', emoji: '🔔' },
   { group: '문장과 문법',  part: '검',     emoji: '⚔️' },
   { group: '읽기의 눈',    part: '투구',   emoji: '🥽' },
   { group: '단어 조립',    part: '장갑',   emoji: '🧤' },
   { group: '말하기',      part: '망토',   emoji: '🧣' },
   { group: '쓰기',        part: '어깨',   emoji: '🎽' },
-  { group: '소리와 철자',  part: '귀걸이', emoji: '🔔' },
   { group: '꾸준함',      part: '오라',   emoji: '🔥' },
   { group: '복습과 기억',  part: '곡괭이', emoji: '⛏️' },
   { group: '단어 대륙',    part: '부츠',   emoji: '🥾' },

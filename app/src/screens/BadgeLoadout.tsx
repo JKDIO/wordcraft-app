@@ -1,11 +1,11 @@
-// v1.4.31 ⚔️ 룬 장비창 — 뭃지 전체를 한 그림으로 (내 정보 화면 뭃지 도감 최상단)
+// v1.4.32 ⚔️ 룬 장비창 — 뱃지 전체를 한 그림으로 (내 정보 화면 뱃지 도감 최상단)
 //
-// 왜 이걸 만드나 (Dio님): "가장 상단에서 모든 뭃지들을 한눈에, 한 그림에 볼 수 있어야 한다."
+// 왜 이걸 만드나 (Dio님): "가장 상단에서 모든 뱃지들을 한눈에, 한 그림에 볼 수 있어야 한다."
 // 도감은 71칸짜리 목록이라 '내가 지금 얼마나 강해졌는지'가 안 보인다. 장비창은 그걸 **한 장면**으로 답한다.
 //
-// v1.4.31 변경 (Dio님 지적: "흥갑, 검, 망토, 귀걸이, 오라 있는데 하나도 안 보여"):
-//   12×16 팔레트 스왝 → **128×128 부위 레이어 조립**. 카테고리별 달성률이 그 부위의 등급을 정한다.
-//   그래서 '문장과 문법' 뭃지를 따면 검만 바뀌고, '읽기의 눈'을 따면 투구만 바뀐다.
+// v1.4.31: 12×16 팔레트 스왑 → **128×128 부위 레이어 조립**. 카테고리별 달성률이 그 부위의 등급을 정한다.
+//   그래서 '문장과 문법' 뱃지를 따면 검만 바뀌고, '읽기의 눈'을 따면 투구만 바뀐다.
+// v1.4.32: 장비칸 순서를 뱃지 도감과 일치시키고, 분야 이름을 장비 아래에 직접 적는다(Dio님 지적).
 //
 // 규칙은 lib/loadout.ts + lib/heroSprite.ts 단일 원천. 이 파일은 그리기만 한다.
 import { useEffect, useState } from 'react'
@@ -43,7 +43,7 @@ export function BadgeLoadout(props: { earned: string[]; onPickGroup: (g: BadgeGr
   return (
     <div className="loadout" data-stage={stage} data-complete={legendary ? 1 : 0}>
       <div className="loadout-stage">
-        {/* 마법진 — 소환진과 같은 세계관. 단계가 오를수록 빠르고 밝게 돌다 */}
+        {/* 마법진 — 소환진과 같은 세계관. 단계가 오를수록 빠르고 밝게 돈다 */}
         <div className="loadout-ring" />
 
         {artOk ? (
@@ -83,11 +83,12 @@ export function BadgeLoadout(props: { earned: string[]; onPickGroup: (g: BadgeGr
             <button key={sl.group} className={`loadout-slot t${t}`}
               style={{ borderColor: st.border, background: st.bg, boxShadow: st.glow }}
               onClick={() => props.onPickGroup(sl.group)}
-              title={`${sl.part} — ${TIER_NAME[t]} (${sl.got}/${sl.total})`}>
+              title={`${sl.part} — ${TIER_NAME[t]} (${sl.group} ${sl.got}/${sl.total})`}>
               <span className="ls-em" style={{ filter: t === 0 ? 'grayscale(1) opacity(.4)' : 'none' }}>{sl.emoji}</span>
               <span className="ls-part" style={{ color: st.text }}>{sl.part}</span>
+              {/* ★분야 이름을 장비 아래에 붙여 둔다★ (Dio님 지적) — 이모지 하나로는 어느 분야인지 안 읽힌다 */}
+              <span className="ls-grp">{GROUP_EMOJI[sl.group]} {sl.group}</span>
               <span className="ls-cnt" style={{ color: st.text }}>{sl.got}/{sl.total}</span>
-              <span className="ls-grp">{GROUP_EMOJI[sl.group]}</span>
             </button>
           )
         })}
@@ -95,7 +96,7 @@ export function BadgeLoadout(props: { earned: string[]; onPickGroup: (g: BadgeGr
       <p className="loadout-tip">
         {legendary
           ? '⚔️ 풀세트 완성 — 더 넣을 자리가 없다'
-          : '⚔️ 장비를 누르면 그 분야 뭃지로 바로 간다. 그 분야를 채우면 그 장비만 자란다'}
+          : '⚔️ 장비를 누르면 그 분야 뱃지로 바로 간다. 그 분야를 채우면 그 장비만 자란다'}
       </p>
     </div>
   )
