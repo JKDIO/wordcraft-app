@@ -1715,3 +1715,74 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
   display:block;font-size:11px;font-weight:800;letter-spacing:1.5px;
   color:var(--text-2);margin:12px 0 4px;
 }
+
+/* ================= v1.4.28 ⚔️ 룬 장비창 (내 정보 — 뱃지 도감 최상단) =================
+   뱃지 59개를 "한 그림"으로. 카테고리 10 = 장비 슬롯 10, 각 슬롯은 달성률로 자란다.
+   ⚠️ 캔버스·SVG 애니메이션 금지 — 예한이 폰은 APK WebView다(L8). CSS만 쓴다. */
+.loadout{
+  background:linear-gradient(180deg,#131a26,#0e131c);
+  border:1px solid var(--wc-surface-border);border-radius:14px;
+  padding:14px 12px 12px;margin:6px 0 10px;
+}
+.loadout-stage{position:relative;height:150px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;}
+.loadout-ring{
+  position:absolute;left:50%;bottom:10px;width:176px;height:58px;margin-left:-88px;
+  border-radius:50%;border:2px dashed rgba(143,212,255,.55);
+  box-shadow:0 0 22px rgba(143,212,255,.18) inset, 0 0 14px rgba(143,212,255,.15);
+  animation:loRing 11s linear infinite;opacity:.55;
+}
+.loadout-ring::after{
+  content:'';position:absolute;left:8%;top:14%;right:8%;bottom:14%;
+  border-radius:50%;border:1px solid rgba(143,212,255,.35);
+  animation:loRing 7s linear infinite reverse;
+}
+@keyframes loRing{to{transform:rotate(360deg)}}
+.loadout[data-stage="2"] .loadout-ring{opacity:.7;animation-duration:7s;}
+.loadout[data-stage="3"] .loadout-ring{opacity:.85;animation-duration:5s;filter:hue-rotate(45deg);}
+.loadout[data-stage="4"] .loadout-ring{opacity:1;animation-duration:4s;filter:hue-rotate(-35deg) saturate(1.4);}
+.loadout[data-complete="1"] .loadout-ring{animation-duration:2.6s;filter:hue-rotate(-35deg) saturate(1.9);}
+
+.loadout-hero{position:relative;z-index:2;margin-bottom:16px;image-rendering:pixelated;animation:loBob 2.6s ease-in-out infinite;}
+.loadout-hero > i{position:absolute;left:0;top:0;display:block;background:transparent;}
+@keyframes loBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.loadout[data-stage="3"] .loadout-hero{filter:drop-shadow(0 0 8px rgba(185,140,255,.55));}
+.loadout[data-stage="4"] .loadout-hero{filter:drop-shadow(0 0 12px rgba(245,197,66,.85));animation-duration:1.9s;}
+
+.loadout-burst{
+  position:absolute;left:50%;bottom:10px;width:220px;height:220px;margin-left:-110px;z-index:1;
+  background:radial-gradient(closest-side, rgba(245,197,66,.35), rgba(245,197,66,0) 70%);
+  animation:loBurst 2.4s ease-in-out infinite;
+}
+@keyframes loBurst{0%,100%{transform:scale(.9);opacity:.5}50%{transform:scale(1.06);opacity:.95}}
+
+.loadout-name{text-align:center;margin:2px 0 8px;}
+.loadout-name b{display:block;font-size:15px;color:var(--gold);letter-spacing:.3px;}
+.loadout-name span{display:block;font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.5;}
+
+.loadout-bar{position:relative;height:16px;background:#111823;border-radius:99px;overflow:hidden;margin:0 2px 12px;}
+.loadout-bar > i{display:block;height:100%;background:linear-gradient(90deg,#4a9eff,#3ddc84);transition:width .5s ease;}
+.loadout[data-stage="4"] .loadout-bar > i{background:linear-gradient(90deg,#f5c542,#ffe9a8);}
+.loadout-bar > em{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-style:normal;font-size:10.5px;font-weight:800;color:#eaf3ff;text-shadow:0 1px 2px rgba(0,0,0,.7);
+  font-variant-numeric:tabular-nums;letter-spacing:.3px;
+}
+
+.loadout-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.loadout-slot{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;
+  border:1.5px solid;border-radius:10px;padding:7px 2px 5px;cursor:pointer;
+  transition:transform .12s ease;min-height:72px;
+}
+.loadout-slot:active{transform:scale(.94);}
+.loadout-slot .ls-em{font-size:22px;line-height:1.15;}
+.loadout-slot .ls-part{font-size:11px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;}
+.loadout-slot .ls-cnt{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;opacity:.9;}
+.loadout-slot .ls-grp{position:absolute;top:2px;right:3px;font-size:8.5px;opacity:.5;}
+.loadout-slot.t4 .ls-em{animation:loPulse 2s ease-in-out infinite;}
+@keyframes loPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.loadout-tip{margin:9px 2px 0;font-size:11px;color:var(--text-2);line-height:1.6;text-align:center;}
+
+@media (max-width:340px){
+  .loadout-slots{grid-template-columns:repeat(3,1fr);}
+}
