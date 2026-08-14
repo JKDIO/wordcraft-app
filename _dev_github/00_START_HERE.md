@@ -1,6 +1,14 @@
 # 🚩 START HERE — WordCraft 개발 현황 (새 세션 최초 필독)
 
-> **현재 상태 스탬프 → 라이브 v1.4.29 · 소스 v1.4.29 (2026-08-14). ★복습 광산 P0 봉합 + ⚔️ 룬 장비창 첫 배포★**
+> **현재 상태 스탬프 → 라이브 v1.4.30 · 소스 v1.4.30 (2026-08-14, 라이브 SHA 대조 완료). ★뱃지 도감 기본 접힘 + '열기 ▼' 강조★**
+>
+> **v1.4.30 = 🏆 뱃지 도감이 열자마자 접혀 있다 (Dio님 지시)**
+>  ① **기본값 전환**: 옛 규칙 "하나라도 딴 카테고리는 펼침"(v1.4.27~29) → **11개 카테고리 전부 접힘**. 뱃지 71종이 되면서 옛 규칙이 내 정보 화면을 수백 줄로 늘려 놓았다. 이제 ⚔️ 룬 장비창(한 그림)이 먼저, 세부는 **아이가 골라 연다**.
+>  ② **여는 버튼 강조**: 11px·불투명도 .55짜리 `▼` → **금색으로 채운 '열기 ▼' 알약**(56×26, weight 900, 금색 글로우). 열리면 조용한 테두리 '닫기 ▲'로 물러나므로 **열린 줄이 어디인지도** 한눈에 보인다. `전체 펼치기`는 📂 칩 버튼으로 승격.
+>  ③ **관제실은 그대로 둔다** — 아빠 화면은 훑어보는 것이 목적. **규칙이 두 앱에서 갈라진 첫 사례**이므로 기억할 것.
+>  ④ **배포물 2종만**(`main.js`+`version.json`). `app.css` 변경 0 — 새 클래스 없이 **인라인 스타일**로만 처리했다(app.css 크기 불일치 이월 과제를 건드리지 않기 위해).
+>  ⑤ **검사 보강**: `badge_ui_smoke.mjs`에 ①전부 닫힘(`data-wc-open=0`) ②기본 카드 0 ③알약이 실제로 칠해지고 56×26 이상 — 3개 판정 신설. 옛 기본값을 되살리면 즉시 실패(L27④ 확인).
+>  ⑥ ⚠️ **함께 바로잡음**: 노트북 저장소 루트 `content.json`이 **v1.4.23판으로 낡아 있었다**(라이브·GitHub·tgz는 v1.4.26판). 라이브와 동일한 파일로 덮었다. → **L32 제정: 로컬 사본도 진실이 아니다, 진실은 라이브 바이트(SHA)다.**
 >
 > **v1.4.29 = ★★복습 광산이 "오늘 캘 카드 0"이라 거짓말하고 있었다 — P0 봉합★★**
 >  ① **증상**: 하단 뱃지는 40, 광산 화면은 0. 원인 = 광산이 카드 전체를 **정렬 없는 `limit=500`**으로 받아 그 안에서 due를 골랐고, 예한이 카드가 **685장**이 되자 due 40장이 창 밖으로 밀렸다. **그중 38장이 그날 틀려서 리스폰된 오답 카드** — 앱의 약속이 조용히 깨져 있었다.
@@ -28,9 +36,10 @@
 > ⚠️ **감사에서 불량 1건을 잡았다** — 11단어 문장이 18.2초·peak 0.05로 절대 기준을 0.0005 차이로 통과했다. 재생성으로 해결했고, **이번부터 분포 상대 기준(중앙값 1/4)과 단어당 재생시간을 함께 본다**(L22 보강).
 > ⚠️ **배포 절차(필수)**: `bash verify.sh` → 빌드 → `bash verify.sh`(버전 3자 대조) → **렌더 스모크 6종**(`review_smoke` · `badge_ui_smoke` · `reward_smoke` · `summon_smoke` · `w710_smoke` · `routes20`; dist는 8099, 소환 하니스는 8098 로컬 서버 필요) → 배포 → 라이브 SHA·번들 grep 대조
 > ⚠️ **소환 스모크 하니스 재생성법**(tgz에 없다): `.verify/summon_items.json` = content.json의 모든 `type:'summon'` 스텝 items를 펼친 배열(66개) · `.verify/summon_entry.tsx` = `SummonExercise`를 `items={[ITEMS[n]]}`로 렌더하고 `globalThis.__go(n)`을 노출하는 하니스 + `.verify/out/index.html`(app.css 링크).
-> ⚠️ 소스 SSOT = 노트북 `_dev_github/src_v1.4.29/`(+ tgz). 콘텐츠 SSOT = `wordcraft_content_v1.4.26.json`(v1.4.27~28은 코드만 변경)(+ 월드7~10 원본 `wordcraft_content_w710_src_v1.4.24.tgz`). 어휘 SSOT = `wordcraft_vocab_v1.4.20.json`. 계약 = `연동계약_CONTRACT_v1.7.md`.
+> ⚠️ 소스 SSOT = 노트북 `_dev_github/src_v1.4.30/`(+ tgz). 콘텐츠 SSOT = `wordcraft_content_v1.4.26.json`(v1.4.27~28은 코드만 변경)(+ 월드7~10 원본 `wordcraft_content_w710_src_v1.4.24.tgz`). 어휘 SSOT = `wordcraft_vocab_v1.4.20.json`. 계약 = `연동계약_CONTRACT_v1.7.md`.
 
 ## ⚡ 지금 최우선 (2026-08-14~)
+0. **★예한이 폰에서 뱃지 도감 확인 (v1.4.30)★** — 내 정보를 열었을 때 ① 11줄이 전부 접혀 있는가 ② 금색 '열기 ▼' 알약이 **손가락으로 정확히 눌리는가**(A24 실기기) ③ 접힌 목록이 아이에게 "볼 게 없다"로 읽히지는 않는가. **이게 최종 판정이다.**
 1. **★★예한이 폰에서 복습 광산 40장 확인 (v1.4.29 P0)★★** — 앱을 다시 열어 하단 뱃지 숫자와 광산의 "오늘 캘 카드"가 **같은 숫자**인지, 채굴이 실제로 시작되는지. 잘려 있던 40장(38장은 오답 리스폰)이 그대로 남아 있다. **이게 최종 판정이다.**
 1-1. **★예한이 실기기(A24) 확인★** — 월드 7~10이 열렸다. ① 새 월드 4개가 폰에서 보이는가 ② P1 첫 팩에서 소리가 나는가 ③ 🔮 문장 소환이 손에 맞는가 ④ 15~20분에 몇 스텝을 하는가. **이게 최종 판정이다.**
 2. **★예한이 실사용 확인 — 🔮 문장 소환 + ⚔️ 룬 장비창★** (장비창은 마법진 회전·픽셀 92개 렌더가 A24에서 버벅이지 않는지도 함께)
@@ -74,21 +83,21 @@
 ## 0. ⚠️ 이 문서는 낡을 수 있다 — 신뢰 순서 (먼저 읽기)
 이 문서는 **"지도 + 마지막 세션 스냅샷"**이다. 위 스탬프가 실제와 다르면 이 문서가 낡은 것.
 **낡지 않는 진실:**
-1. **프로젝트 메모리 `RELEASE_LOG.md`** (append-only, 맨 위=최신 = **v1.4.22 / 배포 시 1.4.23**).
-2. 라이브 `https://wordcraft-app.vercel.app/version.json` (WebFetch 시 캐시버스터 `?cb=...` 필수). 현재 **1.4.22** (v1.4.23 배포 후 1.4.23).
-3. 소스 `APP_VERSION` = 로컬 `src_v1.4.23/src/lib/version.ts` = '1.4.23'.
+1. **프로젝트 메모리 `RELEASE_LOG.md`** (append-only, 맨 위=최신 = **v1.4.30**).
+2. 라이브 `https://wordcraft-app.vercel.app/version.json` (캐시버스터 `?cb=...` 필수). 현재 **1.4.30**. ⚠️ **버전 문자열만으로는 내용물을 보증하지 못한다 — 배포물 SHA256을 브라우저에서 직접 계산해 대조할 것(L32).**
+3. 소스 `APP_VERSION` = 로컬 `src_v1.4.30/src/lib/version.ts` = '1.4.30'.
 4. **(v1.4.18 근접사고 이후 추가)** 배포 직전 **빌드된 번들에 박힌 버전 문자열**을 grep으로 확인(L25) — `verify.sh` ⑦이 자동으로 한다.
 
 **세션 종료 시(필수):** 코드/배포 변경 시 ① RELEASE_LOG 항목 추가 ② 이 문서 스탬프·다음작업 갱신 ③ **기록 3종 동기화(L14·L20: 프로젝트 메모리 + 로컬 + GitHub) — 미루지 말 것.**
 
 ## 1. 지금 상태
 - **제품**: 예한이(초6) 영어 학습 웹앱 "WordCraft". 한 번들(main.js)에 두 앱 — 학습자 앱(예한이) + 관제실(아빠, `/#/admin`, PIN 7351).
-- **라이브 v1.4.22(배포대기 v1.4.23)**: 학습(유령 보스·수정 동굴·소리 훈련소·문장 소환진·복습 라이트너·출석 15분) + 단어 대륙(2,400단어/200팩) + 워드몬 진화 + 단어 도감 + 이야기(수호자 10·팩 결말 200) + 분류 상자 + 속사 사냥 + 단어 골렘 40 + 뱃지 36종 + **보상 로드맵** + 다가구 인증 라우팅 + 가족 RLS 격리 + 전 재생 항목 음원화.
+- **라이브 v1.4.30**: 학습(유령 보스·수정 동굴·소리 훈련소·문장 소환진·복습 라이트너·출석 15분) + 단어 대륙(2,400단어/200팩) + 워드몬 진화 + 단어 도감 + 이야기(수호자 10·팩 결말 200) + 분류 상자 + 속사 사냥 + 단어 골렘 40 + 뱃지 36종 + **보상 로드맵** + 다가구 인증 라우팅 + 가족 RLS 격리 + 전 재생 항목 음원화.
 - **예한이 폰(갤럭시 A24)**: APK지만 `server.url=wordcraft-app.vercel.app` 라이브 직접 로드 → **웹 배포 = 폰 즉시 반영**. 음원은 Storage 직접 로드.
 - **DB**: Supabase `gbynvzxgbpmoqdsriowz`. families·memberships·learners·answer_events·xp_events·review_cards·module_progress·sessions·tts_clips·parent_rewards·**reward_goals**. Storage `tts-audio` = 6,3xx 클립. Edge: `tts-batch`(v4) · `tts-seed` · `vocab-seed`.
 
 ## 2. 🔒 철칙 (어기면 사고 재발)
-1. **소스 SSOT = 로컬 `_dev_github/src_v1.4.23/`(+ tgz), 콘텐츠 SSOT = `wordcraft_content_v1.4.23.json` + 어휘 `wordcraft_vocab_v1.4.20.json`.** 컨테이너에서만 고쳐 배포 금지.
+1. **소스 SSOT = 로컬 `_dev_github/src_v1.4.30/`(+ tgz), 콘텐츠 SSOT = `wordcraft_content_v1.4.26.json` + 어휘 `wordcraft_vocab_v1.4.20.json`.** 컨테이너에서만 고쳐 배포 금지. ⚠️ **저장소 루트의 content.json/vocab.json은 낡아 있을 수 있다 — 빌드 입력은 tgz 안의 `public/`에서 가져온다(L32).**
 2. **두 앱 공동 기록** (RELEASE_LOG에 예한이 앱+관제실+연동 함께).
 3. **연동 계약 준수**(`앱개발/연동계약_CONTRACT_v1.md`, 현재 **v1.7** — §15 보상 로드맵 신설).
 4. **배포는 모아서 1회 + 스냅샷**(L1). 대용량은 모델 문맥 무통과(SendUserFile·device_commit — L0/L7).
@@ -106,11 +115,11 @@
 ## 4. 파일 지도
 | 위치 | 내용 |
 |---|---|
-| 로컬 `Word Craft/wordcraft-app/` | GitHub 배포 저장소 클론. 루트 main.js·content.json·**vocab.json(1.44MB)**·version.json = **v1.4.22 / 배포 시 1.4.23** |
-| `_dev_github/src_v1.4.23/` | **소스 SSOT** — App.tsx·screens/{…,VocabContinent,WordDex,**RewardBoard**}·engine/·lib/{audio,tts,store,supabase,version,vocab,wordmon,**rewards**}·tools/음원감사_AUDIO_QA.html |
-| `_dev_github/wordcraft_src_v1.4.23.tgz` | 소스 스냅샷 |
-| `_dev_github/wordcraft_tests_v1.4.23.tgz` | 검사 스크립트(xp_parity·badge_check·**reward_check**·**reward_smoke**·measure20·golem_check·routes20 등) |
-| `_dev_github/wordcraft_content_v1.4.15.json` | **콘텐츠 SSOT 스냅샷**(L20 ②) |
+| 로컬 `Desktop/VIBE CODING/Projects/Word Craft/wordcraft-app/` | GitHub 배포 저장소 사본. 루트 main.js·content.json·vocab.json·app.css·version.json = **v1.4.30** (2026-08-14 라이브 SHA와 일치 확인) |
+| `_dev_github/src_v1.4.30/` | **소스 SSOT** — App.tsx·screens/{…,VocabContinent,WordDex,**RewardBoard**}·engine/·lib/{audio,tts,store,supabase,version,vocab,wordmon,**rewards**}·tools/음원감사_AUDIO_QA.html |
+| `_dev_github/wordcraft_src_v1.4.30.tgz` | 소스 스냅샷 |
+| `_dev_github/wordcraft_tests_v1.4.30.tgz` | 검사 스크립트(xp_parity·badge_check·**reward_check**·**reward_smoke**·measure20·golem_check·routes20 등) |
+| `_dev_github/wordcraft_content_v1.4.26.json` | **콘텐츠 SSOT 스냅샷**(L20 ②) — 1,886,568B · SHA `f5b4b927…` |
 | ⚠️ `Desktop/YEHAN/Education/Yehan_English_App/_dev_github/` | **미끼 폴더 — 절대 SSOT로 쓰지 말 것.** v1.4.6(7/16)에서 멈춰 있다 |
 | `_dev_github/wordcraft_vocab_v1.4.20.json` + `vocab_packs_v3_final.tgz` | **어휘 SSOT 스냅샷** |
 | `_dev_github/RELEASE_LOG.md` / `00_START_HERE.md` | 개발 원장·현황(GitHub 동반 업로드) |
@@ -119,10 +128,10 @@
 
 ## 5. 빌드 & 배포 퀵스타트 (컨테이너 — 빈 컨테이너 전제)
 ```
-# device_stage_files로 _dev_github/wordcraft_src_v1.4.23.tgz (+ tests tgz) 스테이징
+# device_stage_files로 _dev_github/wordcraft_src_v1.4.30.tgz (+ tests tgz) 스테이징
 mkdir -p /home/claude/wc && cd /home/claude/wc
-tar xzf "/mnt/user-data/uploads/.../wordcraft_src_v1.4.23.tgz"
-mkdir -p tests && tar xzf ".../wordcraft_tests_v1.4.23.tgz" && cp *.mjs .
+tar xzf "/mnt/user-data/uploads/.../wordcraft_src_v1.4.30.tgz"
+mkdir -p tests && tar xzf ".../wordcraft_tests_v1.4.30.tgz" && cp *.mjs .
 ln -sfn /home/claude/.npm-global/lib/node_modules node_modules   # react 전역
 # verify.sh는 public/vocab.json·content.json을 읽는다 → 배포 저장소에서 복사해 둘 것
 bash verify.sh
@@ -143,9 +152,9 @@ node reward_smoke.mjs   # (python3 -m http.server 8099 --directory dist 를 먼�
 
 ## 7. 세션 시작 체크리스트
 1. 이 문서 + `claude/개발_영구교훈_LESSONS.md` 읽기.
-2. 진실 확인: 라이브 version.json(캐시버스터=1.4.22 또는 1.4.23) · RELEASE_LOG 맨 위(v1.4.23) · 로컬 `src_v1.4.23` APP_VERSION · **빌드 번들 grep**(L25).
-3. 컨테이너 비었으면 §5로 소스 복구·빌드(tgz = v1.4.23). **복구는 반드시 직전 릴리스 tgz로, 복구 직후 `diff -ru`로 유실 0 확인(L27).**
+2. 진실 확인: 라이브 version.json(캐시버스터=1.4.30) · RELEASE_LOG 맨 위(v1.4.30) · 로컬 `src_v1.4.30` APP_VERSION · **빌드 번들 grep**(L25) · **라이브 배포물 SHA256 대조**(L32).
+3. 컨테이너 비었으면 §5로 소스 복구·빌드(tgz = v1.4.30). **복구는 반드시 직전 릴리스 tgz로, 복구 직후 `diff -ru`로 유실 0 확인(L27).**
 4. 작업 후: RELEASE_LOG·이 문서 갱신 + 기록 3종 동기화(L14·L20).
 
 ---
-*교훈: `개발_영구교훈_LESSONS.md` (L0~L28 — 특히 L19 오디오 전수감사, L20 로컬↔GitHub 동시기록, L21 오디오 세대 관리, L22 음원은 파형으로 검수, L23 세션 만료 오판, L24 정답 위치 분포, L25 번들 grep, L26 손이 하는 행동, L27 복구 직후 diff·검사는 스크립트, L28 한 테이블 여러 종류).*
+*교훈: `개발_영구교훈_LESSONS.md` (L0~L32 — 특히 L19 오디오 전수감사, L20 로컬↔GitHub 동시기록, L21 오디오 세대 관리, L22 음원은 파형으로 검수, L23 세션 만료 오판, L24 정답 위치 분포, L25 번들 grep, L26 손이 하는 행동, L27 복구 직후 diff·검사는 스크립트, L28 한 테이블 여러 종류, L29 사라진 고침, L30 독립 화면의 비대화, L31 상한·정렬 없는 조회, **L32 로컬 사본도 진실이 아니다 — 라이브 SHA가 기준**).*
