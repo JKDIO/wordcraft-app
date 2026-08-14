@@ -37,18 +37,21 @@ jobs:
           set -euo pipefail
           cd app
           if [ ! -f package.json ]; then
-            echo '{"name":"wordcraft","private":true,"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1","@supabase/supabase-js":"^2.45.0"}}' > package.json
-            echo 'created minimal package.json'
+            # 외부 의존은 react / react-dom 둘뿐이다 (전 소스 import 전수 확인 결과).
+            # 버전은 로컬 SSOT와 동일하게 19.2.6으로 못박는다 — 메이저가 다르면 조용히 깨진다.
+            printf '%s\n' '{"name":"wordcraft","private":true,"dependencies":{"react":"19.2.6","react-dom":"19.2.6"}}' > package.json
+            echo 'created package.json (react 19.2.6)'
           fi
           # bunfig 없으면 JSX 변환이 깨진다 (과거 SMOKE_LOG 봉합 결함)
           [ -f bunfig.toml ] || printf 'jsx = "react-jsx"\n' > bunfig.toml
+          cat package.json bunfig.toml
 
       - name: Install deps
         run: cd app && bun install
 
-      - name: Typecheck
+      - name: Typecheck (참고용 — 실패해도 빌드는 진행)
         continue-on-error: true
-        run: cd app && bunx tsc -p tsconfig.json --noEmit
+        run: cd app && bunx --bun typescript@5 tsc -p tsconfig.json --noEmit
 
       - name: Bundle
         run: |
@@ -58,6 +61,17 @@ jobs:
             --outdir dist --minify \
             --define process.env.NODE_ENV='"production"'
           ls -l dist/
+
+      - name: Sanity gate
+        run: |
+          set -euo pipefail
+          SZ=$(stat -c%s app/dist/main.js)
+          echo "bundle bytes: $SZ"
+          # ★안전장치★ 깨진 빌드가 예한이가 쓰는 라이브 앱을 덮어쓰면 안 된다.
+          if [ "$SZ" -lt 300000 ]; then
+            echo "::error::번들이 비정상적으로 작다($SZ bytes). 배포를 중단한다."
+            exit 1
+          fi
 
       - name: Publish to repo root
         run: |
