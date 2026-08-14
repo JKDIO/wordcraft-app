@@ -1,0 +1,48 @@
+/* v1.4.34 등급 상승 연출 — CSS만. Web Animations API·canvas 금지(WebView·L8)
+   ★왜 필요한가★ 장비는 뱃지를 딴 순간이 아니라 다음에 장비창을 열 때 바뀌어 있다.
+   표시가 없으면 아이는 뭐가 달라졌는지 모른 채 지나간다 — 보상이 없는 것과 같다. */
+
+/* 올라간 슬롯: 금색 테두리가 번지고 살짝 튀어오른다 */
+.loadout-slot.ls-up{
+  animation: lsUp 2.4s cubic-bezier(.22,1,.36,1) 1;
+  z-index:3;
+}
+@keyframes lsUp{
+  0%   { transform:scale(1);    box-shadow:0 0 0 0 rgba(245,197,66,.85); }
+  12%  { transform:scale(1.16); box-shadow:0 0 22px 6px rgba(245,197,66,.85); }
+  30%  { transform:scale(1.02); box-shadow:0 0 16px 3px rgba(245,197,66,.55); }
+  55%  { transform:scale(1.07); box-shadow:0 0 20px 5px rgba(245,197,66,.7); }
+  100% { transform:scale(1);    box-shadow:0 0 0 0 rgba(245,197,66,0); }
+}
+.loadout-slot.ls-up .ls-em{ animation: lsUpEm 2.4s ease-out 1; }
+@keyframes lsUpEm{
+  0%,100%{ transform:translateY(0) rotate(0); }
+  14%    { transform:translateY(-6px) rotate(-9deg); }
+  26%    { transform:translateY(0)    rotate(7deg); }
+  38%    { transform:translateY(-3px) rotate(-4deg); }
+  50%    { transform:translateY(0)    rotate(0); }
+}
+
+/* 영웅: 한 번 밝게 번쩍이고 마법진이 빨라진다 */
+.loadout[data-up="1"] .loadout-art{ animation: heroUp 2.4s ease-out 1, loBob 2.6s ease-in-out infinite; }
+@keyframes heroUp{
+  0%  { filter:brightness(1)   drop-shadow(0 0 0 rgba(245,197,66,0)); }
+  10% { filter:brightness(2.1) drop-shadow(0 0 18px rgba(255,255,255,.95)); }
+  28% { filter:brightness(1.15) drop-shadow(0 0 14px rgba(245,197,66,.8)); }
+  60% { filter:brightness(1.3) drop-shadow(0 0 12px rgba(245,197,66,.6)); }
+  100%{ filter:brightness(1)   drop-shadow(0 0 0 rgba(245,197,66,0)); }
+}
+.loadout[data-up="1"] .loadout-ring{ animation-duration:1.1s !important; opacity:1 !important; }
+
+/* 안내문이 축하 문구로 바뀔 때 부드럽게 */
+.loadout[data-up="1"] .loadout-tip{
+  color:#f5c542; font-weight:800; animation: tipUp .5s ease-out 1;
+}
+@keyframes tipUp{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:none;} }
+
+/* 애니메이션을 꺼둔 사용자는 존중한다 */
+@media (prefers-reduced-motion: reduce){
+  .loadout-slot.ls-up, .loadout-slot.ls-up .ls-em,
+  .loadout[data-up="1"] .loadout-art{ animation:none !important; }
+  .loadout-slot.ls-up{ box-shadow:0 0 16px 4px rgba(245,197,66,.7) !important; }
+}

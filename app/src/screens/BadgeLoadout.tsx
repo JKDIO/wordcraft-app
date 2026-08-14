@@ -1,11 +1,13 @@
-// v1.4.32 ⚔️ 룬 장비창 — 뱃지 전체를 한 그림으로 (내 정보 화면 뱃지 도감 최상단)
+// v1.4.34 ⚔️ 룬 장비창 — 뱃지 전체를 한 그림으로 (내 정보 화면 뱃지 도감 최상단)
 //
 // 왜 이걸 만드나 (Dio님): "가장 상단에서 모든 뱃지들을 한눈에, 한 그림에 볼 수 있어야 한다."
 // 도감은 71칸짜리 목록이라 '내가 지금 얼마나 강해졌는지'가 안 보인다. 장비창은 그걸 **한 장면**으로 답한다.
 //
 // v1.4.31: 12×16 팔레트 스왑 → **128×128 부위 레이어 조립**. 카테고리별 달성률이 그 부위의 등급을 정한다.
 //   그래서 '문장과 문법' 뱃지를 따면 검만 바뀌고, '읽기의 눈'을 따면 투구만 바뀐다.
-// v1.4.32: 장비칸 순서를 뱃지 도감과 일치시키고, 분야 이름을 장비 아래에 직접 적는다(Dio님 지적).
+// v1.4.32: 장비칸 순서를 뱃지 도감과 일치시키고 분야 이름을 장비 아래에 적었다(Dio님 지적).
+// v1.4.34: **등급 상승 연출**. 지난번에 본 등급을 기억해 두고, 올라간 부위만 한 번 반짝인다.
+//   장비는 뱃지를 딴 순간이 아니라 다음에 장비창을 열 때 바뀌어 있다 — 표시가 없으면 아이는 모르고 지나간다.
 //
 // 규칙은 lib/loadout.ts + lib/heroSprite.ts 단일 원천. 이 파일은 그리기만 한다.
 import { useEffect, useState } from 'react'
@@ -14,7 +16,10 @@ import {
   LOADOUT_SLOTS, slotTier, TIER_NAME, TIER_STYLE,
   heroStage, heroShadow, HERO_TITLE, HERO_SUB, HERO_W, HERO_H, isComplete, COMPLETE_TITLE, COMPLETE_SUB,
 } from '../lib/loadout'
-import { SLOT_KEY, Z_ORDER, heroBaseUrl, heroLayerUrl, warmHeroArt } from '../lib/heroSprite'
+import {
+  SLOT_KEY, Z_ORDER, heroBaseUrl, heroLayerUrl, warmHeroArt,
+  readSeenTiers, writeSeenTiers, findUpgrades,
+} from '../lib/heroSprite'
 
 const PX = 7          // 폴백 픽셀 한 칸 → 영웅 84×112
 const ART = 150       // 스프라이트 표시 크기(px). 128의 배수가 아니어도 pixelated면 깨지지 않는다
@@ -33,6 +38,9 @@ export function BadgeLoadout(props: { earned: string[]; onPickGroup: (g: BadgeGr
   const [artOk, setArtOk] = useState(true)
   useEffect(() => { warmHeroArt() }, [])
 
+  // 지난번에 본 등급과 비교해 올라간 부위만 축하한다. 처음 여는 경우는 축하하지 않는다.
+  const [upgraded, setUpgraded] = useState<string[]>([])
+
   const counts = LOADOUT_SLOTS.map(sl => {
     const ids = all.filter(([, b]) => b.group === sl.group)
     const g = ids.filter(([id]) => earned.has(id)).length
@@ -40,8 +48,23 @@ export function BadgeLoadout(props: { earned: string[]; onPickGroup: (g: BadgeGr
   })
   const tierOf = (group: BadgeGroup) => counts.find(c => c.group === group)?.tier ?? 0
 
+  useEffect(() => {
+    const cur: Record<string, number> = {}
+    counts.forEach(c => { cur[c.group] = c.tier })
+    const ups = findUpgrades(cur, readSeenTiers())
+    writeSeenTiers(cur)
+    if (!ups.length) return
+    setUpgraded(ups)
+    // 연출은 한 번만. 계속 반짝이면 화면이 시끄럽다.
+    const t = setTimeout(() => setUpgraded([]), 2600)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [got, total])
+
+  const celebrating = upgraded.length > 0
+
   return (
-    <div className="loadout" data-stage={stage} data-complete={legendary ? 1 : 0}>
+    <div className="loadout" data-stage={stage} data-complete={legendary ? 1 : 0} data-up={celebrating ? 1 : 0}>
       <div className="loadout-stage">
         {/* 마법진 — 소환진과 같은 세계관. 단계가 오를수록 빠르고 밝게 돈다 */}
         <div className="loadout-ring" />
@@ -80,7 +103,7 @@ export function BadgeLoadout(props: { earned: string[]; onPickGroup: (g: BadgeGr
           const t = sl.tier
           const st = TIER_STYLE[t]
           return (
-            <button key={sl.group} className={`loadout-slot t${t}`}
+            <button key={sl.group} className={`loadout-slot t${t}${upgraded.includes(sl.group) ? ' ls-up' : ''}`}
               style={{ borderColor: st.border, background: st.bg, boxShadow: st.glow }}
               onClick={() => props.onPickGroup(sl.group)}
               title={`${sl.part} — ${TIER_NAME[t]} (${sl.group} ${sl.got}/${sl.total})`}>
@@ -94,9 +117,11 @@ export function BadgeLoadout(props: { earned: string[]; onPickGroup: (g: BadgeGr
         })}
       </div>
       <p className="loadout-tip">
-        {legendary
-          ? '⚔️ 풀세트 완성 — 더 넣을 자리가 없다'
-          : '⚔️ 장비를 누르면 그 분야 뱃지로 바로 간다. 그 분야를 채우면 그 장비만 자란다'}
+        {celebrating
+          ? `✨ ${upgraded.map(g => LOADOUT_SLOTS.find(s => s.group === g)?.part).filter(Boolean).join('·')} 업그레이드!`
+          : legendary
+            ? '⚔️ 풀세트 완성 — 더 넣을 자리가 없다'
+            : '⚔️ 장비를 누르면 그 분야 뱃지로 바로 간다. 그 분야를 채우면 그 장비만 자란다'}
       </p>
     </div>
   )
