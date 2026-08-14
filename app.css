@@ -1790,8 +1790,23 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
    ★이 파일이 따로 있는 이유★ app.css는 114KB다. 작은 수정 하나 때문에 그 큰 파일을
    통째로 커밋하면 모델 문맥을 통과시켜야 해서 토큰이 폭증한다(L7).
    그래서 public/css.d/*.css 는 빌드 때 app.css 뒤에 이어 붙인다. 앞으로 CSS 추가는 여기에. */
+/* 부위 레이어 조립 — <img>를 겹친다. canvas 금지(WebView·L8) */
 .loadout-art{position:relative;z-index:2;margin-bottom:6px;animation:loBob 2.6s ease-in-out infinite;}
 .loadout-art > img{position:absolute;left:0;top:0;width:100%;height:100%;image-rendering:pixelated;-ms-interpolation-mode:nearest-neighbor;pointer-events:none;}
 .loadout[data-stage="3"] .loadout-art{filter:drop-shadow(0 0 8px rgba(185,140,255,.55));}
 .loadout[data-stage="4"] .loadout-art{filter:drop-shadow(0 0 12px rgba(245,197,66,.85));animation-duration:1.9s;}
 .loadout-stage{height:172px;}
+
+/* v1.4.32 슬롯↔분야 연결 명확화 (Dio님 지적: "각 그룹과 장비를 묶는 연결이 명확하지 못하다")
+   ① 순서를 뱃지 도감과 일치시켰다(loadout.ts) ② 분야 이름을 장비 아래에 직접 적는다
+   4열은 분야 이름이 들어갈 폭이 없다 → 3열로 넓힌다. */
+.loadout-slots{grid-template-columns:repeat(3,1fr);gap:8px;}
+.loadout-slot{padding:9px 4px 7px;}
+.loadout-slot .ls-em{font-size:26px;line-height:1.1;}
+.loadout-slot .ls-part{font-size:12.5px;}
+.loadout-slot .ls-grp{position:static;font-size:10px;font-weight:700;opacity:.72;color:var(--text-2);
+  white-space:nowrap;letter-spacing:-.3px;margin-top:1px;}
+.loadout-slot .ls-cnt{font-size:11px;margin-top:1px;}
+@media (max-width:360px){
+  .loadout-slots{grid-template-columns:repeat(2,1fr);}
+}
