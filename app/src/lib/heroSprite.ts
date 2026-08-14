@@ -1,13 +1,13 @@
-// v1.4.31 ⚔️ 룬 기사 스프라이트 — 부위 레이어 조립 규칙 (단일 원천)
+// v1.4.33 ⚔️ 룬 기사 스프라이트 — 부위 레이어 조립 규칙 (단일 원천)
 //
-// ★설계★ 뭃지 카테고리 = 장비 슬롯. 그 카테고리를 채울수록 그 부위만 등급이 오른다.
+// ★설계★ 뱃지 카테고리 = 장비 슬롯. 그 카테고리를 채울수록 그 부위만 등급이 오른다.
 //   전신 그림을 등급마다 새로 그리는 게 아니라, **투명 레이어 11장을 겹친다.**
-//   → 커리큘럼이 늘어 뭃지가 100개가 되어도 그림은 다시 안 그린다. 슬롯의 분모만 바뀐다.
+//   → 커리큘럼이 늘어 뱃지가 100개가 되어도 그림은 다시 안 그린다. 슬롯의 분모만 바뀐다.
 //
 // ★왜 canvas를 안 쓰나★ 예한이 폰은 APK WebView다. 브라우저 전용 API에 기대면 조용히 죽는다(L8).
 //   그래서 <img>를 겹치는 것만 쓴다. 이건 WebView에서 확실히 돌아간다.
 //
-// 자산은 Supabase Storage(public)에 있다. 앱 번들에 넣지 않는다 — 번들이 봇지 않고,
+// 자산은 Supabase Storage(public)에 있다. 앱 번들에 넣지 않는다 — 번들이 붓지 않고,
 // 그림을 고쳐도 앱 재배포 없이 반영된다. 생성·후처리 파이프라인은
 // `앱개발/자동화_이미지자산_파이프라인_v1.md` 참조.
 import type { BadgeGroup } from './badges'
@@ -44,8 +44,17 @@ export const Z_ORDER: SlotKey[] = [
 ]
 
 export const SPRITE_PX = 128
-export const heroBaseUrl = () => `${ART_BASE}base.png`
-export const heroLayerUrl = (k: SlotKey, t: 1 | 2 | 3 | 4) => `${ART_BASE}layer/${k}${t}.png`
+
+/**
+ * ★자산 버전 — 그림을 고칠 때마다 반드시 올린다★ (2026-08-14 제정)
+ * Supabase Storage는 Cache-Control을 1시간으로 준다. 그림만 갈아끼우면
+ * 브라우저·WebView가 최대 1시간 동안 옛 그림을 계속 쓴다 — 실제로 곡괭이 위치를 고쳤는데
+ * 화면이 안 바뀌었다(Dio님 신고). 주소에 버전을 붙이면 즉시 새 그림을 받는다.
+ */
+export const ART_VER = '2'
+export const heroBaseUrl = () => `${ART_BASE}base.png?v=${ART_VER}`
+export const heroLayerUrl = (k: SlotKey, t: 1 | 2 | 3 | 4) =>
+  `${ART_BASE}layer/${k}${t}.png?v=${ART_VER}`
 
 /** 미리 받아둔다 — 등급이 오르는 순간 그림이 늦게 뜨면 보상의 맛이 죽는다 */
 let warmed = false
