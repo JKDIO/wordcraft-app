@@ -1786,3 +1786,12 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
 @media (max-width:340px){
   .loadout-slots{grid-template-columns:repeat(3,1fr);}
 }
+/* v1.4.31 장비창 부위 레이어 — <img> 겹치기. canvas 금지(WebView·L8)
+   ★이 파일이 따로 있는 이유★ app.css는 114KB다. 작은 수정 하나 때문에 그 큰 파일을
+   통째로 커밋하면 모델 문맥을 통과시켜야 해서 토큰이 폭증한다(L7).
+   그래서 public/css.d/*.css 는 빌드 때 app.css 뒤에 이어 붙인다. 앞으로 CSS 추가는 여기에. */
+.loadout-art{position:relative;z-index:2;margin-bottom:6px;animation:loBob 2.6s ease-in-out infinite;}
+.loadout-art > img{position:absolute;left:0;top:0;width:100%;height:100%;image-rendering:pixelated;-ms-interpolation-mode:nearest-neighbor;pointer-events:none;}
+.loadout[data-stage="3"] .loadout-art{filter:drop-shadow(0 0 8px rgba(185,140,255,.55));}
+.loadout[data-stage="4"] .loadout-art{filter:drop-shadow(0 0 12px rgba(245,197,66,.85));animation-duration:1.9s;}
+.loadout-stage{height:172px;}

@@ -1,0 +1,10 @@
+# build report 2026-08-14T14:48:51Z
+source_commit=b2d37cfd4271c3e88f7518a3bb68c4b7b9fe8464
+
+-rw-r--r-- 1 runner runner 117988 Aug 14 14:48 app.css
+-rw-r--r-- 1 runner runner 462030 Aug 14 14:48 main.js
+
+7f6e67bb9656b2f670a94d90ad8960b13eb0df8df535694c0d46313db71201a5  main.js
+4c4b5aa8a80430d9e0f4745938e16220d8c03235429bfe06590a71aef1dc9f6d  app.css
+
+main.js gzip bytes: 146269
