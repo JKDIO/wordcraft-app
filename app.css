@@ -1679,3 +1679,39 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
 .quiz-top .btn-back { padding: 0 8px 2px 0; font-size: 20px; }
 .ghost-topbar { gap: 8px; }
 .ghost-topbar .btn-back { font-size: 20px; padding: 0 6px 2px 0; }
+
+/* ================= v1.4.24 문장 소환 (모듈 내 연습 문제로 통합) =================
+   월드 6 전용 화면(#/forge)을 없애고, 문법 단원 안의 한 스텝으로 녹였다.
+   .forge-root 네임스페이스를 그대로 재사용한다(무대·파티클 CSS 공유). */
+
+/* 캐릭터로 재현할 수 없는 문장의 정직한 연출 — 마법진에 덩어리를 새긴다 */
+.forge-root .p-chunk{
+  font-weight:900;font-size:15px;color:#eaf3ff;white-space:nowrap;
+  padding:3px 10px;border-radius:8px;
+  background:rgba(20,24,33,.72);border:1px solid rgba(143,212,255,.55);
+  text-shadow:0 0 10px rgba(143,212,255,.8);
+  animation:chunkA 1.5s cubic-bezier(.2,1.2,.4,1) both;
+}
+@keyframes chunkA{
+  0%{transform:translate(-50%,-50%) scale(.4);opacity:0;filter:blur(3px);}
+  18%{transform:translate(-50%,-50%) scale(1.12);opacity:1;filter:blur(0);}
+  30%{transform:translate(-50%,-50%) scale(1);}
+  78%{opacity:1;}
+  100%{transform:translate(-50%, calc(-50% - 16px)) scale(1);opacity:0;}
+}
+.forge-root .stage.v-engrave .floor .core{animation-duration:1.1s;}
+.forge-root .stage.v-engrave .shadow{opacity:0;}
+
+/* 모듈 안에 들어간 소환 스텝 — 무대를 낮춰 한 화면에 무대·슬롯·버튼이 함께 보이게 */
+.summon-step{display:flex;flex-direction:column;}
+.summon-step .forge-stage-box{min-height:150px;}
+.summon-step .summon-focus{
+  margin:8px 0 0;font-size:12.5px;font-weight:700;color:var(--text-2);
+  background:var(--bg-1);border:1px solid var(--wc-surface-border);
+  border-radius:var(--radius);padding:6px 10px;
+}
+.summon-step .order-pool{margin-top:12px;}
+.summon-step .summon-pool-label{
+  display:block;font-size:11px;font-weight:800;letter-spacing:1.5px;
+  color:var(--text-2);margin:12px 0 4px;
+}
