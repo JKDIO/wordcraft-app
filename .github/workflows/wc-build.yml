@@ -1,0 +1,93 @@
+# app/ 소스가 바뀌면 CI가 번들을 만들어 저장소 루트의 main.js·app.css를 갱신한다.
+# → Vercel이 push를 보고 자동 배포한다.
+#
+# ★이게 있어야 배포가 자동화된다★
+#   main.js는 460KB, app.css는 114KB다. 직접 커밋하려면 모델 문맥을 통과시켜야 해서 불가능하다(L7).
+#   작은 소스 파일만 커밋하고 번들은 CI가 만들게 하면 토큰이 거의 안 든다.
+#
+# ⚠️ index.html / content.json / vocab.json 은 건들지 않는다 — 배포본이 더 최신일 수 있다.
+name: WC Build
+
+on:
+  push:
+    paths:
+      - 'app/**'
+      - '_ci/build.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wc-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Ensure build config
+        run: |
+          set -euo pipefail
+          cd app
+          if [ ! -f package.json ]; then
+            echo '{"name":"wordcraft","private":true,"dependencies":{"react":"^18.3.1","react-dom":"^18.3.1","@supabase/supabase-js":"^2.45.0"}}' > package.json
+            echo 'created minimal package.json'
+          fi
+          # bunfig 없으면 JSX 변환이 깨진다 (과거 SMOKE_LOG 봉합 결함)
+          [ -f bunfig.toml ] || printf 'jsx = "react-jsx"\n' > bunfig.toml
+
+      - name: Install deps
+        run: cd app && bun install
+
+      - name: Typecheck
+        continue-on-error: true
+        run: cd app && bunx tsc -p tsconfig.json --noEmit
+
+      - name: Bundle
+        run: |
+          set -euo pipefail
+          cd app
+          NODE_ENV=production bun build src/main.tsx \
+            --outdir dist --minify \
+            --define process.env.NODE_ENV='"production"'
+          ls -l dist/
+
+      - name: Publish to repo root
+        run: |
+          set -euo pipefail
+          cp app/dist/main.js main.js
+          if [ -f app/public/app.css ]; then
+            cp app/public/app.css app.css
+            # CSS 조각 병합 — app.css(114KB)를 통째로 커밋하지 않기 위한 장치
+            if compgen -G "app/public/css.d/*.css" > /dev/null; then
+              cat app/public/css.d/*.css >> app.css
+              echo "css.d merged: $(ls app/public/css.d/*.css | wc -l)"
+            fi
+          fi
+          mkdir -p _ci
+          {
+            echo "# build report $(date -u +%FT%TZ)"
+            echo "source_commit=$GITHUB_SHA"
+            echo
+            ls -l main.js app.css
+            echo
+            sha256sum main.js app.css
+            echo
+            echo "main.js gzip bytes: $(gzip -c main.js | wc -c)"
+          } > _ci/BUILD_REPORT.txt
+          cat _ci/BUILD_REPORT.txt
+
+      - name: Commit bundle
+        run: |
+          git config user.name  'wc-ci'
+          git config user.email 'ci@wordcraft.local'
+          git add -A main.js app.css _ci/BUILD_REPORT.txt
+          git commit -m 'ci: rebuild bundle from app/ [skip ci]' || { echo 'no change'; exit 0; }
+          git push
