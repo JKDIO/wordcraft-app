@@ -64,6 +64,12 @@
 - 렌더 스모크 6종 통과: `review_smoke`(신설) · `badge_ui_smoke` · `reward_smoke` · `summon_smoke`(7/7) · `w710_smoke` · `routes20` — **JS 오류 0**.
 - 소스 스냅샷: `wordcraft_src_v1.4.29.tgz` · 검사 `wordcraft_tests_v1.4.29.tgz`.
 
+### 배포 완료 (2026-08-14, 클로드가 브라우저로 직접 — L20)
+
+- GitHub 커밋 2건: `_dev_github/`(소스·검사 스냅샷 + 문서 3부) → 루트(`main.js`·`app.css`·`version.json`) → Vercel 자동 배포.
+- **라이브 실증**: `version.json` = **1.4.29** · 번들에 박힌 버전 문자열 **`1.4.29` 하나뿐**(L25 grep 대조) · `loadout` **존재**(v1.4.28이 처음으로 라이브에 올라갔다) · 새 due 쿼리(`due_date=lte.` + `order=box.asc,id.asc`) **존재** · **옛 `limit=500` 쿼리 소멸 확인**.
+- 예한이 폰은 라이브를 직접 로드하므로 **앱을 다시 열면 즉시 반영**된다.
+
 ### 연동 계약
 
 CONTRACT 변경 없음(v1.7 유지). **스키마 변경 0 · 데이터 마이그레이션 0 · XP 규칙 변경 0.** 조회 방식만 바뀌었다.
