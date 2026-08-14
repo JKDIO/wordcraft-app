@@ -1,0 +1,67 @@
+# bootstrap report 2026-08-14T14:43:31Z
+commit=be1c7b00de23642d6324fe4304447c4d86bcc52e
+
+## key files
+MISS package.json
+OK   bunfig.toml
+OK   tsconfig.json
+OK   index.html
+OK   build.sh
+OK   src/main.tsx
+OK   public/app.css
+
+## package.json
+(none)
+
+## file count
+54
+
+## tree (src, public)
+app/public/app.css
+app/public/content.json
+app/public/vocab.json
+app/src/App.tsx
+app/src/engine/MatchGame.tsx
+app/src/engine/OrderGame.tsx
+app/src/engine/QuestionCard.tsx
+app/src/engine/StepRunner.tsx
+app/src/engine/SummonExercise.tsx
+app/src/engine/Toast.tsx
+app/src/lib/audio.ts
+app/src/lib/badges.ts
+app/src/lib/content.ts
+app/src/lib/forge.ts
+app/src/lib/forgeStage.ts
+app/src/lib/leitner.ts
+app/src/lib/loadout.ts
+app/src/lib/review.ts
+app/src/lib/rewards.ts
+app/src/lib/runeArt.ts
+app/src/lib/store.ts
+app/src/lib/supabase.ts
+app/src/lib/tts.ts
+app/src/lib/version.ts
+app/src/lib/vocab.ts
+app/src/lib/wordmon.ts
+app/src/lib/xp.ts
+app/src/main.tsx
+app/src/screens/AdminPage.tsx
+app/src/screens/AppInfo.tsx
+app/src/screens/BadgeLoadout.tsx
+app/src/screens/Connect.tsx
+app/src/screens/DiagnosticRun.tsx
+app/src/screens/FamilyDashboard.tsx
+app/src/screens/GhostBattle.tsx
+app/src/screens/InstallGuide.tsx
+app/src/screens/ListenArcade.tsx
+app/src/screens/ModuleSession.tsx
+app/src/screens/Profile.tsx
+app/src/screens/ReviewMine.tsx
+app/src/screens/RewardBoard.tsx
+app/src/screens/RuneDex.tsx
+app/src/screens/Splash.tsx
+app/src/screens/SuperConsole.tsx
+app/src/screens/VocabContinent.tsx
+app/src/screens/WordDex.tsx
+app/src/screens/WorldMap.tsx
+app/src/types/react-shim.d.ts
