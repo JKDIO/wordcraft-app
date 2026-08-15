@@ -183,5 +183,35 @@ console.log('── ⑦ 조회 페이지네이션: 서버가 1,000행에서 자�
   ok(capped.rows.length === 2000 && capped.truncated === true, '안전 상한에 걸리면 truncated=true로 알린다')
 }
 
+
+console.log('── ⑧ 성능: 상한을 풀었으면 계산량도 감당돼야 한다 ──')
+{
+  // v1.4.38에서 조회 절단을 고치자 문항이 1,000 → 4,432건이 됐고, 관제실이 그대로 **멈췄다**.
+  // 집계가 날짜별로 여러 번 훑기 때문에 KST 날짜 변환이 40만 번 넘게 불리는데,
+  // Intl 경유 변환은 호출당 수십 마이크로초라 10초가 넘는 정지가 됐다(L44 — 수정이 결함을 낳는다).
+  const N = 5000
+  const base = Date.parse(iso('2026-06-01T09:00:00'))
+  const evs = Array.from({ length: N }, (_, i) => ({
+    activity_type: 'quiz', is_correct: i % 3 !== 0, module_id: 'A1', response_ms: 3000,
+    created_at: new Date(base + i * 90_000).toISOString(),
+  }))
+  const sess = Array.from({ length: 200 }, (_, i) => ({
+    id: i, started_at: new Date(base + i * 3600_000).toISOString(),
+    ended_at: new Date(base + i * 3600_000 + 600_000).toISOString(), duration_seconds: 600, device: 'mobile',
+  }))
+  const days = Array.from({ length: 40 }, (_, i) => A.addDays('2026-06-01', i))
+  const t0 = process.hrtime.bigint()
+  for (const d of days) A.studyTimeOfDay(evs, sess, d)
+  const ms = Number(process.hrtime.bigint() - t0) / 1e6
+  ok(ms < 1500, `문항 ${N}건 × 40일 집계가 1.5초 안에 끝난다 (관제실 멈춤 회귀 감시)`, `→ ${Math.round(ms)}ms`)
+  // 결과가 옛 방식(Intl)과 한 글자도 다르면 안 된다 — 빨라지려고 날짜를 틀리면 아무 의미가 없다.
+  let same = true
+  for (let i = 0; i < 400; i++) {
+    const t = new Date(base + i * 137_000).toISOString()
+    if (A.kstDayOf(t) !== new Date(t).toLocaleDateString('sv', { timeZone: 'Asia/Seoul' })) { same = false; break }
+  }
+  ok(same, 'KST 날짜 계산 결과가 Intl 방식과 완전히 일치한다')
+}
+
 console.log(fail === 0 ? '\n✅ admin_check 통과' : `\n❌ admin_check 실패 ${fail}건`)
 process.exit(fail === 0 ? 0 : 1)
