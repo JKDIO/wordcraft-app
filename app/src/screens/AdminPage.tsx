@@ -3,7 +3,7 @@ import { db, fetchLearner, type Learner } from '../lib/supabase'
 import { MODULE_ORDER, WORLDS, RUNE_MODULES, EXT_MODULE_ORDER, EXT_WORLDS } from '../lib/content'
 // v1.4.35 — 아빠 화면에 뜨는 숫자의 단일 원천. 규칙을 이 파일에 복사하지 않는다(L27).
 import {
-  studyTimeOfDay, accuracyOf, progressView, reviewDebtOf, xpAudit, integrityCheck, coachTips, isAssessed,
+  studyTimeOfDay, accuracyOf, progressView, reviewDebtOf, xpAudit, integrityCheck, coachTips, isAssessed, kstDayOf,
   GOAL_SEC as GOAL_SEC_M, type StudyTime, type AccuracySplit, type ReviewDebt, type ProgressView,
   type XpAudit, type IntegrityIssue, type CoachTip, type MetricEvent, type MetricSession, type MetricProgress,
 } from '../lib/adminMetrics'
@@ -123,8 +123,8 @@ function ghostBonus(p: ModProgress): number {
   return p.mastered_at ? XP.ghostClear : 0 // 50
 }
 
-/** KST 날짜 키 'YYYY-MM-DD' */
-function kstDate(iso: string): string { return new Date(iso).toLocaleDateString('sv', { timeZone: 'Asia/Seoul' }) }
+/** KST 날짜 키 'YYYY-MM-DD' — ★v1.4.39★ 규칙·구현 모두 adminMetrics 한 곳만 쓴다(성능 사고 재발 방지) */
+const kstDate = kstDayOf
 /** KST 시:분:초 */
 function kstClock(iso: string): string {
   return new Date(iso).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -446,11 +446,11 @@ function computeMetrics(
   badgeRows: BadgeRow[], learner: Learner | null, todayKey: string, yKey: string, weekStart: string,
   worldsReady: boolean, caps: { events: boolean; sessions: boolean }, failedTables: string[],
 ): Metrics {
-  const kst = (iso: string) => new Date(iso).toLocaleString('sv', { timeZone: 'Asia/Seoul' })
-  const dayOf = (iso: string) => kstDate(iso)
+  // ★v1.4.39★ toLocaleString 경유 비교는 이 함수 안에서만 수십만 번 불린다 → 전부 dayOf(고정 오프셋)로 통일.
+  const dayOf = (iso: string) => kstDayOf(iso)
   const progMap = new Map(progress.map(p => [p.module_id, p]))
 
-  const todayEvents = events.filter(e => kst(e.created_at).startsWith(todayKey))
+  const todayEvents = events.filter(e => dayOf(e.created_at) === todayKey)
   const todayCorrect = todayEvents.filter(e => e.is_correct).length
   const todayAcc = todayEvents.length ? Math.round((todayCorrect / todayEvents.length) * 100) : null
 
@@ -468,7 +468,7 @@ function computeMetrics(
     events.some(e => dayOf(e.created_at) === key) ? studyTimeOfDay(metricEvents, metricSessions, key).focusSec : 0
   const todaySec = time.focusSec
 
-  const yEvents = events.filter(e => kst(e.created_at).startsWith(yKey))
+  const yEvents = events.filter(e => dayOf(e.created_at) === yKey)
   const yAcc = yEvents.length ? Math.round((yEvents.filter(e => e.is_correct).length / yEvents.length) * 100) : null
   const accDelta = todayAcc !== null && yAcc !== null ? todayAcc - yAcc : null
 
