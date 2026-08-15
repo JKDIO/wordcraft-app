@@ -125,6 +125,8 @@ export function recordAnswer(s: LocalState, p: {
   question_text?: string; given_answer?: string; correct_answer?: string
   is_correct: boolean; response_ms?: number
 }) {
+  // 문항을 푼 것은 가장 확실한 '사용 중' 신호다 — 학습 시간 게이트를 여기서도 연다(v1.4.35)
+  markUserActivity()
   // 응답시간 상한 120초 절사 (A-019 — 탭 이탈 등 비정상 값이 통계를 오염시키지 않도록)
   const clamped = { ...p, response_ms: p.response_ms != null ? Math.min(p.response_ms, 120000) : undefined }
   enqueue({ kind: 'insert', table: 'answer_events', payload: { learner_id: s.learnerId, session_id: s.sessionId, ...clamped } })
@@ -244,6 +246,41 @@ export function recordBadge(s: LocalState, badge_id: string) {
 let _activeMs = 0 // 이번 세션 누적 활성 시간(ms) — 모듈 스코프(리로드=새 세션이라 초기화 정상)
 let _lastTick = 0 // 마지막 틱 시각(ms)
 
+/* ★★v1.4.35 — 2026-08-15 적대적 검증에서 드러난 두 결함을 여기서 막는다★★
+ *
+ *  ① **입력이 없어도 시간이 쌓였다.** 아래 delta 게이트는 "2분 이상 멈춤"만 걸렀지
+ *     "사람이 아무것도 안 함"은 거르지 않았다. 그래서 화면을 켜 두기만 해도 30초마다 학습 시간이
+ *     쌓였고, 8/15에는 **푼 문항 0개인 날에 세션 합계 42,216초(11시간 43분)** 가 기록됐다.
+ *     그 시간은 관제실 "오늘 학습"과 **출석 15분 판정·연속 출석**까지 그대로 밀고 들어갔다.
+ *     → 이제 마지막 사용자 입력으로부터 IDLE_TIMEOUT_MS 안일 때만 시간을 센다.
+ *
+ *  ② **탭을 두 개 열면 세션이 섞였다.** tick이 `loadLocal().sessionId`(=localStorage 공유값)를 봤기 때문에,
+ *     나중에 연 탭이 그 값을 덮어쓰면 먼저 열린 탭이 **남의 세션에 자기 누적치**를 썼다.
+ *     실측: 세션 #242는 실경과 69초인데 1,150초로 저장돼 있다(duration > 벽시계).
+ *     → 이제 각 탭은 자기가 만든 세션 id(_ownedSessionId)에만 쓴다.
+ *
+ *  ③ 안전망: 누적 시간은 **자기 세션의 벽시계와 3시간**을 넘을 수 없다.
+ */
+export const IDLE_TIMEOUT_MS = 90_000        // 마지막 입력 후 90초까지는 '공부 중'으로 본다(문제 읽는 시간)
+export const SESSION_CAP_MS = 3 * 3600_000   // 한 세션 상한 3시간 — 그 이상은 사람이 앉아 있던 시간이 아니다
+let _ownedSessionId: number | null = null    // 이 탭이 만든 세션. 다른 탭 것에는 절대 쓰지 않는다
+let _ownedStart = 0
+let _lastActivity = 0                        // 마지막 사용자 입력 시각
+let _activityBound = false
+
+/** 사용자가 실제로 뭔가 했다 — 화면 어디든 누르거나 키를 치면 갱신된다.
+ *  문항 제출(recordAnswer)에서도 부른다: 자동 재생 문항처럼 탭 없이 넘어가는 경우가 있기 때문. */
+export function markUserActivity(): void { _lastActivity = Date.now() }
+
+function bindActivityListeners(): void {
+  if (_activityBound || typeof window === 'undefined') return
+  _activityBound = true
+  const opt = { passive: true, capture: true } as const
+  for (const ev of ['pointerdown', 'keydown', 'touchstart', 'wheel']) {
+    window.addEventListener(ev, markUserActivity, opt)
+  }
+}
+
 export async function startSession(s: LocalState): Promise<LocalState> {
   const start = Date.now()
   let sessionId: number | null = null
@@ -253,6 +290,10 @@ export async function startSession(s: LocalState): Promise<LocalState> {
   } catch { /* 오프라인 — 세션 없이 진행, answer_events는 session_id null */ }
   _activeMs = 0
   _lastTick = start
+  _ownedSessionId = sessionId
+  _ownedStart = start
+  _lastActivity = start // 앱을 연 것 자체가 입력이다 — 첫 구간은 세어 준다
+  bindActivityListeners()
   const ns = { ...s, sessionId, sessionStart: start }
   saveLocal(ns)
   return ns
@@ -262,13 +303,20 @@ export async function startSession(s: LocalState): Promise<LocalState> {
 // 반환: 이번 틱에서 출석이 새로 인정됐으면 갱신된 상태(LocalState), 아니면 null (App이 화면에 반영)
 function tickSession(end: boolean): LocalState | null {
   const s = loadLocal()
-  if (!s.sessionId) return null
+  // ★이 탭이 만든 세션에만 쓴다★ — localStorage의 sessionId를 보면 다른 탭 세션에 덮어쓴다(v1.4.35 봉합)
+  const sid = _ownedSessionId
+  if (!sid) return null
   const now = Date.now()
   const delta = now - _lastTick
   _lastTick = now
   let attended: LocalState | null = null
-  // 정상 경과(0~2분)만 누적 — 그 이상은 백그라운드/절전으로 얼어붙은 것이라 학습시간 아님
-  if (delta > 0 && delta < 120000) {
+  // 누적 조건 3가지를 **전부** 만족해야 학습 시간이다:
+  //   ① 정상 경과(0~2분) — 그 이상은 백그라운드/절전으로 얼어붙은 것
+  //   ② 마지막 입력 후 90초 이내 — 켜 두기만 한 시간은 학습이 아니다 (v1.4.35 핵심 수정)
+  //   ③ 화면이 보이는 중 — 숨은 탭은 애초에 공부가 아니다
+  const interacted = now - _lastActivity < IDLE_TIMEOUT_MS
+  const visible = typeof document === 'undefined' || !document.hidden
+  if (delta > 0 && delta < 120000 && interacted && visible) {
     _activeMs += delta
     // 출석 판정 (2026-07-16 규칙): 오늘 누적 활성 학습 15분 도달 순간 출석 도장
     const dailySec = addDailyActiveSec(Math.round(delta / 1000))
@@ -276,14 +324,16 @@ function tickSession(end: boolean): LocalState | null {
       attended = markAttendance(s)
     }
   }
-  const dur = Math.round(_activeMs / 1000)
+  // 안전망 — 누적치는 자기 세션의 벽시계와 3시간 상한을 절대 넘지 않는다.
+  const wallMs = Math.max(0, now - (_ownedStart || now))
+  const dur = Math.round(Math.min(_activeMs, wallMs, SESSION_CAP_MS) / 1000)
   if (dur <= 0 && !end) return attended
   const payload: Record<string, unknown> = { duration_seconds: dur }
   if (end) {
     payload.ended_at = new Date().toISOString()
-    enqueue({ kind: 'update', table: 'sessions', query: `id=eq.${s.sessionId}`, payload }) // 오프라인 내성
+    enqueue({ kind: 'update', table: 'sessions', query: `id=eq.${sid}`, payload }) // 오프라인 내성
   } else {
-    db.update('sessions', `id=eq.${s.sessionId}`, payload).catch(() => {}) // 하트비트 — best-effort
+    db.update('sessions', `id=eq.${sid}`, payload).catch(() => {}) // 하트비트 — best-effort
   }
   return attended
 }
@@ -293,7 +343,7 @@ export function heartbeatSession(): LocalState | null { return tickSession(false
 // 백그라운드 전환/페이지 종료 — 사용시간 확정 기록
 export function endSession() { void tickSession(true) }
 // 포그라운드 복귀 — 그 사이 얼어붙은 시간은 학습 아님, 구간만 리셋(누적 제외)
-export function resumeSession() { _lastTick = Date.now() }
+export function resumeSession() { _lastTick = Date.now(); markUserActivity() }
 
 // ---------- 출석 & 스트릭 (2026-07-16 규칙: 하루 15분 이상 학습해야 출석 인정 — Dio님 지시) ----------
 export const ATTENDANCE_MIN_SEC = 15 * 60
