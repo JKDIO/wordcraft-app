@@ -23,9 +23,10 @@ export function WordDex(props: { state: LocalState; onExit: () => void }) {
     loadVocab().then(setVocab).catch(() => setErr(true))
     const lid = props.state.learnerId
     if (!lid) { setEntries([]); return }
-    db.select('review_cards', `learner_id=eq.${lid}&card_id=like.${VOCAB_CARD_PREFIX}*&select=card_id,card_front,card_back,box,review_count&order=id.asc&limit=20000`)
-      .then(rows => {
-        const list = (rows as unknown as { card_id: string; card_front: string; card_back: string | null; box: number; review_count?: number }[])
+    // ★v1.4.38★ selectAll — 서버가 1,000행에서 자른다. 워드몬 도감은 2,400마리까지 자란다.
+    db.selectAll('review_cards', `learner_id=eq.${lid}&card_id=like.${VOCAB_CARD_PREFIX}*&select=card_id,card_front,card_back,box,review_count&order=id.asc`)
+      .then(r => {
+        const list = (r.rows as unknown as { card_id: string; card_front: string; card_back: string | null; box: number; review_count?: number }[])
           .filter(r => isVocabCard(r.card_id))
           .map(r => ({
             cardId: r.card_id,

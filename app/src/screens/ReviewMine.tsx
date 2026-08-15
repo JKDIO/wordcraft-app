@@ -62,12 +62,16 @@ export function ReviewMine(props: {
     if (phase !== 'entrance') return
     const lid = props.state.learnerId
     if (!lid) { setAll([]); setBoxTotals([0, 0, 0, 0, 0, 0]); return }
-    db.select('review_cards', dueCardsQuery(lid))
-      .then(rows => setAll(rows as unknown as Card[]))
+    // ★v1.4.38★ `db.select`가 아니라 `db.selectAll`. 서버(Supabase Data API)는 `Max rows`가 1,000이라
+    //   쿼리에 limit=2000/20000을 적어도 **1,000행에서 조용히 자른다.**
+    //   예한이 카드는 이미 687장이다 — 1,000장을 넘는 순간 v1.4.29의 절단 사고가 그대로 재현된다
+    //   ("뱃지엔 40인데 광산은 0"). 그때는 창(window)이 문제였고, 이번엔 서버 상한이다. 원인만 다르고 증상은 같다.
+    db.selectAll('review_cards', dueCardsQuery(lid))
+      .then(r => setAll(r.rows as unknown as Card[]))
       .catch(() => setAll([]))
     // 층별 총 보유량 — 표시 전용이라 실패해도 채굴은 막지 않는다(0으로 남을 뿐).
-    db.select('review_cards', boxTotalsQuery(lid))
-      .then(rows => setBoxTotals(tallyBoxes(rows as unknown as { box: number }[])))
+    db.selectAll('review_cards', boxTotalsQuery(lid))
+      .then(r => setBoxTotals(tallyBoxes(r.rows as unknown as { box: number }[])))
       .catch(() => { /* 표시 전용 */ })
   }, [phase, props.state.learnerId])
 

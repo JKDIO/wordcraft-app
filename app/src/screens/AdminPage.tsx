@@ -214,18 +214,25 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
       // 최근 120일 — 캘린더/추이/분석 공용. KST 기준 시작일.
       const d = new Date(); d.setDate(d.getDate() - 119)
       const sinceIso = encodeURIComponent(`${d.toLocaleDateString('sv', { timeZone: 'Asia/Seoul' })}T00:00:00+09:00`)
-      /** 한 테이블이 실패해도 나머지는 살린다. 실패한 것은 **이름을 남겨 화면에 띄운다**(무음 실패 금지). */
-      const get = async (label: string, table: string, query: string): Promise<unknown[]> => {
-        try { return await db.select(table, query) } catch { failed.push(label); return [] }
+      /** 한 테이블이 실패해도 나머지는 살린다. 실패한 것은 **이름을 남겨 화면에 띄운다**(무음 실패 금지).
+       *  ★v1.4.38★ `db.select`가 아니라 `db.selectAll`을 쓴다 — 서버가 1,000행에서 잘라 버리기 때문이다.
+       *  (배포 직후 정합성 진단이 "XP 255% 차이"로 잡아낸 결함. 자세한 경위는 supabase.ts 주석 참조.) */
+      const cut: Record<string, boolean> = {}
+      const get = async (label: string, table: string, query: string, maxRows: number): Promise<unknown[]> => {
+        try {
+          const r = await db.selectAll(table, query, maxRows)
+          cut[label] = r.truncated
+          return r.rows
+        } catch { failed.push(label); return [] }
       }
       const [ev, pr, se, rc, bd, rw, rg] = await Promise.all([
-        get('활동 기록', 'answer_events', `learner_id=eq.${l.id}&created_at=gte.${sinceIso}&order=created_at.desc&limit=${EVENT_LIMIT}`),
-        get('모듈 진도', 'module_progress', `learner_id=eq.${l.id}&order=module_id.asc&limit=${PROGRESS_LIMIT}`),
-        get('세션', 'sessions', `learner_id=eq.${l.id}&order=started_at.desc&limit=${SESSION_LIMIT}`),
-        get('복습 카드', 'review_cards', `learner_id=eq.${l.id}&order=box.desc,id.asc&limit=${CARD_LIMIT}`),
-        get('뱃지', 'badges', `learner_id=eq.${l.id}&order=earned_at.desc&limit=1000`),
-        get('지급 이력', 'parent_rewards', `learner_id=eq.${l.id}&order=granted_at.desc&limit=1000`),
-        get('보상 목표', 'reward_goals', `learner_id=eq.${l.id}&order=threshold_xp.asc&limit=200`),
+        get('활동 기록', 'answer_events', `learner_id=eq.${l.id}&created_at=gte.${sinceIso}&order=created_at.desc`, EVENT_LIMIT),
+        get('모듈 진도', 'module_progress', `learner_id=eq.${l.id}&order=module_id.asc`, PROGRESS_LIMIT),
+        get('세션', 'sessions', `learner_id=eq.${l.id}&order=started_at.desc`, SESSION_LIMIT),
+        get('복습 카드', 'review_cards', `learner_id=eq.${l.id}&order=box.desc,id.asc`, CARD_LIMIT),
+        get('뱃지', 'badges', `learner_id=eq.${l.id}&order=earned_at.desc`, 2000),
+        get('지급 이력', 'parent_rewards', `learner_id=eq.${l.id}&order=granted_at.desc`, 2000),
+        get('보상 목표', 'reward_goals', `learner_id=eq.${l.id}&order=threshold_xp.asc`, 200),
       ])
       // 실패한 조회는 빈 배열이 온다 — 그걸 그대로 반영하면 "기록이 사라진 것처럼" 보인다.
       // 그래서 **실패한 테이블만 이전 값을 유지**하고, 화면에는 실패 사실을 띄운다.
@@ -236,7 +243,9 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
       if (!failed.includes('뱃지')) setBadges(bd as unknown as BadgeRow[])
       if (!failed.includes('지급 이력')) setRewards(rw as unknown as RewardRow[])
       if (!failed.includes('보상 목표')) setGoals(rg as unknown as RewardGoal[])
-      setCaps({ events: ev.length >= EVENT_LIMIT, sessions: se.length >= SESSION_LIMIT })
+      // ★v1.4.38★ "받은 행 수 == 내 limit"으로 포화를 판정하면, 서버 상한이 내 상한보다 작을 때
+      //   그 검사는 **영원히 통과한다.** 이제 페이지네이터가 "더 있는데 못 받았다"를 직접 알려준다.
+      setCaps({ events: !!cut['활동 기록'], sessions: !!cut['세션'] })
       if (failed.length < 7) setUpdatedAt(new Date())
     } catch { failed.push('아이 정보') /* 오프라인 — 기존 데이터 유지 */ }
     setFailedTables(failed)
