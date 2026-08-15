@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db, fetchLearner, type Learner } from '../lib/supabase'
-import { MODULE_ORDER, WORLDS, RUNE_MODULES, EXT_MODULE_ORDER } from '../lib/content'
+import { MODULE_ORDER, WORLDS, RUNE_MODULES, EXT_MODULE_ORDER, EXT_WORLDS } from '../lib/content'
+// v1.4.35 — 아빠 화면에 뜨는 숫자의 단일 원천. 규칙을 이 파일에 복사하지 않는다(L27).
+import {
+  studyTimeOfDay, accuracyOf, progressView, reviewDebtOf, xpAudit, integrityCheck, coachTips, isAssessed,
+  GOAL_SEC as GOAL_SEC_M, type StudyTime, type AccuracySplit, type ReviewDebt, type ProgressView,
+  type XpAudit, type IntegrityIssue, type CoachTip, type MetricEvent, type MetricSession, type MetricProgress,
+} from '../lib/adminMetrics'
+import { TodayBriefing, IntegrityPanel } from './AdminHealth'
 import { loadVocab, AWAKEN_ICON, type VocabData } from '../lib/vocab'
 import { EVO_STAGES } from '../lib/wordmon'
 import { XP, levelProgress, levelTitle, answerXpOf, moduleBonusOf, isVocabGolemId } from '../lib/xp'
 import { BADGE_DEFS, BADGE_GROUPS, GROUP_EMOJI, earnedFrom, VOCAB_PACK_RE, GOLEM_RE, type BadgeFacts } from '../lib/badges'
 import { buildRewardView, validateGoal, MAX_GOALS, REWARD_EMOJIS, type RewardGoal } from '../lib/rewards'
+import { DAILY_REVIEW_CAPACITY } from '../lib/adminMetrics'
 import { APP_VERSION, isNewer, type VersionInfo } from '../lib/version'
 
 /* ─────────────────────────────────────────────
@@ -74,8 +82,17 @@ const BOX_COLORS = ['var(--dirt)', 'var(--wc-stone)', 'var(--info)', 'var(--gold
 const BOX_LABELS = ['박스1 (오늘)', '박스2 (2일)', '박스3 (4일)', '박스4 (7일)', '박스5 (14일)']
 
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
-const GOAL_SEC = 15 * 60
+/** ★L27★ 출석 기준을 여기에 복사하지 않는다 — adminMetrics 한 곳만 본다. */
+const GOAL_SEC = GOAL_SEC_M
 const DIAG_DONE_XP = 30 // App.tsx onDiagComplete 보너스와 동일
+
+/* ── v1.4.35 조회 상한 (L31: 모든 조회에 상한·정렬. 그리고 상한에 닿으면 화면이 그 사실을 말한다) ──
+   상한에 조용히 잘리면 정답률·취약 영역·누적 XP가 전부 과소 집계된다. 그래서 숫자를 올리는 것으로
+   끝내지 않고, `rows.length === LIMIT`이면 정합성 진단이 P0으로 띄운다. */
+export const EVENT_LIMIT = 12000
+export const SESSION_LIMIT = 400
+export const CARD_LIMIT = 20000
+export const PROGRESS_LIMIT = 5000
 
 /** 향후 확장 월드 로드맵 — 중학 대비 심화 과정 (콘텐츠 추가 시 열림)
  *  월드 5(시제 시간여행)는 v1.2.0에서 정식 오픈 → 로드맵에서 졸업 */
@@ -85,10 +102,10 @@ const DIAG_DONE_XP = 30 // App.tsx onDiagComplete 보너스와 동일
 /** v1.4.23 — 월드 7~10은 **제작이 끝났고 배포도 됐다.** 다만 Dio님 승인 전까지 아이 화면에 뜨지 않는다.
  *  여는 방법: 서버 `version.json`의 `worlds_ready`를 true로 (앱 재배포 불필요). */
 const FUTURE_WORLDS: { world: number; emoji: string; name: string; desc: string }[] = [
-  { world: 7, emoji: '📖', name: '독해 던전', desc: '제작 완료 · 승인 대기 — 청킹 읽기·후치수식·대명사 추적·담화 표지·요지·순서 배열 (6모듈)' },
-  { world: 8, emoji: '🔨', name: '어휘 대장간', desc: '제작 완료 · 승인 대기 — 접두사·접미사·라틴/그리스 어근·구동사 파티클 (6모듈)' },
-  { world: 9, emoji: '💬', name: '회화 아레나', desc: '제작 완료 · 승인 대기 — 덩어리 표현·강세 리듬·연음·4/3/2 타임어택·역할극 (6모듈)' },
-  { world: 10, emoji: '✍️', name: '서술 마스터리', desc: '제작 완료 · 승인 대기 — 문장 결합·문단 구조·모방 개조·조건 영작 (6모듈)' },
+  { world: 7, emoji: '📖', name: '독해 던전', desc: '청킹 읽기 · 후치수식 · 대명사 추적 · 담화 표지 · 요지 · 순서 배열 (6단원)' },
+  { world: 8, emoji: '🔨', name: '어휘 대장간', desc: '접두사 · 접미사 · 라틴/그리스 어근 · 구동사 파티클 (6단원)' },
+  { world: 9, emoji: '💬', name: '회화 아레나', desc: '덩어리 표현 · 강세 리듬 · 연음 · 4/3/2 타임어택 · 역할극 (6단원)' },
+  { world: 10, emoji: '✍️', name: '서술 마스터리', desc: '문장 결합 · 문단 구조 · 모방 개조 · 조건 영작 (6단원)' },
 ]
 
 /** 앱 실제 XP 규칙(StepRunner·ReviewMine emit)과 동일 산식 (CONTRACT §2)
@@ -178,43 +195,60 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
   const [viewerOpen, setViewerOpen] = useState(false)
   const [granting, setGranting] = useState<number | null>(null)
   const [latest, setLatest] = useState<VersionInfo | null>(null)
+  /** v1.4.35 — 어떤 조회가 실패했는가. 예전에는 catch로 통째로 삼키고 **낡은 숫자를 최신인 척** 보여 줬다. */
+  const [failedTables, setFailedTables] = useState<string[]>([])
+  /** v1.4.35 — 조회가 상한에 닿았는가(=조용히 잘렸는가) */
+  const [caps, setCaps] = useState<{ events: boolean; sessions: boolean }>({ events: false, sessions: false })
   const timerRef = useRef<number | null>(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
     // 새 버전 감지 (v1.2.1) — 관제실 탭은 오래 열려 있으므로, 배포되면 배너로 새로고침 유도
+    // ★v1.4.35★ worlds_ready도 여기서 온다 — 관제실 진도 분모를 **아이 화면과 같게** 맞추기 위해.
     fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null)).then(v => v && setLatest(v as VersionInfo)).catch(() => {})
+    const failed: string[] = []
     try {
       const l = props.learner ?? await fetchLearner()
       setLearner(l)
       // 최근 120일 — 캘린더/추이/분석 공용. KST 기준 시작일.
       const d = new Date(); d.setDate(d.getDate() - 119)
       const sinceIso = encodeURIComponent(`${d.toLocaleDateString('sv', { timeZone: 'Asia/Seoul' })}T00:00:00+09:00`)
+      /** 한 테이블이 실패해도 나머지는 살린다. 실패한 것은 **이름을 남겨 화면에 띄운다**(무음 실패 금지). */
+      const get = async (label: string, table: string, query: string): Promise<unknown[]> => {
+        try { return await db.select(table, query) } catch { failed.push(label); return [] }
+      }
       const [ev, pr, se, rc, bd, rw, rg] = await Promise.all([
-        db.select('answer_events', `learner_id=eq.${l.id}&created_at=gte.${sinceIso}&order=created_at.desc&limit=6000`),
-        db.select('module_progress', `learner_id=eq.${l.id}&order=module_id.asc&limit=5000`),
-        db.select('sessions', `learner_id=eq.${l.id}&order=started_at.desc&limit=120`),
-        db.select('review_cards', `learner_id=eq.${l.id}&order=box.desc,id.asc&limit=20000`),
-        db.select('badges', `learner_id=eq.${l.id}&order=earned_at.desc&limit=1000`),
-        db.select('parent_rewards', `learner_id=eq.${l.id}&order=granted_at.desc&limit=1000`),
-        db.select('reward_goals', `learner_id=eq.${l.id}&order=threshold_xp.asc&limit=200`).catch(() => [] as unknown[]),
+        get('활동 기록', 'answer_events', `learner_id=eq.${l.id}&created_at=gte.${sinceIso}&order=created_at.desc&limit=${EVENT_LIMIT}`),
+        get('모듈 진도', 'module_progress', `learner_id=eq.${l.id}&order=module_id.asc&limit=${PROGRESS_LIMIT}`),
+        get('세션', 'sessions', `learner_id=eq.${l.id}&order=started_at.desc&limit=${SESSION_LIMIT}`),
+        get('복습 카드', 'review_cards', `learner_id=eq.${l.id}&order=box.desc,id.asc&limit=${CARD_LIMIT}`),
+        get('뱃지', 'badges', `learner_id=eq.${l.id}&order=earned_at.desc&limit=1000`),
+        get('지급 이력', 'parent_rewards', `learner_id=eq.${l.id}&order=granted_at.desc&limit=1000`),
+        get('보상 목표', 'reward_goals', `learner_id=eq.${l.id}&order=threshold_xp.asc&limit=200`),
       ])
-      setEvents(ev as unknown as AnswerEvent[])
-      setProgress(pr as unknown as ModProgress[])
-      setSessions(se as unknown as Session[])
-      setCards(rc as unknown as ReviewCard[])
-      setBadges(bd as unknown as BadgeRow[])
-      setRewards(rw as unknown as RewardRow[])
-      setGoals(rg as unknown as RewardGoal[])
-      setUpdatedAt(new Date())
-    } catch { /* 오프라인 — 기존 데이터 유지 */ }
+      // 실패한 조회는 빈 배열이 온다 — 그걸 그대로 반영하면 "기록이 사라진 것처럼" 보인다.
+      // 그래서 **실패한 테이블만 이전 값을 유지**하고, 화면에는 실패 사실을 띄운다.
+      if (!failed.includes('활동 기록')) setEvents(ev as unknown as AnswerEvent[])
+      if (!failed.includes('모듈 진도')) setProgress(pr as unknown as ModProgress[])
+      if (!failed.includes('세션')) setSessions(se as unknown as Session[])
+      if (!failed.includes('복습 카드')) setCards(rc as unknown as ReviewCard[])
+      if (!failed.includes('뱃지')) setBadges(bd as unknown as BadgeRow[])
+      if (!failed.includes('지급 이력')) setRewards(rw as unknown as RewardRow[])
+      if (!failed.includes('보상 목표')) setGoals(rg as unknown as RewardGoal[])
+      setCaps({ events: ev.length >= EVENT_LIMIT, sessions: se.length >= SESSION_LIMIT })
+      if (failed.length < 7) setUpdatedAt(new Date())
+    } catch { failed.push('아이 정보') /* 오프라인 — 기존 데이터 유지 */ }
+    setFailedTables(failed)
     setLoading(false)
   }, [props.learner])
 
   useEffect(() => {
     void refresh()
-    timerRef.current = window.setInterval(() => void refresh(), 25000)
+    // v1.4.35 — 숨은 탭에서는 폴링하지 않는다. 관제실은 하루 종일 열려 있는 화면이라
+    //   25초마다 7개 테이블을 계속 긁으면 아빠 폰 배터리와 Supabase 쿼터를 그냥 태운다.
+    //   (돌아오면 visibilitychange가 즉시 한 번 갱신한다.)
+    timerRef.current = window.setInterval(() => { if (!document.hidden) void refresh() }, 25000)
     const onVis = () => { if (!document.hidden) void refresh() }
     document.addEventListener('visibilitychange', onVis)
     return () => { if (timerRef.current) clearInterval(timerRef.current); document.removeEventListener('visibilitychange', onVis) }
@@ -293,7 +327,14 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
     return d.toISOString().slice(0, 10)
   }, [todayKey])
 
-  const M = useMemo(() => computeMetrics(events, progress, sessions, cards, learner, todayKey, yKey, weekStart), [events, progress, sessions, cards, learner, todayKey, yKey, weekStart])
+  // ★v1.4.35★ worlds_ready = 아이 화면에 월드 7~10이 열려 있는가. 이걸 안 보면 관제실 분모가 28로 굳어
+  //   "전체 진행률 100%"라는 거짓말이 나온다(실제로 나오고 있었다 — 아이 앱은 28/52였다).
+  const worldsReady = !!latest?.worlds_ready
+  const M = useMemo(
+    () => computeMetrics(events, progress, sessions, cards, badges, learner, todayKey, yKey, weekStart,
+      worldsReady, { events: caps.events, sessions: caps.sessions }, failedTables),
+    [events, progress, sessions, cards, badges, learner, todayKey, yKey, weekStart, worldsReady, caps.events, caps.sessions, failedTables],
+  )
 
   const lp = levelProgress(learner?.xp ?? 0)
 
@@ -324,7 +365,14 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
         ))}
       </nav>
 
-      {tab === 'overview' && <OverviewTab M={M} lp={lp} learner={learner} onSeeAll={() => setViewerOpen(true)} />}
+      {tab === 'overview' && (
+        <OverviewTab M={M} lp={lp} learner={learner} onSeeAll={() => setViewerOpen(true)}
+          onBackfilled={ids => setBadges(prev => [
+            ...ids.filter(id => !prev.some(b => b.badge_id === id))
+              .map((id, i) => ({ id: -1 - i, badge_id: id, earned_at: new Date().toISOString() })),
+            ...prev,
+          ])} />
+      )}
       {tab === 'activity' && <ActivityTab events={events} todayKey={todayKey} yKey={yKey} dayAgg={M.dayAgg} onSeeAll={() => setViewerOpen(true)} />}
       {tab === 'review' && <ReviewTab M={M} cards={cards} />}
       {tab === 'analysis' && <AnalysisTab M={M} />}
@@ -332,7 +380,7 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
       {tab === 'rewards' && <RewardsTab M={M} lp={lp} rewards={rewards} badges={badges} goals={goals} granting={granting}
         onAdd={addGoal} onEdit={editGoal} onRemove={removeGoal} onGrant={grantGoal} onUngrant={ungrantGoal} />}
 
-      <p className="admin-foot">WordCraft 관제실 v2 · 문항 단위 기록 기반 심층 분석</p>
+      <p className="admin-foot">WordCraft 관제실 v3 · 문항 단위 기록 기반 심층 분석 · 숫자는 매 갱신마다 자가 점검됩니다</p>
 
       {viewerOpen && learner && (
         <ProblemViewer learnerId={learner.id} baseEvents={events} onClose={() => setViewerOpen(false)} />
@@ -344,6 +392,18 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
 /* ═══════════════ 집계 엔진 ═══════════════ */
 interface Metrics {
   todayEvents: AnswerEvent[]
+  /** ★v1.4.35★ 진실 계층 — 규칙은 lib/adminMetrics.ts 한 곳에만 있다 */
+  time: StudyTime
+  accToday: AccuracySplit; acc7: AccuracySplit
+  prog: ProgressView
+  debt: ReviewDebt
+  xpChk: XpAudit
+  issues: IntegrityIssue[]
+  tips: CoachTip[]
+  /** 서버 기록으로는 조건을 채웠는데 아이 기기에는 없는 뱃지 (되메우기 대상) */
+  badgeOnlyInAdmin: string[]
+  /** 아이 기기에만 있는 뱃지 (분류 상자·속사 사냥 등 서버로 되짚을 수 없는 것) */
+  badgeOnlyInApp: string[]
   todaySec: number; todayAcc: number | null; accDelta: number | null
   todayXp: number; weekXp: number; totalXp: number
   /** v1.4.22 보상 로드맵 — 최근 14일 중 '학습한 날'의 하루 평균 XP (기준선 잡기·도착 예상용).
@@ -374,7 +434,8 @@ interface Metrics {
 
 function computeMetrics(
   events: AnswerEvent[], progress: ModProgress[], sessions: Session[], cards: ReviewCard[],
-  learner: Learner | null, todayKey: string, yKey: string, weekStart: string,
+  badgeRows: BadgeRow[], learner: Learner | null, todayKey: string, yKey: string, weekStart: string,
+  worldsReady: boolean, caps: { events: boolean; sessions: boolean }, failedTables: string[],
 ): Metrics {
   const kst = (iso: string) => new Date(iso).toLocaleString('sv', { timeZone: 'Asia/Seoul' })
   const dayOf = (iso: string) => kstDate(iso)
@@ -384,15 +445,19 @@ function computeMetrics(
   const todayCorrect = todayEvents.filter(e => e.is_correct).length
   const todayAcc = todayEvents.length ? Math.round((todayCorrect / todayEvents.length) * 100) : null
 
-  // 오늘 학습시간: 세션 duration 합 vs 활동로그 활성시간(간격 5분 미만) 중 큰 값
-  const todaySessionSec = sessions.filter(s => kst(s.started_at).startsWith(todayKey)).reduce((a, s) => a + (s.duration_seconds || 0), 0)
-  const daySecFromEvents = (key: string): number => {
-    const ts = events.filter(e => dayOf(e.created_at) === key).map(e => new Date(e.created_at).getTime()).sort((a, b) => a - b)
-    let sec = 0
-    for (let i = 1; i < ts.length; i++) { const g = (ts[i] - ts[i - 1]) / 1000; if (g > 0 && g < 300) sec += g }
-    return Math.round(sec)
-  }
-  const todaySec = Math.max(todaySessionSec, daySecFromEvents(todayKey))
+  /* ★★v1.4.35 — 학습 시간의 진실화★★
+     예전 규칙: `Math.max(세션 duration 합, 활동 간격 합)`.
+     이 max가 사고였다. 세션 duration은 ①입력이 없어도 30초마다 쌓이고 ②탭을 두 개 열면 서로 덮어써
+     자기 세션의 벽시계보다 커진다. max는 **항상 그 오염된 쪽**을 고른다.
+     2026-08-15 실측: 푼 문항 0개 / 세션 합 42,216초 → 화면에는 "오늘 학습 703분 · 목표 달성 ✓".
+     이제는 문항 기록(증거)으로만 학습 시간을 세고, 켜 둔 시간은 '켜 둔 시간'으로 따로 부른다. */
+  const metricEvents = events as unknown as MetricEvent[]
+  const metricSessions = sessions as unknown as MetricSession[]
+  const metricProgress = progress as unknown as MetricProgress[]
+  const time = studyTimeOfDay(metricEvents, metricSessions, todayKey)
+  const daySecFromEvents = (key: string): number =>
+    events.some(e => dayOf(e.created_at) === key) ? studyTimeOfDay(metricEvents, metricSessions, key).focusSec : 0
+  const todaySec = time.focusSec
 
   const yEvents = events.filter(e => kst(e.created_at).startsWith(yKey))
   const yAcc = yEvents.length ? Math.round((yEvents.filter(e => e.is_correct).length / yEvents.length) * 100) : null
@@ -473,8 +538,10 @@ function computeMetrics(
   for (let i = 6; i >= 0; i--) {
     const dt = new Date(); dt.setDate(dt.getDate() - i)
     const key = dt.toLocaleDateString('sv', { timeZone: 'Asia/Seoul' })
-    const evs = events.filter(e => dayOf(e.created_at) === key)
-    days7.push({ dow: DOW_KO[new Date(`${key}T00:00:00Z`).getUTCDay()], acc: evs.length ? Math.round((evs.filter(e => e.is_correct).length / evs.length) * 100) : null })
+    // ★v1.4.35★ 추이는 **신규 학습**만 본다. 복습(99.8%)·자기 채점(말하기 100%)·문장 발견(100%)을
+    //   섞으면 그래프가 실력이 아니라 '그날 복습 비중'을 그린다.
+    const a = accuracyOf(events.filter(e => dayOf(e.created_at) === key) as unknown as MetricEvent[])
+    days7.push({ dow: DOW_KO[new Date(`${key}T00:00:00Z`).getUTCDay()], acc: a.newPct })
   }
 
   // 캘린더 히트맵용 일별 집계
@@ -489,7 +556,9 @@ function computeMetrics(
   // 취약 영역 (개념=모듈 단위, 표본 5+)
   const modAgg: Record<string, { total: number; correct: number }> = {}
   for (const e of events) {
-    if (e.activity_type === 'diagnostic') continue
+    // ★v1.4.35★ 채점이 아닌 것(진단·문장 발견)과 자기 채점(말하기)은 취약 영역 분모에서 뺀다.
+    //   말하기는 아이가 "말했다"를 누르면 무조건 정답이라, 두면 약한 단원이 멀쩡해 보인다.
+    if (!isAssessed(e as unknown as MetricEvent)) continue
     if (!modAgg[e.module_id]) modAgg[e.module_id] = { total: 0, correct: 0 }
     modAgg[e.module_id].total++; if (e.is_correct) modAgg[e.module_id].correct++
   }
@@ -559,8 +628,10 @@ function computeMetrics(
     tierRows, weakVocab: weakVocab.slice(0, 5),
   }
 
-  // 모듈 마스터리
-  const mastery = MODULE_ORDER.map(id => {
+  // 모듈 마스터리 — ★v1.4.35★ 아이 화면에 열려 있으면 월드 7~10(24개)도 함께 본다.
+  //   예전에는 MODULE_ORDER(28개)만 돌아, 열려 있는 월드의 학습 결과가 관제실에서 통째로 보이지 않았다.
+  const masteryIds = worldsReady ? [...MODULE_ORDER, ...EXT_MODULE_ORDER] : MODULE_ORDER
+  const mastery = masteryIds.map(id => {
     const p = progMap.get(id)
     const evs = events.filter(e => e.module_id === id && e.activity_type !== 'diagnostic')
     const acc = evs.length ? Math.round((evs.filter(e => e.is_correct).length / evs.length) * 100) : null
@@ -605,15 +676,40 @@ function computeMetrics(
   }
   const earnedBadges = new Set<string>(earnedFrom(facts))
 
-  // 월드 진행
-  const worldProgress = WORLDS.filter(w => w.modules.length).map(w => {
+  // 월드 진행 — ★v1.4.35★ 열려 있으면 월드 7~10도 지도에 그린다(아이 화면과 같은 목록).
+  const worldProgress = (worldsReady ? [...WORLDS, ...EXT_WORLDS] : WORLDS).filter(w => w.modules.length).map(w => {
     const mods = w.modules.map(id => ({ id, status: progMap.get(id)?.status || 'locked' }))
     const done = mods.filter(m => m.status === 'completed' || m.status === 'mastered').length
     return { world: w.world, emoji: w.emoji, name: w.name_ko, mods, done, total: w.modules.length }
   })
 
+  /* ═══ v1.4.35 진실 계층 — 규칙은 전부 lib/adminMetrics.ts에 있다 ═══ */
+  const accToday = accuracyOf(metricEvents.filter(e => dayOf(e.created_at) === todayKey))
+  const from7 = addDays(todayKey, -6)
+  const acc7 = accuracyOf(metricEvents.filter(e => { const k = dayOf(e.created_at); return k >= from7 && k <= todayKey }))
+  const prog = progressView(metricProgress, worldsReady)
+  const debt = reviewDebtOf(cards as unknown as { card_id: string; box: number; due_date: string | null }[], metricEvents, todayKey)
+  const xpChk = xpAudit(metricEvents, metricProgress, learner?.xp ?? 0, caps.events)
+
+  // 뱃지 정합 — 관제실 파생(서버 사실 기반) vs 아이 기기가 실제로 받은 것(badges 테이블).
+  // 예전에는 둘을 그냥 합집합으로 보여 줘서, 아이 화면엔 없는 뱃지를 아빠만 보고 있었다(실측 25 vs 28).
+  const tableIds = new Set(badgeRows.map(b => b.badge_id))
+  const badgeOnlyInAdmin = [...earnedBadges].filter(id => !tableIds.has(id) && BADGE_DEFS[id] && !BADGE_DEFS[id].localOnly)
+  const badgeOnlyInApp = [...tableIds].filter(id => !earnedBadges.has(id))
+
+  const week7: StudyTime[] = Array.from({ length: 7 }, (_, i) =>
+    studyTimeOfDay(metricEvents, metricSessions, addDays(todayKey, -i)))
+  const issues = integrityCheck({
+    today: time, week: week7, xp: xpChk, progress: prog, debt,
+    badgeOnlyInAdmin, badgeOnlyInApp,
+    eventsTruncated: caps.events, sessionsTruncated: caps.sessions, failedTables,
+  })
+  const weakest = weakAreas.length ? { name: moduleName(weakAreas[0].id), pct: weakAreas[0].pct } : null
+  const tips = coachTips({ today: time, acc7, debt, progress: prog, weakest, streak: facts.streak })
+
   return {
-    todayEvents, todaySec, todayAcc, accDelta, todayXp, weekXp, totalXp, paceXp, streak: facts.streak, completedCount,
+    todayEvents, time, accToday, acc7, prog, debt, xpChk, issues, tips, badgeOnlyInAdmin, badgeOnlyInApp,
+    todaySec, todayAcc, accDelta, todayXp, weekXp, totalXp, paceXp, streak: facts.streak, completedCount,
     dueToday, reviewedToday, days7, dayAgg, weakAreas, weakspots, weakspotsVocab, typeBreakdown, respAvgMs, respBuckets, vocabStats,
     mastery, boxDist, dueBuckets, reviewAcc, reviewCount: reviewEvents.length, masteredCards, earnedBadges, worldProgress,
     todayBalance, weekBalance,
@@ -625,41 +721,28 @@ function addDays(key: string, n: number): string {
 }
 
 /* ═══════════════ 탭: 개요 ═══════════════ */
-function OverviewTab(props: { M: Metrics; lp: { level: number; cur: number; need: number }; learner: Learner | null; onSeeAll: () => void }) {
+function OverviewTab(props: {
+  M: Metrics; lp: { level: number; cur: number; need: number }; learner: Learner | null
+  onSeeAll: () => void; onBackfilled: (ids: string[]) => void
+}) {
   const { M, lp } = props
   return (
     <div className="adm-screen">
-      <div className="adm-stat-grid">
-        <div className="adm-stat">
-          <span className="k">⏱ 오늘 학습</span>
-          <span className="v">{Math.floor(M.todaySec / 60)}분</span>
-          {M.todaySec >= GOAL_SEC ? <span className="d up">목표 15분 달성 ✓</span> : <span className="d flat">{`목표 15분 · 지금 ${Math.floor(M.todaySec / 60)}분`}</span>}
-        </div>
-        <div className="adm-stat">
-          <span className="k">🎯 오늘 정답률</span>
-          <span className="v">{M.todayAcc === null ? '—' : `${M.todayAcc}%`}</span>
-          {M.accDelta !== null ? <span className={`d ${M.accDelta >= 0 ? 'up' : 'down'}`}>{`어제 ${M.accDelta >= 0 ? '+' : ''}${M.accDelta}%p`}</span> : <span className="d flat">어제 기록 없음</span>}
-        </div>
-        <div className="adm-stat hl">
-          <span className="k">⚡ 오늘 XP</span>
-          <span className="v">+{M.todayXp}</span>
-          <span className="d flat">{`누적 ${M.totalXp.toLocaleString()} · LV.${lp.level}`}</span>
-        </div>
-        <div className="adm-stat">
-          <span className="k">⛏️ 복습 카드</span>
-          <span className="v">{M.dueToday}장</span>
-          {M.dueToday === 0 ? (M.reviewedToday ? <span className="d up">오늘 완료 ✓</span> : <span className="d flat">예정 없음</span>) : <span className="d flat">{`${M.dueToday}장 남음`}</span>}
-        </div>
-      </div>
+      {/* ★v1.4.35★ 아빠가 이 두 패널만 보고 나가도 손해가 없어야 한다 —
+          ① 오늘 뭘 하면 되는지 ② 이 화면의 숫자를 믿어도 되는지. */}
+      <TodayBriefing time={M.time} acc={M.accToday} debt={M.debt} progress={M.prog}
+        streak={M.streak} todayXp={M.todayXp} tips={M.tips} />
+      <IntegrityPanel issues={M.issues} learnerId={props.learner?.id ?? null}
+        badgeOnlyInAdmin={M.badgeOnlyInAdmin} onBackfilled={props.onBackfilled} />
 
       <div className="stat-row">
-        <div className="stat-tile"><b>⭐ {M.totalXp.toLocaleString()}</b><span>누적 XP</span></div>
-        <div className="stat-tile"><b>{M.completedCount}/{MODULE_ORDER.length}</b><span>모듈 클리어</span></div>
-        <div className="stat-tile" title="출석 기준: 하루 15분 이상 학습 (2026-07-16부터)"><b>🔥 {M.streak}</b><span>연속 출석 (15분↑)</span></div>
+        <div className="stat-tile"><b>⭐ {M.totalXp.toLocaleString()}</b><span>누적 XP · LV.{lp.level}</span></div>
+        <div className="stat-tile"><b>{M.prog.done}/{M.prog.total}</b><span>모듈 클리어</span></div>
+        <div className="stat-tile" title="출석 기준: 하루 15분 이상 '문제를 푼' 시간 (앱을 켜 두기만 한 시간은 제외)"><b>🔥 {M.streak}</b><span>연속 출석 (15분↑)</span></div>
       </div>
 
       <div className="adm-panel adm-chart">
-        <h4>정답률 추이 · 최근 7일</h4>
+        <h4>정답률 추이 · 최근 7일 <span className="adm-sub">신규 학습만 — 복습은 구조적으로 100%에 가까워 섞으면 실력이 안 보입니다</span></h4>
         <TrendChart days={M.days7} />
       </div>
 
@@ -874,6 +957,40 @@ function ReviewTab(props: { M: Metrics; cards: ReviewCard[] }) {
             </div>
           </div>
 
+          {/* ★v1.4.35★ 복습 부채 — 숫자만 던지지 않고 '언제 갚아지는지'까지 말한다 */}
+          <div className="adm-panel">
+            <h4>밀린 복습 <span className="adm-sub">지금 캘 수 있는 카드 {M.debt.due}장</span></h4>
+            {M.debt.due === 0 ? (
+              <p className="admin-empty">밀린 카드가 없어요. 지금이 새 단원을 나가기 가장 좋은 상태입니다.</p>
+            ) : (
+              <p className="admin-note" style={{ margin: 0 }}>
+                기한이 지난 카드 <b>{M.debt.overdue}장</b>
+                {M.debt.oldestOverdueDays > 0 && <> · 가장 오래된 건 <b>{M.debt.oldestOverdueDays}일</b> 지났어요</>}.
+                {' '}최근 페이스는 하루 {M.debt.pacePerDay}장
+                {M.debt.daysToClear !== null ? <> — 이대로면 <b>약 {M.debt.daysToClear}일</b>이면 다 갚습니다.</> : ' — 최근 복습 기록이 없어 예상 일수를 낼 수 없어요.'}
+                {M.debt.overCapacity && <><br />하루 15~20분으로는 <b>{DAILY_REVIEW_CAPACITY}장</b> 안팎이 한계예요. 새 진도를 잠시 멈추고 복습만 하는 편이 기억에 훨씬 남습니다.</>}
+              </p>
+            )}
+          </div>
+
+          <div className="adm-panel">
+            {/* 예전에는 박스 높은 순 40장만 보여 줬다 — 잘 외운 카드만 보이고 **정작 못 외우는 카드는 안 보였다.** */}
+            <h4>지금 가장 흔들리는 카드 <span className="adm-sub">최근 오답 · 낮은 박스 순</span></h4>
+            <div className="rv-cards">
+              {[...cards].sort((a, b) =>
+                (Number(a.last_result === false ? 0 : 1) - Number(b.last_result === false ? 0 : 1))
+                || ((a.box || 1) - (b.box || 1))
+                || (b.review_count - a.review_count),
+              ).slice(0, 30).map((c, i) => (
+                <div key={`w${i}`} className="rv-card">
+                  <span className="rv-card-box" style={{ background: BOX_COLORS[(c.box || 1) - 1] }}>{c.box}</span>
+                  <span className="rv-card-front">{c.card_front || c.card_id}</span>
+                  <span className="rv-card-meta">{c.review_count}회{c.last_result === false ? ' · 최근 오답' : ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="adm-panel">
             <h4>카드별 성취 (박스 높은 순)</h4>
             <div className="rv-cards">
@@ -920,7 +1037,7 @@ function AnalysisTab(props: { M: Metrics }) {
   return (
     <div className="adm-screen">
       <div className="adm-panel">
-        <h4>취약 영역 (개념별 정답률 낮은 순)</h4>
+        <h4>취약 영역 <span className="adm-sub">최근 120일 누적 · 개념별 5문항 이상 · 말하기/진단/문장 발견 제외</span></h4>
         {M.weakAreas.length === 0 ? <p className="admin-empty">표본이 아직 부족해요 (개념별 5문항 이상).</p> : (
           <div className="adm-weak">
             {M.weakAreas.slice(0, 8).map(w => {
@@ -939,6 +1056,10 @@ function AnalysisTab(props: { M: Metrics }) {
 
       <div className="adm-panel">
         <h4>활동 유형별 정답률</h4>
+        <p className="admin-note" style={{ margin: '0 0 8px' }}>
+          ⚠️ <b>말하기</b>는 아이가 "말했어요"를 누르면 항상 정답, <b>문장 발견</b>·<b>진단</b>은 채점이 아닙니다.
+          {' '}이 세 가지는 위 취약 영역과 개요의 정답률에서 빼고 계산해요 — 여기서는 참고용으로만 보여 줍니다.
+        </p>
         {M.typeBreakdown.length === 0 ? <p className="admin-empty">기록이 없어요.</p> : (
           <div className="adm-weak">
             {M.typeBreakdown.map(t => {
@@ -1103,23 +1224,32 @@ function VocabPanel(props: { M: Metrics }) {
 
 function ProgressTab(props: { M: Metrics }) {
   const { M } = props
-  const totalDone = M.completedCount
-  const totalMods = MODULE_ORDER.length
-  const pct = Math.round((totalDone / totalMods) * 100)
+  /* ★v1.4.35★ 분모는 **아이 화면과 같아야 한다.**
+     worlds_ready가 켜진 뒤에도 관제실은 28로 나눠 "100% 완주"라고 적고 있었다.
+     같은 시각 예한이 폰은 28/52였다 — 같은 아이를 두고 두 화면이 다른 말을 하고 있었던 것이다. */
+  const P = M.prog
   return (
     <div className="adm-screen">
       <VocabPanel M={M} />
       <div className="adm-panel">
-        <h4>전체 진행률</h4>
+        <h4>전체 진행률 <span className="adm-sub">예한이 화면과 같은 분모</span></h4>
         <div className="prog-hero">
-          <div className="prog-ring" style={{ background: `conic-gradient(var(--diamond) ${pct * 3.6}deg, var(--wc-surface-border) 0)` }}>
-            <span>{pct}%</span>
+          <div className="prog-ring" style={{ background: `conic-gradient(var(--diamond) ${P.pct * 3.6}deg, var(--wc-surface-border) 0)` }}>
+            <span>{P.pct}%</span>
           </div>
           <div className="prog-hero-txt">
-            <b>{totalDone} / {totalMods} 모듈</b>
+            <b>{P.done} / {P.total} 모듈</b>
             <span>클리어한 학습 모듈</span>
           </div>
         </div>
+        {P.extOpen && (
+          <div className="ah-progsplit">
+            <div><span>기준 커리큘럼 (월드 1~5)</span><b>{P.baseDone}/{P.baseTotal}</b>
+              <i><em style={{ width: `${(P.baseDone / P.baseTotal) * 100}%` }} /></i></div>
+            <div><span>확장 커리큘럼 (월드 7~10)</span><b>{P.extDone}/{P.extTotal}</b>
+              <i><em style={{ width: `${(P.extDone / P.extTotal) * 100}%` }} /></i></div>
+          </div>
+        )}
       </div>
 
       <div className="adm-panel">
@@ -1140,21 +1270,33 @@ function ProgressTab(props: { M: Metrics }) {
         ))}
       </div>
 
+      {/* ★v1.4.35★ 이 패널은 v1.4.26에 월드 7~10이 실제로 열린 뒤에도 "승인 대기 · 예정"이라고 적고 있었다.
+          문구를 손으로 관리하면 반드시 낡는다 → 이제 라이브 스위치(worlds_ready)와 실제 진도에서 상태를 만든다. */}
       <div className="adm-panel">
-        <h4>🚀 앞으로 열릴 월드 <span className="adm-sub">중학 대비 심화 과정 (콘텐츠 준비 중)</span></h4>
+        <h4>🚀 중학 대비 심화 과정 <span className="adm-sub">{M.prog.extOpen ? '예한이 화면에 열려 있음' : '아직 잠김 (version.json의 worlds_ready)'}</span></h4>
         <div className="road-future">
-          {FUTURE_WORLDS.map(w => (
-            <div key={w.world} className="road-fut">
-              <span className="road-fut-em">{w.emoji}</span>
-              <div className="road-fut-txt">
-                <b>월드 {w.world} · {w.name}</b>
-                <span>{w.desc}</span>
+          {FUTURE_WORLDS.map(w => {
+            const wp = M.worldProgress.find(x => x.world === w.world)
+            const done = wp?.done ?? 0
+            const total = wp?.total ?? 6
+            const state = !M.prog.extOpen ? '잠김' : done === 0 ? '미시작' : done === total ? '완료 ✓' : `${done}/${total}`
+            return (
+              <div key={w.world} className="road-fut">
+                <span className="road-fut-em">{w.emoji}</span>
+                <div className="road-fut-txt">
+                  <b>월드 {w.world} · {w.name}</b>
+                  <span>{w.desc}</span>
+                </div>
+                <span className="road-fut-lock">{state}</span>
               </div>
-              <span className="road-fut-lock">예정</span>
-            </div>
-          ))}
+            )
+          })}
         </div>
-        <p className="admin-note">각 월드는 콘텐츠(JSON)만 추가하면 자동으로 열리는 구조예요. 예한이 진도에 맞춰 난이도를 이어서 확장할 수 있습니다.</p>
+        <p className="admin-note">
+          {M.prog.extOpen
+            ? '네 월드 모두 예한이 화면에 이미 떠 있습니다. 위 진행률의 분모(52)에도 들어가 있어요.'
+            : '콘텐츠·코드는 배포돼 있고 서버 스위치(worlds_ready) 하나로 열립니다 — 앱 재배포가 필요 없어요.'}
+        </p>
       </div>
     </div>
   )
@@ -1505,11 +1647,23 @@ function ProblemViewer(props: { learnerId: string; baseEvents: AnswerEvent[]; on
               {cur.response_ms != null && <p className="pv-rt">걸린 시간 {(cur.response_ms / 1000).toFixed(1)}초</p>}
             </div>
 
+            {/* v1.4.35 — 하루 1,000문항인 날이 실제로 있다(8/14: 1,179문항). 점을 전부 그리면
+                화면이 점으로 뒤덮여 아무것도 못 고른다 → 현재 위치 주변 60개만 그린다. */}
             <div className="pv-dots">
-              {problems.map((p, i) => (
-                <button key={p.id} className={`pv-dot ${p.is_correct ? 'o' : 'x'} ${i === idx ? 'cur' : ''}`}
-                  onClick={() => setIdx(i)} aria-label={`${i + 1}번 ${p.is_correct ? '정답' : '오답'}`} />
-              ))}
+              {(() => {
+                const W = 60
+                const start = Math.max(0, Math.min(idx - Math.floor(W / 2), problems.length - W))
+                const from = Math.max(0, start)
+                const slice = problems.slice(from, from + W)
+                return <>
+                  {from > 0 && <span className="pv-dots-more">…{from}</span>}
+                  {slice.map((p, i) => (
+                    <button key={p.id} className={`pv-dot ${p.is_correct ? 'o' : 'x'} ${from + i === idx ? 'cur' : ''}`}
+                      onClick={() => setIdx(from + i)} aria-label={`${from + i + 1}번 ${p.is_correct ? '정답' : '오답'}`} />
+                  ))}
+                  {from + W < problems.length && <span className="pv-dots-more">{problems.length - from - W}…</span>}
+                </>
+              })()}
             </div>
             <div className="pv-nav">
               <button className="pv-navbtn" disabled={idx <= 0} onClick={() => setIdx(i => Math.max(0, i - 1))}>◂ 이전</button>
