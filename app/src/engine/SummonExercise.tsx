@@ -118,7 +118,9 @@ export function SummonExercise(props: {
 
   function summon() {
     if (busyRef.current || !placed.length) return
-    const isRight = normalize(builtStr) === normalize(item.answer)
+    // v1.4.35 — OrderGame과 같은 이유로, 진짜 옳은 대안 어순도 정답으로 받는다
+    const isRight = [item.answer, ...(item.alt_answers ?? [])]
+      .some(a => normalize(a) === normalize(builtStr))
 
     // ── 정답 ──
     if (isRight) {

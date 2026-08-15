@@ -15,7 +15,21 @@ export interface ChoiceItem extends TtsText {
   meme_correct?: string; meme_wrong?: string
 }
 export interface MatchPair extends TtsText { left: string; right: string }
-export interface OrderItem extends TtsText { id: string; prompt_ko: string; tokens: string[]; answer: string; ko?: string }
+/**
+ * 블록 조립 문항.
+ *
+ * ★`alt_answers` — v1.4.35 추가 (월드 7~10 적대적 검증에서 확인된 결함 봉합)★
+ *   같은 토큰으로 **문법적으로 똑같이 맞는 다른 어순**이 나오는 문항이 30개 넘게 있었다.
+ *   예: "I watched TV last night" ↔ "Last night I watched TV" — 둘 다 옳은 영어다.
+ *   그런데 채점이 `answer` 문자열 하나만 비교해서, **맞게 조립한 아이가 틀렸다는 피드백을 받았다.**
+ *   오답 처리 자체보다 나쁜 건 아이가 "내가 아는 게 틀렸나?" 하고 옳은 지식을 버리는 것이다.
+ *   → 진짜로 옳은 대안 어순은 `alt_answers`에 적어 두고 함께 정답으로 인정한다.
+ *   ※ 어순 자체가 학습 목표인 문항(예: 의문문 도치)에는 **넣지 않는다** — 그건 오답이 맞다.
+ */
+export interface OrderItem extends TtsText {
+  id: string; prompt_ko: string; tokens: string[]; answer: string; ko?: string
+  alt_answers?: string[]
+}
 
 /* ─── v1.4.24 문장 소환 — 월드 6 전용 화면을 없애고 문법 단원의 한 스텝으로 녹였다 ─────────
    왜 옮겼나: 독립 기능으로 두면 커리큘럼이 늘 때마다 그 화면 하나가 끝없이 길어지고,
@@ -33,6 +47,7 @@ export interface SummonItem extends TtsText {
   ko: string                 // 미션(한국어 뜻) — 이걸 보고 영어로 조립한다
   tokens: string[]           // 조립 블록(오답 블록 포함 가능). 정답 토큰만 공백으로 이으면 answer
   answer: string             // 정답 문장 (마침표 없음)
+  alt_answers?: string[]     // v1.4.35 — 문법적으로 똑같이 옳은 다른 어순(OrderItem 주석 참조)
   focus_ko?: string          // 이 단원의 문법 초점 — 틀렸을 때 주는 힌트
   explain_ko?: string        // 정답 후 한 줄 해설
   scene?: SummonScene

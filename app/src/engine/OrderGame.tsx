@@ -24,7 +24,13 @@ export function OrderGame(props: { item: OrderItem; onDone: (correct: boolean, m
   }
   function check() {
     const built = placed.map(i => item.tokens[i]).join(' ')
-    const ok = built.trim().toLowerCase() === item.answer.trim().toLowerCase()
+    // ★맞는 영어를 틀렸다고 하지 않는다★ (v1.4.35)
+    //   같은 블록으로 문법적으로 똑같이 옳은 어순이 나오는 문항이 있다.
+    //   그런 대안은 콘텐츠의 alt_answers에 적혀 있고, 여기서 함께 정답으로 인정한다.
+    //   비교는 대소문자와 끝 마침표만 무시한다 — 콤마는 뜻을 바꾸므로 그대로 본다.
+    const norm = (s: string) => s.trim().toLowerCase().replace(/[.!]+$/, '').replace(/\s+/g, ' ')
+    const accept = [item.answer, ...(item.alt_answers ?? [])].map(norm)
+    const ok = accept.includes(norm(built))
     setResult(ok)
     if (item.tts || item.audio_url) playClip(item) // v1.3.0: 클립 우선, tts 폴백
     if (!emittedRef.current) {
