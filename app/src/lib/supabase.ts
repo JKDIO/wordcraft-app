@@ -161,6 +161,57 @@ export const db = {
   /** v1.4.22 — 보상 목표 삭제 전용. ⚠️ 학습 기록 테이블(answer_events 등)에는 절대 쓰지 말 것(L17). */
   del: (table: string, query: string) =>
     req(`/${table}?${query}`, { method: 'DELETE' }),
+  /** v1.4.38 — 서버 상한을 넘겨 **전부** 받아온다. 아래 selectAll 참조. */
+  selectAll: (table: string, query: string, maxRows?: number) => selectAll(table, query, maxRows),
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ★★v1.4.38 — `limit=`은 요청일 뿐이다. 서버가 더 적게 준다★★
+
+   2026-08-15 관제실 v3의 정합성 진단이 배포 직후 스스로 잡아낸 결함이다.
+   화면에 "저장된 XP 44,569 vs 기록으로 계산한 XP 12,537 (+255%)"가 떴다.
+   원인은 산식이 아니라 **조회**였다 — Supabase Data API의 `Max rows` 기본값이 **1,000**이라,
+   `limit=12000`을 보내도 서버는 1,000행만 준다. 예한이 문항은 이미 4,432건이다.
+
+   즉 관제실의 누적 분석(취약 영역·반응 속도·활동 유형별 정답률·반복 오답·캘린더 히트맵·
+   7일 추이·학습 밸런스)은 **처음부터 최근 1,000문항만** 보고 있었다. 120일치를 보여준다고
+   적어 놓고 실제로는 열흘치를 계산하고 있었던 것이다. 아무도 몰랐던 이유는
+   누적 XP가 `Math.max(앱 저장값, 파생값)`으로 가려져 있었기 때문이다(L45와 같은 형태).
+
+   ★교훈★: 클라이언트가 보낸 `limit`은 **상한 요청**이지 보장이 아니다.
+   "몇 행 왔는지"를 세서 상한과 비교하는 것으로는 부족하다 — 서버 상한이 내 상한보다 작으면
+   그 검사는 영원히 통과한다. **끝까지 받아오거나(페이지네이션), 못 받았음을 알아야 한다.**
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** 서버가 한 번에 주는 최대 행 수(Supabase Data API `Max rows` 기본값). 이보다 크게 요청해도 잘린다. */
+export const PAGE_ROWS = 1000
+/** 안전 상한 — 이 이상은 받지 않는다(무한 루프·메모리 폭주 방지). 도달하면 truncated=true. */
+export const DEFAULT_MAX_ROWS = 50000
+
+/** 쿼리에서 limit/offset을 떼어낸다 — 페이지네이션이 직접 붙이기 때문. */
+function stripPaging(query: string): string {
+  return query.split('&').filter(p => p && !/^limit=/.test(p) && !/^offset=/.test(p)).join('&')
+}
+
+/**
+ * 상한에 걸려 조용히 잘리지 않는 조회. `order`가 없으면 페이지 경계에서 행이 중복·유실되므로
+ * **반드시 정렬이 포함된 쿼리를 넘긴다**(L31).
+ *
+ * @returns rows — 모아진 전체 행 / truncated — 안전 상한에 걸려 더 있는데 못 받았는가
+ */
+export async function selectAll(
+  table: string, query: string, maxRows: number = DEFAULT_MAX_ROWS,
+): Promise<{ rows: Row[]; truncated: boolean }> {
+  const base = stripPaging(query)
+  const out: Row[] = []
+  for (let offset = 0; offset < maxRows; offset += PAGE_ROWS) {
+    const page = Math.min(PAGE_ROWS, maxRows - offset)
+    const rows = await req(`/${table}?${base}&limit=${page}&offset=${offset}`)
+    out.push(...rows)
+    // 서버가 요청보다 적게 줬다 = 마지막 페이지다.
+    if (rows.length < page) return { rows: out, truncated: false }
+  }
+  return { rows: out, truncated: true }
 }
 
 /** RPC 호출 (세션 토큰 우선) */
