@@ -79,8 +79,23 @@ export const SELF_GRADED_TYPES = new Set(['speak'])
 export const REVIEW_TYPES = new Set(['review'])
 
 /* ═════════ 날짜 ═════════ */
+/** KST 오프셋(분). 한국은 1988년 이후 서머타임이 없어 **항상 UTC+9**다 — 그래서 고정 오프셋 산술이 안전하다. */
+const KST_OFFSET_MS = 9 * 3600_000
+
+/**
+ * ISO 문자열 → KST 'YYYY-MM-DD'.
+ *
+ * ★왜 `toLocaleDateString('sv', { timeZone })`를 쓰지 않는가 (v1.4.39, 실측으로 배운 것)★
+ *   v1.4.38에서 조회 절단을 고치자 문항이 1,000건 → 4,432건으로 늘었다. 그 순간 관제실이 멈췄다.
+ *   집계가 날짜별로 여러 번 훑기 때문에 이 함수가 한 번 그릴 때 **40만 번 넘게** 불린다.
+ *   `Intl` 경유 변환은 호출당 수십 마이크로초라, 40만 번이면 10초가 넘는 메인 스레드 정지가 된다.
+ *   같은 결과를 내는 고정 오프셋 산술은 수백 나노초다 — **결과는 같고 속도만 100배 빠르다.**
+ *   (교훈: 상한을 풀면 그 뒤의 계산량도 같이 검토해야 한다. 고친 것이 새 결함을 낳는다 — L44.)
+ */
 export function kstDayOf(iso: string): string {
-  return new Date(iso).toLocaleDateString('sv', { timeZone: 'Asia/Seoul' })
+  const t = Date.parse(iso)
+  if (!Number.isFinite(t)) return new Date(iso).toLocaleDateString('sv', { timeZone: 'Asia/Seoul' })
+  return new Date(t + KST_OFFSET_MS).toISOString().slice(0, 10)
 }
 export function addDays(key: string, n: number): string {
   const d = new Date(`${key}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10)
