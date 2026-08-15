@@ -1,0 +1,105 @@
+# content.json 정밀 패치 CI — v1 (2026-08-15, 월드 7~10 적대적 검증 봉합에서 제정)
+#
+# ★왜 이게 필요한가★
+#   content.json 은 1.9MB다. Claude가 직접 커밋하려면 모델 문맥을 통과시켜야 해서 불가능하다(L7·L34).
+#   그래서 **작은 패치 묶음**(gzip+base64, 45KB)만 밀고, 적용은 CI가 한다.
+#
+# 사용법
+#   1) `_ci/content_ops.b64`  : gzip+base64 로 압축한 패치 배열
+#        [{"m":"P1","p":"steps[4].items[5].ko","v":"새 값","c":1(새 키일 때만)}, ...]
+#   2) `_ci/content_ops.meta` : 두 줄
+#        before=<적용 전 정규화 sha256>
+#        after=<적용 후 정규화 sha256>
+#      정규화 해시 = sha256(json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(',',':')))
+#      → 파일 포맷(들여쓰기)과 무관하게 **내용만** 비교한다.
+#   3) 둘을 커밋하면 CI가 적용 → 검증 → content.json 커밋 → Vercel 자동배포
+#
+# 안전장치 (하나라도 어긋나면 실패하고 아무것도 커밋하지 않는다)
+#   · before 해시가 다르면 = 내가 본 것과 저장소의 것이 다르다 → 중단
+#   · after  해시가 다르면 = 적용 결과가 내가 검증한 것과 다르다 → 중단
+#   · 경로가 하나라도 없으면 → 중단
+name: WC Content Apply
+
+on:
+  push:
+    paths:
+      - '_ci/content_ops.b64'
+      - '_ci/content_ops.meta'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wc-content
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply ops
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, gzip, base64, hashlib, re, sys, os
+
+          def canon(d):
+              return hashlib.sha256(json.dumps(d, sort_keys=True, ensure_ascii=False,
+                                               separators=(',', ':')).encode()).hexdigest()
+
+          meta = dict(l.strip().split('=', 1) for l in open('_ci/content_ops.meta') if '=' in l)
+          ops = json.loads(gzip.decompress(base64.b64decode(open('_ci/content_ops.b64').read())))
+
+          data = json.load(open('content.json'))
+          before = canon(data)
+          if before != meta['before']:
+              sys.exit(f'STOP: content.json 이 예상과 다르다\n  기대 {meta["before"]}\n  실제 {before}')
+
+          TOK = re.compile(r'([^.\[\]]+)|\[(\d+)\]')
+          def keys(p):
+              return [m.group(1) if m.group(1) is not None else int(m.group(2)) for m in TOK.finditer(p)]
+
+          mods = data['modules']
+          for i, op in enumerate(ops):
+              cur = mods[op['m']]
+              ks = keys(op['p'])
+              for k in ks[:-1]:
+                  cur = cur[k]
+              last = ks[-1]
+              if isinstance(cur, list):
+                  if not isinstance(last, int) or last >= len(cur):
+                      sys.exit(f'STOP: op#{i} {op["m"]} {op["p"]} — 인덱스 없음')
+              else:
+                  if last not in cur and not op.get('c'):
+                      sys.exit(f'STOP: op#{i} {op["m"]} {op["p"]} — 키 없음(새 키면 c:1 필요)')
+              cur[last] = op['v']
+
+          after = canon(data)
+          if after != meta['after']:
+              sys.exit(f'STOP: 적용 결과가 검증본과 다르다\n  기대 {meta["after"]}\n  실제 {after}')
+
+          out = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
+          open('content.json', 'w', encoding='utf-8').write(out)
+          if os.path.exists('app/public/content.json'):
+              open('app/public/content.json', 'w', encoding='utf-8').write(out)
+
+          os.makedirs('_ci', exist_ok=True)
+          with open('_ci/CONTENT_REPORT.txt', 'w', encoding='utf-8') as f:
+              f.write(f'# content apply\nops={len(ops)}\nbefore={before}\nafter={after}\n'
+                      f'bytes={len(out.encode())}\n')
+          print(f'적용 {len(ops)}건 · {len(out.encode())} bytes')
+          PY
+          cat _ci/CONTENT_REPORT.txt
+
+      - name: Commit
+        run: |
+          set -euo pipefail
+          git config user.name  'wc-ci'
+          git config user.email 'ci@wordcraft.local'
+          rm -f _ci/content_ops.b64 _ci/content_ops.meta
+          git add -A content.json app/public/content.json _ci/CONTENT_REPORT.txt _ci/content_ops.b64 _ci/content_ops.meta || true
+          git commit -m 'ci: apply content ops [skip ci]' || { echo 'no change'; exit 0; }
+          git push
