@@ -1,5 +1,6 @@
 // 콘텐츠 로더 — CONTENT_SPEC v1.0 계약 타입
 // 배포본은 단일 /content.json (7/14 평탄화 — 모듈·진단 JSON을 1회 fetch 후 메모리 인덱싱)
+import { APP_VERSION } from './version'
 export interface TtsText {
   tts?: string | null
   // v1.3.0 오디오 계약(CONTRACT v1.3 §9): audio_url 있으면 진짜 음성 클립 재생, 실패 시 tts 폴백
@@ -155,10 +156,17 @@ interface ContentBundle {
 
 let bundlePromise: Promise<ContentBundle> | null = null
 
-/** 단일 content.json 1회 fetch — 이후 모든 모듈/진단은 메모리에서 반환 */
+/**
+ * 단일 content.json 1회 fetch — 이후 모든 모듈/진단은 메모리에서 반환
+ *
+ * ★주소에 앱 버전을 붙인다 (v1.4.35 제정 — L38의 반복 방지)★
+ *   그림 자산에서 이미 겪은 일이다: 파일만 갈아끼우면 CDN·WebView가 옛 것을 계속 쓴다.
+ *   내용을 고쳐 놓고 아이 폰에서는 안 바뀌면, 고친 것이 아니다.
+ *   배포할 때마다 APP_VERSION이 오르므로 주소가 바뀌고 → 새 콘텐츠를 반드시 받는다.
+ */
 function loadContent(): Promise<ContentBundle> {
   if (!bundlePromise) {
-    bundlePromise = fetch('/content.json').then(res => {
+    bundlePromise = fetch(`/content.json?v=${APP_VERSION}`).then(res => {
       if (!res.ok) throw new Error(`콘텐츠를 불러오지 못했어 (${res.status})`)
       return res.json() as Promise<ContentBundle>
     })
