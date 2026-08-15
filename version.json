@@ -1,1 +1,1 @@
-{"version": "1.4.38", "date": "2026-08-16", "notes": "🔎 관제실이 이제 기록을 끝까지 읽습니다 — 서버가 1,000개만 주던 것을 전부 받아와 다시 계산해요", "vocab_ready": true, "worlds_ready": true}
+{"version": "1.4.39", "date": "2026-08-16", "notes": "⚡ 관제실이 기록을 전부 읽고도 즉시 뜹니다 — 날짜 집계를 100배 빠르게 다시 짰어요", "vocab_ready": true, "worlds_ready": true}
