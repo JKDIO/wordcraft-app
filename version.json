@@ -1,1 +1,1 @@
-{"version": "1.4.37", "date": "2026-08-15", "notes": "🩺 관제실 v3 — 오늘 한눈에 + 정합성 진단. 학습 시간을 문항 기록으로 다시 계산합니다", "vocab_ready": true, "worlds_ready": true}
+{"version": "1.4.38", "date": "2026-08-16", "notes": "🔎 관제실이 이제 기록을 끝까지 읽습니다 — 서버가 1,000개만 주던 것을 전부 받아와 다시 계산해요", "vocab_ready": true, "worlds_ready": true}
