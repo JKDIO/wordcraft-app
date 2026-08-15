@@ -151,5 +151,37 @@ console.log('── ⑥ XP 파생 ──')
   ok(audit.diff === 20, '저장값과의 차이를 그대로 보고한다', `→ ${audit.diff}`)
 }
 
+
+console.log('── ⑦ 조회 페이지네이션: 서버가 1,000행에서 자른다 ──')
+{
+  // 2026-08-15 라이브에서 실제로 벌어진 일: `limit=12000`을 보냈는데 서버(Supabase Data API의
+  // Max rows=1000)가 1,000행만 줬다. 그래서 관제실 누적 분석이 최근 1,000문항만 보고 있었고,
+  // 정합성 진단이 "저장 XP 44,569 vs 파생 12,537"로 잡아냈다. selectAll이 끝까지 받아오는지 본다.
+  writeFileSync('.verify/supa_entry.ts', `import * as S from '../src/lib/supabase'\n// @ts-ignore\nglobalThis.S = S\n`)
+  execSync('/root/.bun/bin/bun build .verify/supa_entry.ts --outfile .verify/supa_bundle.js --target node', { stdio: 'inherit' })
+  const TOTAL = 4432, CAP = 1000
+  let calls = 0
+  globalThis.localStorage = undefined
+  globalThis.fetch = async (url) => {
+    calls++
+    const u = new URL(String(url))
+    const limit = Math.min(Number(u.searchParams.get('limit')), CAP)   // ★서버 상한★
+    const offset = Number(u.searchParams.get('offset')) || 0
+    const n = Math.max(0, Math.min(limit, TOTAL - offset))
+    return { ok: true, status: 200, text: async () => JSON.stringify(Array.from({ length: n }, (_, i) => ({ id: offset + i }))) }
+  }
+  await import('./.verify/supa_bundle.js')
+  const S = globalThis.S
+  ok(S.PAGE_ROWS === CAP, '서버 상한을 페이지 크기로 안다', `→ ${S.PAGE_ROWS}`)
+  const r = await S.selectAll('answer_events', 'learner_id=eq.x&order=created_at.desc&limit=12000')
+  ok(r.rows.length === TOTAL, `★상한을 넘겨 전부 받아온다 (${TOTAL}행)`, `→ ${r.rows.length}`)
+  ok(r.truncated === false, '다 받았으면 truncated=false')
+  ok(calls === Math.ceil(TOTAL / CAP) + (TOTAL % CAP === 0 ? 1 : 0), '필요한 만큼만 요청한다', `→ ${calls}회`)
+  const ids = new Set(r.rows.map(x => x.id))
+  ok(ids.size === TOTAL, '페이지 경계에서 행이 중복·유실되지 않는다', `→ ${ids.size}`)
+  const capped = await S.selectAll('answer_events', 'learner_id=eq.x&order=id.asc', 2000)
+  ok(capped.rows.length === 2000 && capped.truncated === true, '안전 상한에 걸리면 truncated=true로 알린다')
+}
+
 console.log(fail === 0 ? '\n✅ admin_check 통과' : `\n❌ admin_check 실패 ${fail}건`)
 process.exit(fail === 0 ? 0 : 1)
