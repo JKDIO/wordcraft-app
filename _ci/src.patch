@@ -1,58 +1,97 @@
-diff --git a/app/src/screens/AdminPage.tsx b/app/src/screens/AdminPage.tsx
-index f04b24d..eb80dee 100644
---- a/app/src/screens/AdminPage.tsx
-+++ b/app/src/screens/AdminPage.tsx
-@@ -61,3 +61,3 @@ const MODULE_NAMES: Record<string, string> = {
-   ECHO: '에코 사냥(듣기)', CMD: '지령 미션(듣기)', FORGE: '문장 소환진',
--  // v1.4.23 월드 7~10 (승인 전 = 아이 화면 미노출. 관제실 라벨은 미리 넣어 둔다 — L28 ③)
-+  // v1.4.23 확장 월드 6~9 (승인 전 = 아이 화면 미노출. 관제실 라벨은 미리 넣어 둔다 — L28 ③)
-   P1: '그림자 문장', P2: '뒤에서 꾸미는 자들', P3: '대명사 미로', P4: '신호등 마을', P5: '요지 사냥', P6: '순서의 탑',
-@@ -106,6 +106,7 @@ export const PROGRESS_LIMIT = 5000
-  *  월드 5(시제 시간여행)는 v1.2.0에서 정식 오픈 → 로드맵에서 졸업 */
--/** 월드 6(문장 소환진 공방)은 v1.4.0에서 오픈했다가 **v1.4.24에서 해체**했다 —
-+/** '문장 소환진 공방'(★옛★ 월드 6)은 v1.4.0에서 오픈했다가 **v1.4.24에서 해체**했다 —
-+ *  ★v1.4.42부터 '월드 6'은 독해 던전을 가리킨다★ — 옛 기록의 월드 6과 헷갈리지 말 것.
-  *  독립 화면으로 두면 커리큘럼이 늘 때마다 길어져 방치되므로, 문법 단원 안의 '🔮 문장 소환' 스텝으로 녹였다.
-  *  기존 기록(activity_type 'forge'/'forge_discover', module_id 'FORGE')은 그대로 보존한다(L17). */
--/** v1.4.23 — 월드 7~10은 **제작이 끝났고 배포도 됐다.** 다만 Dio님 승인 전까지 아이 화면에 뜨지 않는다.
-+/** v1.4.23 — 확장 월드(6~9)는 **제작이 끝났고 배포도 됐다.** 다만 Dio님 승인 전까지 아이 화면에 뜨지 않는다.
-  *  여는 방법: 서버 `version.json`의 `worlds_ready`를 true로 (앱 재배포 불필요). */
-@@ -356,3 +357,3 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
+diff --git a/app/badge_check.mjs b/app/badge_check.mjs
+index 0b76a61..22e93c4 100644
+--- a/app/badge_check.mjs
++++ b/app/badge_check.mjs
+@@ -89,2 +89,27 @@ console.log('── ④ 월드 정복 뱃지는 그 월드를 **전부** 클리
  
--  // ★v1.4.35★ worlds_ready = 아이 화면에 월드 7~10이 열려 있는가. 이걸 안 보면 관제실 분모가 28로 굳어
-+  // ★v1.4.35★ worlds_ready = 아이 화면에 확장 월드(6~9)가 열려 있는가. 이걸 안 보면 관제실 분모가 28로 굳어
-   //   "전체 진행률 100%"라는 거짓말이 나온다(실제로 나오고 있었다 — 아이 앱은 28/52였다).
-@@ -692,3 +693,3 @@ function computeMetrics(
- 
--  // 모듈 마스터리 — ★v1.4.35★ 아이 화면에 열려 있으면 월드 7~10(24개)도 함께 본다.
-+  // 모듈 마스터리 — ★v1.4.35★ 아이 화면에 열려 있으면 확장 월드(6~9, 24개)도 함께 본다.
-   //   예전에는 MODULE_ORDER(28개)만 돌아, 열려 있는 월드의 학습 결과가 관제실에서 통째로 보이지 않았다.
-@@ -719,6 +720,6 @@ function computeMetrics(
-   const facts: BadgeFacts = {
--    // v1.4.25: 월드 7~10 포함 — badges.ts의 factsFromLocal과 같은 기준이어야 badge_check가 통과한다(L27)
-+    // v1.4.25: 확장 월드(6~9) 포함 — badges.ts의 factsFromLocal과 같은 기준이어야 badge_check가 통과한다(L27)
-     modulesDone: doneIds.filter(id => MODULE_ORDER.includes(id) || EXT_MODULE_ORDER.includes(id)),
-     perfectModule: progress.some(p => !p.module_id.startsWith('DIAG-') && !VOCAB_PACK_RE.test(p.module_id) && !GOLEM_RE.test(p.module_id) && (p.best_score ?? 0) >= 100),
--    // v1.4.27 — badges.ts factsFromLocal과 같은 기준(월드 7~10 퍼펙트)
-+    // v1.4.27 — badges.ts factsFromLocal과 같은 기준(확장 월드 6~9 퍼펙트)
-     perfectExt: progress.some(p => EXT_MODULE_ORDER.includes(p.module_id) && (p.best_score ?? 0) >= 100),
-@@ -742,3 +743,3 @@ function computeMetrics(
- 
--  // 월드 진행 — ★v1.4.35★ 열려 있으면 월드 7~10도 지도에 그린다(아이 화면과 같은 목록).
-+  // 월드 진행 — ★v1.4.35★ 열려 있으면 확장 월드(6~9)도 지도에 그린다(아이 화면과 같은 목록).
-   const worldProgress = (worldsReady ? [...WORLDS, ...EXT_WORLDS] : WORLDS).filter(w => w.modules.length).map(w => {
-@@ -772,3 +773,3 @@ function computeMetrics(
-   })
--  // 월드 7~10을 "한 번도 안 들어갔다"고 말하려면 완료 여부가 아니라 **기록**을 봐야 한다.
-+  // 확장 월드(6~9)를 "한 번도 안 들어갔다"고 말하려면 완료 여부가 아니라 **기록**을 봐야 한다.
-   //   (실측: P1에 이미 6문항이 있는데 진단 패널은 "통째로 비어 있어요"라고 말하고 있었다)
-@@ -1329,3 +1330,3 @@ function ProgressTab(props: { M: Metrics }) {
-               <i><em style={{ width: `${(P.baseDone / P.baseTotal) * 100}%` }} /></i></div>
--            <div><span>확장 커리큘럼 (월드 7~10)</span><b>{P.extDone}/{P.extTotal}</b>
-+            <div><span>확장 커리큘럼 (월드 6~9)</span><b>{P.extDone}/{P.extTotal}</b>
-               <i><em style={{ width: `${(P.extDone / P.extTotal) * 100}%` }} /></i></div>
-@@ -1353,3 +1354,3 @@ function ProgressTab(props: { M: Metrics }) {
- 
--      {/* ★v1.4.35★ 이 패널은 v1.4.26에 월드 7~10이 실제로 열린 뒤에도 "승인 대기 · 예정"이라고 적고 있었다.
-+      {/* ★v1.4.35★ 이 패널은 v1.4.26에 확장 월드가 실제로 열린 뒤에도 "승인 대기 · 예정"이라고 적고 있었다.
-           문구를 손으로 관리하면 반드시 낡는다 → 이제 라이브 스위치(worlds_ready)와 실제 진도에서 상태를 만든다. */}
++console.log('── ④-b 월드 번호가 중간에 비지 않는다 (v1.4.42) ──')
++{
++  /* ★왜 이 검사가 생겼나★
++   *   옛 월드 6(문장 소환진)을 v1.4.24에서 해체한 뒤 **6번이 비어 있었다.**
++   *   그래서 아이 화면에서 5 다음이 7로 건너뛰었고, 예한이 아빠가 "6만 없으니까 이상하다"고 알아채다.
++   *   코드는 멀줦히 돌았다 — 번호가 비는 건 어떤 타입 검사도 잡지 못한다.
++   *   v1.4.42에서 7~10을 6~9로 당겼고, 다시 벌어지지 않게 여기서 잠근다.
++   *   (1.5 수정 동굴처럼 의도된 소수 번호는 정수 연속성 판정에서 버린다.) */
++  const nums = [...C.WORLDS, ...C.EXT_WORLDS]
++    .filter(w => w.modules.length && Number.isInteger(w.world))
++    .map(w => w.world)
++    .sort((a, b) => a - b)
++  const gaps = []
++  for (let i = 1; i < nums.length; i++) if (nums[i] !== nums[i - 1] + 1) gaps.push(`${nums[i - 1]}→${nums[i]}`)
++  ok(nums[0] === 1, `월드 번호가 1부터 시작한다 (실제 ${nums[0]})`)
++  ok(gaps.length === 0, '★월드 번호에 빈칸이 없다 (5 다음이 7로 건너뛰던 회귀 감시)', `→ 끕긴 곳: ${gaps.join(', ')}`)
++
++  /* 뱃지 ID는 `world${world}_clear`로 자동 생성된다 — 번호를 바꾸고 도감을 안 바꾸면
++   * 도감에 없는 ID가 발급돼 **조용히 안 보이는 뱃지**가 된다. ④에서 이미 보지만 의도를 여기 남긴다. */
++  const orphan = Object.keys(B.BADGE_DEFS)
++    .filter(k => /^world[\d.]+_clear$/.test(k))
++    .filter(k => ![...C.WORLDS, ...C.EXT_WORLDS].some(w => `world${w.world}_clear` === k))
++  ok(orphan.length === 0, '★도감에 실재하지 않는 월드의 정복 뱃지가 남아 있지 않다', `→ ${orphan.join(', ')}`)
++}
++
+ console.log('── ⑤ ★규칙이 두 곳에 복사돼 있지 않은가 (L27·L46)★ ──')
+diff --git a/app/src/engine/SummonExercise.tsx b/app/src/engine/SummonExercise.tsx
+index ad49aff..e432911 100644
+--- a/app/src/engine/SummonExercise.tsx
++++ b/app/src/engine/SummonExercise.tsx
+@@ -39,3 +39,3 @@ function shuffle<T>(arr: T[], seed: number): T[] {
+ /** 정답과 비교해 "어디까지 맞았는지"를 알려주는 정직한 진단.
+- *  문법 엔진이 못 보는 문장(월드 7~10의 긴 문장 등)에서도 아이에게 다음 수를 준다. */
++ *  문법 엔진이 못 보는 문장(확장 월드 6~9의 긴 문장 등)에서도 아이에게 다음 수를 준다. */
+ function positionalHint(built: string[], answer: string, focus?: string): string {
+diff --git a/app/src/lib/adminMetrics.ts b/app/src/lib/adminMetrics.ts
+index fdb09d4..942e060 100644
+--- a/app/src/lib/adminMetrics.ts
++++ b/app/src/lib/adminMetrics.ts
+@@ -360,3 +360,3 @@ export interface ProgressView {
+   baseDone: number; baseTotal: number
+-  /** 확장(월드 7~10) */
++  /** 확장(월드 6~9) */
+   extDone: number; extTotal: number
+@@ -475,3 +475,3 @@ export interface IntegrityInput {
+   failedTables: string[]
+-  /** v1.4.40 — 확장 월드(7~10)에 **기록이 하나라도** 있는가. 완료 여부가 아니라 기록으로 판정한다. */
++  /** v1.4.40 — 확장 월드(6~9)에 **기록이 하나라도** 있는가. 완료 여부가 아니라 기록으로 판정한다. */
+   extTouched?: boolean
+@@ -633,3 +633,3 @@ export function integrityCheck(i: IntegrityInput): IntegrityIssue[] {
+     out.push({
+-      id: 'ext_untouched', level: 'info', title: '월드 7~10이 열렸지만 아직 한 번도 안 들어갔어요',
++      id: 'ext_untouched', level: 'info', title: '월드 6~9가 열렸지만 아직 한 번도 안 들어갔어요',
+       detail: `아이 화면 기준 진도는 ${i.progress.done}/${i.progress.total}입니다. 새 월드 24개가 통째로 비어 있어요.`,
+@@ -673,3 +673,3 @@ export function coachTips(a: {
+   if (a.progress.extOpen && a.progress.extDone === 0 && a.progress.baseDone === a.progress.baseTotal) {
+-    out.push({ emoji: '📖', text: '기준 커리큘럼 28개를 전부 끝냈어요. 월드 7~10(24단원)이 다음 목표입니다.' })
++    out.push({ emoji: '📖', text: '기준 커리큘럼 28개를 전부 끝냈어요. 월드 6~9(24단원)이 다음 목표입니다.' })
+   }
+diff --git a/app/src/screens/Profile.tsx b/app/src/screens/Profile.tsx
+index 0756ac1..d11d731 100644
+--- a/app/src/screens/Profile.tsx
++++ b/app/src/screens/Profile.tsx
+@@ -16,3 +16,3 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
+   const s = props.state
+-  // v1.4.23: 승인 전에는 월드 7~10이 '클리어 n/28' 분모에 들어가지 않는다
++  // v1.4.23: 승인 전에는 확장 월드(6~9)가 '클리어 n/28' 분모에 들어가지 않는다
+   const ORDER_V = moduleOrder(props.worldsReady)
+diff --git a/app/src/screens/WorldMap.tsx b/app/src/screens/WorldMap.tsx
+index 0edf63f..48beec3 100644
+--- a/app/src/screens/WorldMap.tsx
++++ b/app/src/screens/WorldMap.tsx
+@@ -49,3 +49,3 @@ export function WorldMap(props: {
+   vocabReady?: boolean
+-  /** v1.4.23 월드 7~10 — Dio님 승인 전에는 그려지지도 않는다 */
++  /** v1.4.23 확장 월드(6~9) — Dio님 승인 전에는 그려지지도 않는다 */
+   worldsReady?: boolean
+@@ -53,3 +53,3 @@ export function WorldMap(props: {
+   const s = props.state
+-  // ★승인 전에는 월드 7~10이 목록에도, 진행률·잠금 계산에도 들어가지 않는다★
++  // ★승인 전에는 확장 월드(6~9)가 목록에도, 진행률·잠금 계산에도 들어가지 않는다★
+   const WORLDS_V = worldList(props.worldsReady)
+diff --git a/app/verify.sh b/app/verify.sh
+index 5edea9f..92b9b1b 100755
+--- a/app/verify.sh
++++ b/app/verify.sh
+@@ -67,3 +67,3 @@ echo "     summon_check.mjs   문장 소환 scene↔문장 일치 (v1.4.24)"
+ echo "     summon_smoke.mjs   소환 화면 스모크 (dist + 로컬 서버 필요)"
+-echo "     w710_check.mjs     월드 7~10 콘텐츠 전수"
++echo "     w710_check.mjs     확장 월드(6~9) 콘텐츠 전수"
+ echo "   → 전부 content.json/vocab.json을 보는 콘텐츠 검사다. 코드 변경만 하는 릴리스에는 영향이 없지만,"
