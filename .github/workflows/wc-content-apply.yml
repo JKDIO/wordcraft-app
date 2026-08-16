@@ -2,7 +2,7 @@
 #
 # ★왜 이게 필요한가★
 #   content.json 은 1.9MB다. Claude가 직접 커밋하려면 모델 문맥을 통과시켜야 해서 불가능하다(L7·L34).
-#   그래서 **작은 패치 묶음**만 밀고, 적용은 CI가 한다.
+#   그래서 **작은 패치 묶음**(gzip+base64, 45KB)만 밀고, 적용은 CI가 한다.
 #
 # 사용법
 #   1) 패치 배열 — 둘 중 하나
@@ -109,6 +109,8 @@ jobs:
           set -euo pipefail
           git config user.name  'wc-ci'
           git config user.email 'ci@wordcraft.local'
-          git add -A content.json app/public/content.json _ci/CONTENT_REPORT.txt
+          # 적용한 ops는 지운다 — 남겨 두면 다음 릴리스에서 옛 패치가 다시 도는 것처럼 보인다.
+          rm -f _ci/content_ops.b64 _ci/content_ops.json _ci/content_ops.meta
+          git add -A content.json app/public/content.json _ci/CONTENT_REPORT.txt _ci/content_ops.b64 _ci/content_ops.json _ci/content_ops.meta || true
           git commit -m 'ci: apply content ops [skip ci]' || { echo 'no change'; exit 0; }
           git push
