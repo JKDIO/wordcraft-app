@@ -1,17 +1,14 @@
-# src-patch report 2026-08-16T07:14:27Z
-trigger_commit=be66ad7efb5cdd310cfca8effd484a5db39cc7ec
+# src-patch report 2026-08-16T07:17:34Z
+trigger_commit=9e331e6eaf3869e9ba9c031a4b60672f5b4d0cbe
 
 ## 적용한 파일 (blob SHA 대조 통과)
-# v1.4.42 (1/4) — 월드 번호 재정렬. 패치 본문을 먼저 올려 blob 대조한 뒤 트리거했다.
-# 이 값과 어긋나면 CI가 아무것도 커밋하지 않고 실패한다.
-e6644e4af21e66d07bae9ae56ebc41dc47da95ba  app/src/lib/content.ts
-980f271722573242a859f9b978b2319ac1d5163e  app/src/lib/version.ts
-10780ffdc0875538ff4f16b296b401679ed4e4cf  version.json
+# v1.4.42 (2/4) — 뱃지 도감의 월드 번호·뱃지 ID.
+38aba310fad5a3e7ec47f8ad93c875e1e7c45648  app/src/lib/badges.ts
 
--rw-r--r-- 1 runner runner 131274 Aug 16 07:14 app.css
--rw-r--r-- 1 runner runner 497017 Aug 16 07:14 main.js
+-rw-r--r-- 1 runner runner 131274 Aug 16 07:17 app.css
+-rw-r--r-- 1 runner runner 497010 Aug 16 07:17 main.js
 
-16876cb25fa56baa1a7acf1e9820de589aa0cfd338169d9c34e101a65a21362c  main.js
+c9f27c7a0a6ec0c185d2c485cd87e31d46866ad8eeb7b534623413707df37604  main.js
 2c9957aa714e54eb8c2dc6287eee656b562a3b742820a2a27595abc85743ee77  app.css
 
-main.js gzip bytes: 159627
+main.js gzip bytes: 159628

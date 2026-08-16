@@ -20,10 +20,10 @@ export type BadgeGroup =
   | '정복'          // 전체 진도 이정표 (개별 월드 클리어는 각 과목으로 보냈다)
   | '소리와 철자'    // 월드 1 소리 광산 · 월드 1.5 수정 동굴(발음기호)
   | '문장과 문법'    // 월드 2 문법 성 · 문장 소환
-  | '읽기의 눈'      // 월드 7 독해 던전
-  | '단어 조립'      // 월드 8 어휘 대장간
-  | '말하기'         // 월드 4 생존 캠프 · 월드 9 회화 아레나
-  | '쓰기'           // 월드 10 서술 마스터리
+  | '읽기의 눈'      // 월드 6 독해 던전
+  | '단어 조립'      // 월드 7 어휘 대장간
+  | '말하기'         // 월드 4 생존 캠프 · 월드 8 회화 아레나
+  | '쓰기'           // 월드 9 서술 마스터리
   | '꾸준함'         // 습관
   | '복습과 기억'    // 장기기억
   | '단어 대륙'      // 어휘 엔진
@@ -47,7 +47,7 @@ export interface BadgeFacts {
   modulesDone: string[]
   /** 학습 모듈 중 100점이 하나라도 있는가 */
   perfectModule: boolean
-  /** v1.4.27 — 월드 7~10 모듈 중 100점이 하나라도 있는가 */
+  /** v1.4.27 — 확장 월드(6~9) 모듈 중 100점이 하나라도 있는가 */
   perfectExt: boolean
   diagDone: number
   streak: number
@@ -80,9 +80,9 @@ const isDone = (st?: string) => st === 'completed' || st === 'mastered'
 
 /** 앱(LocalState) → 사실 */
 export function factsFromLocal(s: LocalState): BadgeFacts {
-  // v1.4.25: 월드 7~10을 포함한다. 빠뜨리면 그 월드 정복 뱃지가 **조용히 영영 안 나온다**
+  // v1.4.25: 확장 월드(6~9)를 포함한다. 빠뜨리면 그 월드 정복 뱃지가 **조용히 영영 안 나온다**
   // (v1.4.21에서 '수호자 수'를 호출자가 채우게 했다가 똑같은 사고를 냈다 — 파생은 규칙 안에서 계산한다).
-  // 아이 화면에 월드 7~10이 안 보이는 동안엔 그 모듈이 completed가 될 일 자체가 없으므로 안전하다.
+  // 아이 화면에 확장 월드(6~9)가 안 보이는 동안엔 그 모듈이 completed가 될 일 자체가 없으므로 안전하다.
   const done = [...MODULE_ORDER, ...EXT_MODULE_ORDER].filter(id => isDone(s.progress[id]?.status))
   const packs: string[] = []
   let perfect = 0, golems = 0
@@ -95,7 +95,7 @@ export function factsFromLocal(s: LocalState): BadgeFacts {
   }
   return {
     modulesDone: done,
-    // v1.4.27: 관제실(AdminPage)은 이미 월드 7~10까지 보고 있었다 — 여기만 28개 기준이라 어긋나 있었다(봉합)
+    // v1.4.27: 관제실(AdminPage)은 이미 확장 월드까지 보고 있었다 — 여기만 28개 기준이라 어긋나 있었다(봉합)
     perfectModule: [...MODULE_ORDER, ...EXT_MODULE_ORDER].some(id => (s.progress[id]?.best_score ?? 0) >= 100),
     perfectExt: EXT_MODULE_ORDER.some(id => (s.progress[id]?.best_score ?? 0) >= 100),
     diagDone: diagDoneCount(s),
@@ -148,7 +148,7 @@ const worldDone = (s: LocalState, world: number) => {
 /** 진행도 헬퍼 — facts에서 뽑아 상한으로 자른다 */
 const p = (get: (f: BadgeFacts) => number, max: number) =>
   (s: LocalState) => ({ cur: Math.min(get(factsFromLocal(s)), max), max })
-/** 지정한 모듈들을 몇 개 깼는지 — 월드 7~10 콘텐츠 뱃지의 진행도 */
+/** 지정한 모듈들을 몇 개 깼는지 — 확장 월드(6~9) 콘텐츠 뱃지의 진행도 */
 const mods = (...ids: string[]) => (s: LocalState) => {
   const done = doneModules(s)
   return { cur: ids.filter(id => done.includes(id)).length, max: ids.length }
@@ -166,26 +166,31 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
   world3_clear: { emoji: '🏹', name: '사냥의 달인', desc: '월드 3 전체 클리어', hint: '월드 3(동사 사냥터)의 모든 챕터를 클리어하면 획득!', group: '정복', progress: s => worldDone(s, 3) },
   world4_clear: { emoji: '🏕️', name: '생존왕', desc: '월드 4 전체 클리어', hint: '월드 4(생존 캠프)의 모든 챕터를 클리어하면 획득!', group: '말하기', progress: s => worldDone(s, 4) },
   world5_clear: { emoji: '⏳', name: '시간의 지배자', desc: '월드 5 전체 클리어', hint: '월드 5(시제 시간여행)의 모든 챕터를 클리어하면 획득!', group: '정복', progress: s => worldDone(s, 5) },
-  // v1.4.25 — 월드 7~10 개방과 같은 릴리스에서 뱃지도 만든다.
+  // v1.4.25 — 확장 월드 개방과 같은 릴리스에서 뱃지도 만든다.
   // 24모듈을 클리어했는데 받을 뱃지가 하나도 없으면, 아이 입장에서 그 월드는 '보상이 없는 방'이다.
-  world7_clear: { emoji: '📖', name: '던전 해독가', desc: '월드 7 전체 클리어', hint: '독해 던전(P1~P6)의 모든 층을 클리어하면 획득! 그림자 문장이 전부 읽힌다', group: '읽기의 눈', progress: s => worldDone(s, 7) },
-  world8_clear: { emoji: '🔨', name: '단어 대장장이', desc: '월드 8 전체 클리어', hint: '어휘 대장간(W1~W6)을 전부 클리어하면 획득! 모르는 단어도 분해해서 뜻을 추리하게 된다', group: '단어 조립', progress: s => worldDone(s, 8) },
-  world9_clear: { emoji: '💬', name: '아레나 챔피언', desc: '월드 9 전체 클리어', hint: '회화 아레나(S1~S6)를 전부 클리어하면 획득! 관중이 다시 소리를 낸다', group: '말하기', progress: s => worldDone(s, 9) },
-  world10_clear: { emoji: '✍️', name: '잉크의 계승자', desc: '월드 10 전체 클리어', hint: '서술 마스터리(G1~G6)를 전부 클리어하면 획득! 흩어진 이야기책이 다시 이어진다', group: '쓰기', progress: s => worldDone(s, 10) },
+  //
+  // ★v1.4.42 — 월드 번호를 7~10 → 6~9로 당기면서 뱃지 ID도 같이 당겼다.★
+  //   뱃지 ID는 `world${w.world}_clear`로 **자동 생성**되므로(아래 earnedFrom),
+  //   content.ts의 숫자만 바꾸고 여기를 안 바꾸면 도감에 없는 ID가 발급돼 **조용히 안 보이는 뱃지**가 된다.
+  //   안전 확인: 배포 전 DB 조회에서 world7~10_clear를 받은 학습자는 **0명**이었다(옛 ID 유실 없음).
+  world6_clear: { emoji: '📖', name: '던전 해독가', desc: '월드 6 전체 클리어', hint: '독해 던전(P1~P6)의 모든 층을 클리어하면 획득! 그림자 문장이 전부 읽힌다', group: '읽기의 눈', progress: s => worldDone(s, 6) },
+  world7_clear: { emoji: '🔨', name: '단어 대장장이', desc: '월드 7 전체 클리어', hint: '어휘 대장간(W1~W6)을 전부 클리어하면 획득! 모르는 단어도 분해해서 뜻을 추리하게 된다', group: '단어 조립', progress: s => worldDone(s, 7) },
+  world8_clear: { emoji: '💬', name: '아레나 챔피언', desc: '월드 8 전체 클리어', hint: '회화 아레나(S1~S6)를 전부 클리어하면 획득! 관중이 다시 소리를 낸다', group: '말하기', progress: s => worldDone(s, 8) },
+  world9_clear: { emoji: '✍️', name: '잉크의 계승자', desc: '월드 9 전체 클리어', hint: '서술 마스터리(G1~G6)를 전부 클리어하면 획득! 흩어진 이야기책이 다시 이어진다', group: '쓰기', progress: s => worldDone(s, 9) },
   newland_half: {
-    emoji: '🌗', name: '새 대륙 절반', desc: '월드 7~10 중 12모듈 클리어', hint: '새로 열린 네 월드에서 12개 스테이지를 깨면 획득! 딱 절반 지점이야', group: '정복',
+    emoji: '🌗', name: '새 대륙 절반', desc: '월드 6~9 중 12모듈 클리어', hint: '새로 열린 네 월드에서 12개 스테이지를 깨면 획득! 딱 절반 지점이야', group: '정복',
     progress: s => ({ cur: Math.min(doneModules(s).filter(id => EXT_MODULE_ORDER.includes(id)).length, 12), max: 12 }),
   },
   perfect_newland: {
-    emoji: '💠', name: '새 월드 퍼펙트', desc: '월드 7~10 모듈을 정확도 100%로 클리어', hint: '새 월드(7~10)의 스테이지 하나를 하나도 안 틀리고 깨면 획득!', group: '정복',
+    emoji: '💠', name: '새 월드 퍼펙트', desc: '월드 6~9 모듈을 정확도 100%로 클리어', hint: '새 월드(6~9)의 스테이지 하나를 하나도 안 틀리고 깨면 획득!', group: '정복',
     progress: () => null,
   },
   all_worlds: {
-    emoji: '🌐', name: '세계 정복', desc: '전 월드 52모듈 클리어', hint: '월드 1부터 10까지 52개 스테이지를 전부 클리어하면 획득. 여기까지 온 사람은 아직 없다', group: '정복',
+    emoji: '🌐', name: '세계 정복', desc: '전 월드 52모듈 클리어', hint: '월드 1부터 9까지 52개 스테이지를 전부 클리어하면 획득. 여기까지 온 사람은 아직 없다', group: '정복',
     progress: s => ({ cur: doneModules(s).length, max: MODULE_ORDER.length + EXT_MODULE_ORDER.length }),
   },
 
-  // ── 📖 읽기의 눈 (월드 7 독해 던전) ─────────────────────
+  // ── 📖 읽기의 눈 (월드 6 독해 던전) ─────────────────────
   // 한국어 화자가 영어 문장에서 실제로 막히는 지점 하나하나를 뱃지로 만들었다.
   read_chunk: {
     emoji: '🔦', name: '첫 단서', desc: '덩어리로 끊어 읽기 습득', hint: "독해 던전 1층 '그림자 문장'을 클리어하면 획득! 이제 뒤에서부터 번역하지 않아도 돼", group: '읽기의 눈',
@@ -204,7 +209,7 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
     progress: mods('P5'),
   },
 
-  // ── 🔨 단어 조립 (월드 8 어휘 대장간) ───────────────────
+  // ── 🔨 단어 조립 (월드 7 어휘 대장간) ───────────────────
   // 외우는 게 아니라 **분해하고 조립하는** 능력을 증명한다.
   smith_prefix: {
     emoji: '⚒️', name: '반대의 망치', desc: '부정 접두사 4종 습득', hint: "어휘 대장간 '반대의 망치'를 클리어하면 획득! un-·in-·dis-·non-으로 뜻을 뒤집는다", group: '단어 조립',
@@ -223,7 +228,7 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
     progress: mods('W6'),
   },
 
-  // ── 💬 말하기 (월드 9 회화 아레나) ──────────────────────
+  // ── 💬 말하기 (월드 8 회화 아레나) ──────────────────────
   arena_chunk: {
     emoji: '🗣️', name: '표현 인벤토리', desc: '덩어리 표현 장착', hint: "회화 아레나 '표현 인벤토리'를 클리어하면 획득! 문법으로 만들지 않고 통째로 꺼내 쓴다", group: '말하기',
     progress: mods('S1'),
@@ -241,7 +246,7 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
     progress: mods('S5', 'S6'),
   },
 
-  // ── ✍️ 쓰기 (월드 10 서술 마스터리) ─────────────────────
+  // ── ✍️ 쓰기 (월드 9 서술 마스터리) ─────────────────────
   write_combine: {
     emoji: '🔗', name: '문장 합체사', desc: '두 문장을 하나로 합치기', hint: '합체 공방 I·II를 둘 다 클리어하면 획득! 짧은 문장 두 개를 자연스럽게 잇는다', group: '쓰기',
     progress: mods('G1', 'G2'),
@@ -458,7 +463,7 @@ export function earnedFrom(f: BadgeFacts): string[] {
   add(f.balanceDays >= 21, 'balance_21')
   add(f.reviewCorrect >= 500, 'review_500')
 
-  // ── v1.4.27 월드 7~10 콘텐츠 뱃지 ──────────────────────────
+  // ── v1.4.27 확장 월드(6~9) 콘텐츠 뱃지 ──────────────────────
   // ⚠️ 파생은 여기서 직접 센다(호출자가 채우게 하면 조용히 안 나온다 — v1.4.21에서 겪었다).
   const has = (...ids: string[]) => ids.every(id => f.modulesDone.includes(id))
   const extDone = f.modulesDone.filter(id => EXT_MODULE_ORDER.includes(id)).length
