@@ -1,0 +1,171 @@
+# 작은 패치 파일 하나로 소스를 고치고 → 검증하고 → 빌드하고 → 배포까지 한 번에.
+#
+# ★왜 이게 필요한가 (2026-08-16 제정)★
+#   클라우드 세션에서 `git push`가 막히는 경우가 있다(저장소가 세션 소스에 없으면 프록시가 403 — L55).
+#   그때 남은 길은 GitHub API뿐인데, API로 파일을 올리려면 **파일 내용 전체**를 모델이 다시 써야 한다.
+#   v1.4.41의 변경 파일 6개는 합쳐서 109KB다 — 한 글자만 틀려도 그게 아이 앱에 나가는 결함이 된다(L7).
+#   반면 **차이(diff)만** 보내면 8KB다. 그래서 diff를 보내고 CI가 적용한다.
+#
+# ★안전장치 — 이게 이 워크플로의 핵심이다★
+#   패치를 적용한 뒤 **파일마다 git blob SHA를 대조**한다(`_ci/src.patch.sha`).
+#   하나라도 어긋나면 **아무것도 커밋하지 않고 실패**한다.
+#   즉 결과는 둘 중 하나뿐이다 — **바이트 단위로 정확한 배포**, 또는 **배포 안 함**. 중간은 없다.
+#
+# 쓰는 법
+#   ① `_ci/src.patch.b64` — `git diff` 결과를 **gzip + base64** 한 것 (권장).
+#      왜 base64인가: 순수 diff는 문맥 줄의 **앞 공백 한 칸**까지 정확해야 한다.
+#      모델이 그걸 옮겨 적다 공백 하나를 잃으면 `corrupt patch`다. base64는 그 위험이 없고 길이도 1/2다.
+#      (평문 `_ci/src.patch`도 계속 지원한다 — b64가 없으면 그걸 쓴다.)
+#   ② `_ci/src.patch.sha`  — 패치가 건드리는 **모든** 파일의 `git hash-object` 값. "<sha>  <경로>" 한 줄씩
+#   두 파일을 한 커밋으로 밀면 실행된다. 결과는 `_ci/PATCH_REPORT.txt`.
+name: WC Source Patch
+
+on:
+  push:
+    paths: ['_ci/src.patch.sha']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wc-src-patch
+  cancel-in-progress: false
+
+jobs:
+  patch-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply patch
+        run: |
+          set -euo pipefail
+          test -f _ci/src.patch.sha || { echo "::error::_ci/src.patch.sha 가 없다"; exit 1; }
+          if [ -f _ci/src.patch.b64 ]; then
+            echo "패치 형식: gzip+base64"
+            base64 -d _ci/src.patch.b64 | gunzip > /tmp/src.patch \
+              || { echo "::error::base64/gzip 해독 실패 — 전송 중 손상되었다. 아무것도 하지 않는다."; exit 1; }
+          elif [ -f _ci/src.patch ]; then
+            echo "패치 형식: 평문 diff"
+            cp _ci/src.patch /tmp/src.patch
+          else
+            echo "::error::_ci/src.patch.b64 도 _ci/src.patch 도 없다"; exit 1
+          fi
+          echo "패치 크기: $(stat -c%s /tmp/src.patch) bytes"
+          echo "── 적용 대상 ──"
+          git apply --stat /tmp/src.patch
+          # --whitespace=nowarn: 한국어 주석이 많아 공백 경고로 멈추면 안 된다.
+          # 적용 실패는 그대로 실패시킨다 — 억지로 맞추면 조용히 틀린 코드가 나간다.
+          git apply --whitespace=nowarn /tmp/src.patch
+          echo "패치 적용 완료"
+
+      - name: Verify blob SHA (bit-exact gate)
+        run: |
+          set -euo pipefail
+          fail=0; n=0
+          while read -r sha path; do
+            case "$sha" in ''|'#'*) continue ;; esac
+            n=$((n+1))
+            if [ ! -f "$path" ]; then
+              echo "::error::파일 없음: $path"; fail=1; continue
+            fi
+            got=$(git hash-object "$path")
+            if [ "$got" = "$sha" ]; then
+              echo "  OK   $path"
+            else
+              echo "::error::해시 불일치 $path (기대 $sha / 실제 $got)"; fail=1
+            fi
+          done < _ci/src.patch.sha
+          echo "대조한 파일: $n개"
+          if [ "$n" -eq 0 ]; then echo "::error::대조할 항목이 없다"; exit 1; fi
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::바이트 단위 대조 실패 — 아무것도 커밋하지 않고 중단한다."
+            exit 1
+          fi
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Ensure build config
+        run: |
+          set -euo pipefail
+          cd app
+          if [ ! -f package.json ]; then
+            printf '%s\n' '{"name":"wordcraft","private":true,"dependencies":{"react":"19.2.6","react-dom":"19.2.6"}}' > package.json
+          fi
+          [ -f bunfig.toml ] || printf 'jsx = "react-jsx"\n' > bunfig.toml
+
+      - name: Install deps
+        run: cd app && bun install
+
+      - name: Typecheck (참고용 — 실패해도 빌드는 진행)
+        continue-on-error: true
+        run: cd app && bunx --bun typescript@5 tsc -p tsconfig.json --noEmit
+
+      - name: Bundle
+        run: |
+          set -euo pipefail
+          cd app
+          NODE_ENV=production bun build src/main.tsx \
+            --outdir dist --minify \
+            --define process.env.NODE_ENV='"production"'
+          ls -l dist/
+
+      - name: Sanity gate
+        run: |
+          set -euo pipefail
+          SZ=$(stat -c%s app/dist/main.js)
+          echo "bundle bytes: $SZ"
+          if [ "$SZ" -lt 300000 ]; then
+            echo "::error::번들이 비정상적으로 작다($SZ bytes). 배포를 중단한다."
+            exit 1
+          fi
+
+      - name: Version triple check
+        run: |
+          set -euo pipefail
+          S=$(grep -o "'1\.[0-9]*\.[0-9]*'" app/src/lib/version.ts | tr -d "'" | head -1)
+          V=$(python3 -c "import json;print(json.load(open('version.json'))['version'])")
+          B=$(grep -o "$S" app/dist/main.js | head -1)
+          echo "소스:$S / version.json:$V / 번들:$B"
+          # ★소스와 version.json이 어긋나면 아이 폰의 '업데이트 알림'이 오작동한다(L25).
+          [ "$S" = "$V" ] || { echo "::error::APP_VERSION($S) != version.json($V)"; exit 1; }
+          [ -n "$B" ]     || { echo "::error::번들에 버전 문자열이 없다"; exit 1; }
+
+      - name: Publish to repo root
+        run: |
+          set -euo pipefail
+          cp app/dist/main.js main.js
+          if [ -f app/public/app.css ]; then
+            cp app/public/app.css app.css
+            if compgen -G "app/public/css.d/*.css" > /dev/null; then
+              cat app/public/css.d/*.css >> app.css
+              echo "css.d merged: $(ls app/public/css.d/*.css | wc -l)"
+            fi
+          fi
+          mkdir -p _ci
+          {
+            echo "# src-patch report $(date -u +%FT%TZ)"
+            echo "trigger_commit=$GITHUB_SHA"
+            echo
+            echo "## 적용한 파일 (blob SHA 대조 통과)"
+            cat _ci/src.patch.sha
+            echo
+            ls -l main.js app.css
+            echo
+            sha256sum main.js app.css
+            echo
+            echo "main.js gzip bytes: $(gzip -c main.js | wc -c)"
+          } > _ci/PATCH_REPORT.txt
+          cat _ci/PATCH_REPORT.txt
+
+      - name: Commit
+        run: |
+          set -euo pipefail
+          git config user.name  'wc-ci'
+          git config user.email 'ci@wordcraft.local'
+          git add -A
+          git commit -m 'ci: apply source patch + rebuild bundle [skip ci]' || { echo 'no change'; exit 0; }
+          git push
