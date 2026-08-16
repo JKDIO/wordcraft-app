@@ -1,19 +1,17 @@
-# src-patch report 2026-08-16T06:20:37Z
-trigger_commit=7cd04cf751387a0504fd46387da2f08e04a27c2e
+# src-patch report 2026-08-16T07:14:27Z
+trigger_commit=be66ad7efb5cdd310cfca8effd484a5db39cc7ec
 
 ## 적용한 파일 (blob SHA 대조 통과)
-# v1.4.41 — 패치 적용 후 이 값과 어긋나면 CI가 아무것도 커밋하지 않고 실패한다.
-5ce5c82e2b6925197f93ebc33ca7e9d65999c719  app/admin_check.mjs
-fdb09d4d800eca90d74addd933237479516c2932  app/src/lib/adminMetrics.ts
-ab1192b254a4f94cf05d43746a4ef2246541fa9a  app/src/lib/version.ts
-0edf63fb1f32bbe75cab4c3e241901149a3d4907  app/src/screens/WorldMap.tsx
-5edea9fb9fa7af7a0cd5215fdb6b0f08288343ef  app/verify.sh
-c10c8e7faf52eb20626f21357816bb074695ea09  version.json
+# v1.4.42 (1/4) — 월드 번호 재정렬. 패치 본문을 먼저 올려 blob 대조한 뒤 트리거했다.
+# 이 값과 어긋나면 CI가 아무것도 커밋하지 않고 실패한다.
+e6644e4af21e66d07bae9ae56ebc41dc47da95ba  app/src/lib/content.ts
+980f271722573242a859f9b978b2319ac1d5163e  app/src/lib/version.ts
+10780ffdc0875538ff4f16b296b401679ed4e4cf  version.json
 
--rw-r--r-- 1 runner runner 131274 Aug 16 06:20 app.css
--rw-r--r-- 1 runner runner 497018 Aug 16 06:20 main.js
+-rw-r--r-- 1 runner runner 131274 Aug 16 07:14 app.css
+-rw-r--r-- 1 runner runner 497017 Aug 16 07:14 main.js
 
-c26e340db1ed906cb2d77f28a0b097604cfca26314d9be89963bbf7ab81819ec  main.js
+16876cb25fa56baa1a7acf1e9820de589aa0cfd338169d9c34e101a65a21362c  main.js
 2c9957aa714e54eb8c2dc6287eee656b562a3b742820a2a27595abc85743ee77  app.css
 
-main.js gzip bytes: 159628
+main.js gzip bytes: 159627

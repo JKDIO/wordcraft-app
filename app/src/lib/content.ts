@@ -19,7 +19,7 @@ export interface MatchPair extends TtsText { left: string; right: string }
 /**
  * 블록 조립 문항.
  *
- * ★`alt_answers` — v1.4.35 추가 (월드 7~10 적대적 검증에서 확인된 결함 봉합)★
+ * ★`alt_answers` — v1.4.35 추가 (옛 월드 7~10 = 지금의 6~9, 적대적 검증에서 확인된 결함 봉합)★
  *   같은 토큰으로 **문법적으로 똑같이 맞는 다른 어순**이 나오는 문항이 30개 넘게 있었다.
  *   예: "I watched TV last night" ↔ "Last night I watched TV" — 둘 다 옳은 영어다.
  *   그런데 채점이 `answer` 문자열 하나만 비교해서, **맞게 조립한 아이가 틀렸다는 피드백을 받았다.**
@@ -115,20 +115,28 @@ export const WORLDS = [
   { world: 3, name_ko: '동사 사냥터', emoji: '🏹', modules: ['B21a', 'B21b', 'B22a', 'B22b'] },
   { world: 4, name_ko: '생존 캠프', emoji: '🏕️', modules: ['D1S', 'D2S', 'D3S'] },
   { world: 5, name_ko: '시제 시간여행', emoji: '⏳', modules: ['T1', 'T2', 'T3'] },
-  // v1.4.24 — 월드 6 '문장 소환진 공방'(독립 화면)은 제거했다. 소환은 이제 문법 단원 안의 스텝이다.
+  // v1.4.24 — '문장 소환진 공방'(옛 월드 6, 독립 화면)은 제거했다. 소환은 이제 문법 단원 안의 스텝이다.
+  // ★v1.4.42 — 그래서 6번이 비어 있었다. Dio님 지시로 뒤의 월드를 한 칸씩 당겨 6~9로 다시 번호를 붙였다.
+  //   (번호만 바뀐다. module_id P/W/S/G는 그대로라 예한이 학습 기록에는 아무 영향이 없다.)
 ]
 export const MODULE_ORDER = ['A1', 'A2', 'A3', 'A4', 'R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'C0', 'C5', 'C6', 'C7', 'B21a', 'B21b', 'B22a', 'B22b', 'D1S', 'D2S', 'D3S', 'T1', 'T2', 'T3']
 
-/* ─── v1.4.23 월드 7~10 (선행 개발 — Dio님 승인 전까지 노출 금지) ─────────────────
+/* ─── v1.4.23 확장 월드 (선행 개발 — Dio님 승인 전까지 노출 금지) ─────────────────
    콘텐츠·코드는 배포하되 **보이지 않는다**. 스위치는 서버의 `version.json.worlds_ready` 하나.
    왜 이렇게 하나: MODULE_ORDER에 그냥 24개를 이어붙이면 예한이 화면의 "클리어 n/28"이
    조용히 "n/52"로 바뀐다. 아이 입장에서 그건 어느 날 갑자기 진도가 반토막 나는 경험이다.
-   그래서 기준선(WORLDS·MODULE_ORDER)은 건드리지 않고, 접근자에서 합친다. */
+   그래서 기준선(WORLDS·MODULE_ORDER)은 건드리지 않고, 접근자에서 합친다.
+
+   ★v1.4.42 번호 정정★ 옛 월드 6(문장 소환진)이 해체돼 6번이 비어 있었고,
+   아이 화면에 5 다음이 7로 건너뛰어 보였다. 7~10 → **6~9**로 한 칸씩 당겼다.
+   ┌ 옛 → 새 ┐  7→6 독해 던전 · 8→7 어휘 대장간 · 9→8 회화 아레나 · 10→9 서술 마스터리
+   여기 `world` 숫자가 **단일 원천**이다 — 화면 라벨도, `world{N}_clear` 뱃지 ID도 여기서 나온다.
+   module_id(P/W/S/G)는 손대지 않았으므로 DB 기록·복습 카드·진도는 전혀 영향받지 않는다. */
 export const EXT_WORLDS = [
-  { world: 7, name_ko: '독해 던전', emoji: '📖', modules: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] },
-  { world: 8, name_ko: '어휘 대장간', emoji: '🔨', modules: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'] },
-  { world: 9, name_ko: '회화 아레나', emoji: '💬', modules: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'] },
-  { world: 10, name_ko: '서술 마스터리', emoji: '✍️', modules: ['G1', 'G2', 'G3', 'G4', 'G5', 'G6'] },
+  { world: 6, name_ko: '독해 던전', emoji: '📖', modules: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] },
+  { world: 7, name_ko: '어휘 대장간', emoji: '🔨', modules: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'] },
+  { world: 8, name_ko: '회화 아레나', emoji: '💬', modules: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'] },
+  { world: 9, name_ko: '서술 마스터리', emoji: '✍️', modules: ['G1', 'G2', 'G3', 'G4', 'G5', 'G6'] },
 ]
 export const EXT_MODULE_ORDER = [
   'P1', 'P2', 'P3', 'P4', 'P5', 'P6',
@@ -148,7 +156,7 @@ export function isOffTrackModuleId(id: string): boolean {
   if (/^GOLEM-T\d{1,2}-\d$/.test(id)) return false
   return true
 }
-/** 월드 7~10에 속한 모듈인가 (승인 전에는 아이 화면 어디에도 나오면 안 된다) */
+/** 확장 월드(6~9)에 속한 모듈인가 (승인 전에는 아이 화면 어디에도 나오면 안 된다) */
 export const isExtModule = (id: string) => EXT_SET.has(id)
 /** 화면이 쓰는 월드 목록 — ready가 아니면 기준선(월드 1~6)만 */
 export const worldList = (ready?: boolean) => (ready ? [...WORLDS, ...EXT_WORLDS] : WORLDS)
