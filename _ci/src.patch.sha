@@ -1,12 +1,4 @@
-# v1.4.42 — 패치 적용 후 이 값과 어긋나면 CI가 아무것도 커밋하지 않고 실패한다.
-22e93c459b471b7feb519bbb363582c91a2248c6  app/badge_check.mjs
-e4329110720736dcebc741d15b8c726c8b213719  app/src/engine/SummonExercise.tsx
-942e060c7d91a6c598dcd5b9fbdfd9f6b3dabf61  app/src/lib/adminMetrics.ts
-38aba310fad5a3e7ec47f8ad93c875e1e7c45648  app/src/lib/badges.ts
+# v1.4.42 (1/4)
 e6644e4af21e66d07bae9ae56ebc41dc47da95ba  app/src/lib/content.ts
 980f271722573242a859f9b978b2319ac1d5163e  app/src/lib/version.ts
-eb80deeac8d9ebb813b26017e6ac4300204a3c4d  app/src/screens/AdminPage.tsx
-d11d731555f35ad92e5e91bd65adccf895d6c517  app/src/screens/Profile.tsx
-48beec34a41283fab5dd4362b814cae705ff60df  app/src/screens/WorldMap.tsx
-92b9b1b6abd968fe1eca6185901c5879fa5d1801  app/verify.sh
 10780ffdc0875538ff4f16b296b401679ed4e4cf  version.json
