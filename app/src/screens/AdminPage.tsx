@@ -59,7 +59,7 @@ const MODULE_NAMES: Record<string, string> = {
   D1S: '생존 캠프', D2S: '미국 상륙 작전', D3S: '미국 친구 사귀기',
   T1: '과거로 GO!', T2: '미래로 GO!', T3: '지금 이 순간',
   ECHO: '에코 사냥(듣기)', CMD: '지령 미션(듣기)', FORGE: '문장 소환진',
-  // v1.4.23 월드 7~10 (승인 전 = 아이 화면 미노출. 관제실 라벨은 미리 넣어 둔다 — L28 ③)
+  // v1.4.23 확장 월드 6~9 (승인 전 = 아이 화면 미노출. 관제실 라벨은 미리 넣어 둔다 — L28 ③)
   P1: '그림자 문장', P2: '뒤에서 꾸미는 자들', P3: '대명사 미로', P4: '신호등 마을', P5: '요지 사냥', P6: '순서의 탑',
   W1: '반대의 망치', W2: '다시·너머의 망치', W3: '변신 모루', W4: '라틴 유적', W5: '그리스 유적', W6: '파티클 마법서',
   S1: '표현 인벤토리', S2: '리듬 대장간', S3: '연음 다리', S4: '타임어택 아레나', S5: '역할극 던전', S6: '거울 방',
@@ -104,10 +104,11 @@ export const PROGRESS_LIMIT = 5000
 
 /** 향후 확장 월드 로드맵 — 중학 대비 심화 과정 (콘텐츠 추가 시 열림)
  *  월드 5(시제 시간여행)는 v1.2.0에서 정식 오픈 → 로드맵에서 졸업 */
-/** 월드 6(문장 소환진 공방)은 v1.4.0에서 오픈했다가 **v1.4.24에서 해체**했다 —
+/** '문장 소환진 공방'(★옛★ 월드 6)은 v1.4.0에서 오픈했다가 **v1.4.24에서 해체**했다 —
+ *  ★v1.4.42부터 '월드 6'은 독해 던전을 가리킨다★ — 옛 기록의 월드 6과 헷갈리지 말 것.
  *  독립 화면으로 두면 커리큘럼이 늘 때마다 길어져 방치되므로, 문법 단원 안의 '🔮 문장 소환' 스텝으로 녹였다.
  *  기존 기록(activity_type 'forge'/'forge_discover', module_id 'FORGE')은 그대로 보존한다(L17). */
-/** v1.4.23 — 월드 7~10은 **제작이 끝났고 배포도 됐다.** 다만 Dio님 승인 전까지 아이 화면에 뜨지 않는다.
+/** v1.4.23 — 확장 월드(6~9)는 **제작이 끝났고 배포도 됐다.** 다만 Dio님 승인 전까지 아이 화면에 뜨지 않는다.
  *  여는 방법: 서버 `version.json`의 `worlds_ready`를 true로 (앱 재배포 불필요). */
 const FUTURE_WORLDS: { world: number; emoji: string; name: string; desc: string }[] = [
   { world: 7, emoji: '📖', name: '독해 던전', desc: '청킹 읽기 · 후치수식 · 대명사 추적 · 담화 표지 · 요지 · 순서 배열 (6단원)' },
@@ -354,7 +355,7 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
     return d.toISOString().slice(0, 10)
   }, [todayKey])
 
-  // ★v1.4.35★ worlds_ready = 아이 화면에 월드 7~10이 열려 있는가. 이걸 안 보면 관제실 분모가 28로 굳어
+  // ★v1.4.35★ worlds_ready = 아이 화면에 확장 월드(6~9)가 열려 있는가. 이걸 안 보면 관제실 분모가 28로 굳어
   //   "전체 진행률 100%"라는 거짓말이 나온다(실제로 나오고 있었다 — 아이 앱은 28/52였다).
   const worldsReady = !!latest?.worlds_ready
   const M = useMemo(
@@ -690,7 +691,7 @@ function computeMetrics(
     tierRows, weakVocab: weakVocab.slice(0, 5),
   }
 
-  // 모듈 마스터리 — ★v1.4.35★ 아이 화면에 열려 있으면 월드 7~10(24개)도 함께 본다.
+  // 모듈 마스터리 — ★v1.4.35★ 아이 화면에 열려 있으면 확장 월드(6~9, 24개)도 함께 본다.
   //   예전에는 MODULE_ORDER(28개)만 돌아, 열려 있는 월드의 학습 결과가 관제실에서 통째로 보이지 않았다.
   const masteryIds = worldsReady ? [...MODULE_ORDER, ...EXT_MODULE_ORDER] : MODULE_ORDER
   const mastery = masteryIds.map(id => {
@@ -717,10 +718,10 @@ function computeMetrics(
     else dayKinds[k].course = true
   }
   const facts: BadgeFacts = {
-    // v1.4.25: 월드 7~10 포함 — badges.ts의 factsFromLocal과 같은 기준이어야 badge_check가 통과한다(L27)
+    // v1.4.25: 확장 월드(6~9) 포함 — badges.ts의 factsFromLocal과 같은 기준이어야 badge_check가 통과한다(L27)
     modulesDone: doneIds.filter(id => MODULE_ORDER.includes(id) || EXT_MODULE_ORDER.includes(id)),
     perfectModule: progress.some(p => !p.module_id.startsWith('DIAG-') && !VOCAB_PACK_RE.test(p.module_id) && !GOLEM_RE.test(p.module_id) && (p.best_score ?? 0) >= 100),
-    // v1.4.27 — badges.ts factsFromLocal과 같은 기준(월드 7~10 퍼펙트)
+    // v1.4.27 — badges.ts factsFromLocal과 같은 기준(확장 월드 6~9 퍼펙트)
     perfectExt: progress.some(p => EXT_MODULE_ORDER.includes(p.module_id) && (p.best_score ?? 0) >= 100),
     diagDone: progress.filter(p => p.module_id.startsWith('DIAG-') && (p.status === 'completed' || p.status === 'mastered')).length,
     streak: learner?.streak_days ?? 0,
@@ -740,7 +741,7 @@ function computeMetrics(
   }
   const earnedBadges = new Set<string>(earnedFrom(facts))
 
-  // 월드 진행 — ★v1.4.35★ 열려 있으면 월드 7~10도 지도에 그린다(아이 화면과 같은 목록).
+  // 월드 진행 — ★v1.4.35★ 열려 있으면 확장 월드(6~9)도 지도에 그린다(아이 화면과 같은 목록).
   const worldProgress = (worldsReady ? [...WORLDS, ...EXT_WORLDS] : WORLDS).filter(w => w.modules.length).map(w => {
     const mods = w.modules.map(id => ({ id, status: progMap.get(id)?.status || 'locked' }))
     const done = mods.filter(m => m.status === 'completed' || m.status === 'mastered').length
@@ -770,7 +771,7 @@ function computeMetrics(
     const devs = Array.from(new Set(rawSessions.filter(s => dayOf(s.started_at) === key).map(s => s.device || '알 수 없음'))).sort()
     return { focusSec: 0, openSec: 0, rawSessionSec: 0, answers: 0, idleSuspect: false, corruptSessions: 0, devices: devs }
   })
-  // 월드 7~10을 "한 번도 안 들어갔다"고 말하려면 완료 여부가 아니라 **기록**을 봐야 한다.
+  // 확장 월드(6~9)를 "한 번도 안 들어갔다"고 말하려면 완료 여부가 아니라 **기록**을 봐야 한다.
   //   (실측: P1에 이미 6문항이 있는데 진단 패널은 "통째로 비어 있어요"라고 말하고 있었다)
   const extTouched = events.some(e => EXT_MODULE_ORDER.includes(e.module_id))
   /* v1.4.40 — 진도 시스템 밖의 학습. 2026-08-16 실측으로 전체의 20.6%(911문항)가 여기였다:
@@ -1327,7 +1328,7 @@ function ProgressTab(props: { M: Metrics }) {
           <div className="ah-progsplit">
             <div><span>기준 커리큘럼 (월드 1~5)</span><b>{P.baseDone}/{P.baseTotal}</b>
               <i><em style={{ width: `${(P.baseDone / P.baseTotal) * 100}%` }} /></i></div>
-            <div><span>확장 커리큘럼 (월드 7~10)</span><b>{P.extDone}/{P.extTotal}</b>
+            <div><span>확장 커리큘럼 (월드 6~9)</span><b>{P.extDone}/{P.extTotal}</b>
               <i><em style={{ width: `${(P.extDone / P.extTotal) * 100}%` }} /></i></div>
           </div>
         )}
@@ -1351,7 +1352,7 @@ function ProgressTab(props: { M: Metrics }) {
         ))}
       </div>
 
-      {/* ★v1.4.35★ 이 패널은 v1.4.26에 월드 7~10이 실제로 열린 뒤에도 "승인 대기 · 예정"이라고 적고 있었다.
+      {/* ★v1.4.35★ 이 패널은 v1.4.26에 확장 월드가 실제로 열린 뒤에도 "승인 대기 · 예정"이라고 적고 있었다.
           문구를 손으로 관리하면 반드시 낡는다 → 이제 라이브 스위치(worlds_ready)와 실제 진도에서 상태를 만든다. */}
       <div className="adm-panel">
         <h4>🚀 중학 대비 심화 과정 <span className="adm-sub">{M.prog.extOpen ? '예한이 화면에 열려 있음' : '아직 잠김 (version.json의 worlds_ready)'}</span></h4>

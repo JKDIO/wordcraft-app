@@ -1,14 +1,14 @@
-# src-patch report 2026-08-16T07:17:34Z
-trigger_commit=9e331e6eaf3869e9ba9c031a4b60672f5b4d0cbe
+# src-patch report 2026-08-16T07:26:13Z
+trigger_commit=427ef14e377a40061c0e728d9293b60f8887e264
 
 ## 적용한 파일 (blob SHA 대조 통과)
-# v1.4.42 (2/4) — 뱃지 도감의 월드 번호·뱃지 ID.
-38aba310fad5a3e7ec47f8ad93c875e1e7c45648  app/src/lib/badges.ts
+# v1.4.42 (3/4) — 관제실 라벨·주석의 월드 번호.
+eb80deeac8d9ebb813b26017e6ac4300204a3c4d  app/src/screens/AdminPage.tsx
 
--rw-r--r-- 1 runner runner 131274 Aug 16 07:17 app.css
--rw-r--r-- 1 runner runner 497010 Aug 16 07:17 main.js
+-rw-r--r-- 1 runner runner 131274 Aug 16 07:26 app.css
+-rw-r--r-- 1 runner runner 497009 Aug 16 07:26 main.js
 
-c9f27c7a0a6ec0c185d2c485cd87e31d46866ad8eeb7b534623413707df37604  main.js
+0aa6ac3e06fc3041eb84525127eda8a89cea3400bb013e2d52a55d732575d1de  main.js
 2c9957aa714e54eb8c2dc6287eee656b562a3b742820a2a27595abc85743ee77  app.css
 
-main.js gzip bytes: 159628
+main.js gzip bytes: 159627
