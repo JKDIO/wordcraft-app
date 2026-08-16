@@ -1,7 +1,12 @@
-# v1.4.41 — 패치 적용 후 이 값과 어긋나면 CI가 아무것도 커밋하지 않고 실패한다.
-5ce5c82e2b6925197f93ebc33ca7e9d65999c719  app/admin_check.mjs
-fdb09d4d800eca90d74addd933237479516c2932  app/src/lib/adminMetrics.ts
-ab1192b254a4f94cf05d43746a4ef2246541fa9a  app/src/lib/version.ts
-0edf63fb1f32bbe75cab4c3e241901149a3d4907  app/src/screens/WorldMap.tsx
-5edea9fb9fa7af7a0cd5215fdb6b0f08288343ef  app/verify.sh
-c10c8e7faf52eb20626f21357816bb074695ea09  version.json
+# v1.4.42 — 패치 적용 후 이 값과 어긋나면 CI가 아무것도 커밋하지 않고 실패한다.
+22e93c459b471b7feb519bbb363582c91a2248c6  app/badge_check.mjs
+e4329110720736dcebc741d15b8c726c8b213719  app/src/engine/SummonExercise.tsx
+942e060c7d91a6c598dcd5b9fbdfd9f6b3dabf61  app/src/lib/adminMetrics.ts
+38aba310fad5a3e7ec47f8ad93c875e1e7c45648  app/src/lib/badges.ts
+e6644e4af21e66d07bae9ae56ebc41dc47da95ba  app/src/lib/content.ts
+980f271722573242a859f9b978b2319ac1d5163e  app/src/lib/version.ts
+eb80deeac8d9ebb813b26017e6ac4300204a3c4d  app/src/screens/AdminPage.tsx
+d11d731555f35ad92e5e91bd65adccf895d6c517  app/src/screens/Profile.tsx
+48beec34a41283fab5dd4362b814cae705ff60df  app/src/screens/WorldMap.tsx
+92b9b1b6abd968fe1eca6185901c5879fa5d1801  app/verify.sh
+10780ffdc0875538ff4f16b296b401679ed4e4cf  version.json
