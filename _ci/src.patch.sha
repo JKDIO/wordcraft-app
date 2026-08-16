@@ -1,6 +1,2 @@
-# v1.4.42 (4a/5)
-e4329110720736dcebc741d15b8c726c8b213719  app/src/engine/SummonExercise.tsx
-942e060c7d91a6c598dcd5b9fbdfd9f6b3dabf61  app/src/lib/adminMetrics.ts
-d11d731555f35ad92e5e91bd65adccf895d6c517  app/src/screens/Profile.tsx
-48beec34a41283fab5dd4362b814cae705ff60df  app/src/screens/WorldMap.tsx
-92b9b1b6abd968fe1eca6185901c5879fa5d1801  app/verify.sh
+# v1.4.42 (5/5)
+b6c264bb1f14fb500271fefceb996c04d2f009ca  app/badge_check.mjs
