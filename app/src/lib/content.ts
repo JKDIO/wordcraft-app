@@ -137,6 +137,17 @@ export const EXT_MODULE_ORDER = [
   'G1', 'G2', 'G3', 'G4', 'G5', 'G6',
 ]
 const EXT_SET = new Set(EXT_MODULE_ORDER)
+/** ★v1.4.40★ 이 module_id가 '진도(모듈 52개)'에 잡히는가.
+ *  어휘 팩(V1-01)·단어 골렘(GOLEM-T1-1)·진단(DIAG-D1)은 진도바가 아니라 각자 화면에서 센다.
+ *  그 밖의 것(지령 미션 CMD·에코 사냥 ECHO·문장 소환진 FORGE·복습 REVIEW)이 **진도 밖 학습**이다. */
+const TRACKED = new Set([...MODULE_ORDER, ...EXT_MODULE_ORDER])
+export function isOffTrackModuleId(id: string): boolean {
+  if (TRACKED.has(id)) return false
+  if (id.startsWith('DIAG-') || /^D\d$/.test(id)) return false
+  if (/^V\d{1,2}-\d{2}$/.test(id)) return false
+  if (/^GOLEM-T\d{1,2}-\d$/.test(id)) return false
+  return true
+}
 /** 월드 7~10에 속한 모듈인가 (승인 전에는 아이 화면 어디에도 나오면 안 된다) */
 export const isExtModule = (id: string) => EXT_SET.has(id)
 /** 화면이 쓰는 월드 목록 — ready가 아니면 기준선(월드 1~6)만 */

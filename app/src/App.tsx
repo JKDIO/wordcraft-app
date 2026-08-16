@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { WorldMap } from './screens/WorldMap'
 import { ModuleSession } from './screens/ModuleSession'
 import { DiagnosticRun } from './screens/DiagnosticRun'
@@ -17,7 +17,7 @@ import { VocabContinent, type VocabResult } from './screens/VocabContinent'
 import { WordDex } from './screens/WordDex'
 import { RewardBoard, useRewardGoals } from './screens/RewardBoard'
 import {
-  loadLocal, saveLocal, initLearner, startSession, endSession, heartbeatSession, resumeSession, repairStreak, syncSharedDaily,
+  loadLocal, saveLocal, initLearner, startSession, endSession, pauseSession, heartbeatSession, resumeSession, repairStreak, syncSharedDaily,
   recordAnswer, recordXp, recordProgress, recordGhostResult, recordBadge,
   bumpSortPerfect, setRapidBest, enqueue, type LocalState,
 } from './lib/store'
@@ -28,7 +28,7 @@ import { computeEarnedBadges } from './lib/badges'
 import { reviewCardsFor, type VocabQuestion } from './lib/vocab'
 import { todayStr, kstTomorrowStr } from './lib/leitner'
 // v1.4.29: 하단 네비 뱃지와 복습 광산이 **같은 규칙**을 쓰도록 (숫자 불일치 사고 재발 방지)
-import { dueCardsQuery, minableCards } from './lib/review'
+import { dueCardsQuery, todaysMine } from './lib/review'
 import { APP_VERSION, isNewer, type VersionInfo } from './lib/version'
 import type { StepEvent } from './engine/StepRunner'
 
@@ -56,6 +56,9 @@ export default function App() {
   // v2 다가구: 인증 상태별 라우팅. guardian=보호자(구글)·device=아이기기(익명)·legacy=세션無(예한 하위호환)
   const [authRole, setAuthRole] = useState<AuthRole>('loading')
   const [dueCount, setDueCount] = useState(0)
+  /** ★v1.4.40★ 지금 '학습자 화면'에 있는가. 하트비트가 매 틱마다 이 값을 본다(마운트 시 1회가 아니라).
+   *  ref인 이유: deps가 `[]`인 init effect 안의 setInterval이 최신 값을 읽어야 하기 때문. */
+  const onLearnerRouteRef = useRef(true)
   const [backsMap, setBacksMap] = useState<Record<string, { back: string; tts?: string | null }>>({})
   // v1.4.22 보상 로드맵 — 한 번만 읽어 월드맵 스트립·보상 창고가 같은 데이터를 쓴다.
   const { goals: rewardGoals } = useRewardGoals(state.learnerId)
@@ -78,6 +81,14 @@ export default function App() {
     setRechecking(false)
   }, [])
   useEffect(() => { void checkVersion() }, [checkVersion])
+
+  // 학습자 화면을 벗어나면(관제실·가족·슈퍼·연결) 그 시점까지를 저장하고 시간 누적을 멈춘다.
+  useEffect(() => {
+    const learner = !(route.startsWith('/admin') || route.startsWith('/super') || route.startsWith('/family') || route.startsWith('/connect'))
+    if (onLearnerRouteRef.current && !learner) pauseSession() // 떠나는 순간 지금까지를 저장(닫지는 않는다)
+    if (!onLearnerRouteRef.current && learner) resumeSession() // 돌아오면 구간만 리셋 — 그 사이 시간은 누적 안 됨
+    onLearnerRouteRef.current = learner
+  }, [route])
   const updateAvailable = !!latest && isNewer(latest.version, APP_VERSION)
 
   // 뱃지 동기화 — 현재 상태로 획득 가능한 뱃지를 전부 판정해 놓친 것 소급 지급 (upsert라 중복 무해)
@@ -92,10 +103,14 @@ export default function App() {
 
   // ★v1.4.29★ 뱃지 숫자 = 복습 광산이 실제로 보여줄 카드 수. 같은 쿼리·같은 필터를 쓴다.
   //   (2026-08-14 사고: 뱃지는 서버 due를 세고 광산은 500장 창에서 골라 40 vs 0으로 갈렸다)
+  //   ★v1.4.40★ ① `db.select`가 아니라 `db.selectAll` — 서버 `Max rows`가 1,000이라 limit=2000은
+  //     조용히 잘린다. 광산(ReviewMine)은 이미 selectAll이었으므로 카드가 1,000장을 넘는 순간
+  //     "뱃지 1000 / 광산 1,2xx"로 **같은 사고가 그대로 재현**될 참이었다(L49).
+  //   ② `minableCards`가 아니라 `todaysMine` — 하루 상한(60장)이 뱃지에도 똑같이 걸려야 한다.
   const refreshDueCount = useCallback((learnerId: string | null) => {
     if (!learnerId) return
-    db.select('review_cards', dueCardsQuery(learnerId))
-      .then(rows => setDueCount(minableCards(rows as unknown as { card_id: string; due_date: string }[]).length))
+    db.selectAll('review_cards', dueCardsQuery(learnerId))
+      .then(r => setDueCount(todaysMine(r.rows as unknown as { card_id: string; due_date: string; box: number; id: number }[]).length))
       .catch(() => {})
   }, [])
 
@@ -203,14 +218,20 @@ export default function App() {
       // device면 이 기기에 바인딩된 아이, 아니면 레거시(FAMILY_CODE=예한 — 기존 흐름 그대로)
       const bound: Learner | null = role === 'device' ? await myDeviceLearner(user!.id) : null
       let s = await initLearner(state, bound ?? undefined)
-      s = await syncSharedDaily(s) // v1.4.3 공유 밸런스: 서버 파생 병합(새 기기에도 게이지·출석 정확)
-      s = repairStreak(s) // 과거 UTC '어제' 버그로 낮게 저장된 스트릭을 출석 이력으로 자가 복구 (7/16)
+      // v1.4.3 공유 밸런스: 서버 파생 병합(새 기기에도 게이지·출석 정확)
+      // ★v1.4.40-b★ 조회가 실제로 성공했는지를 같이 받는다 — 실패를 성공으로 오해하면
+      //   attendance가 비어 보이고, 그 상태로 연속 일수를 내리면 서버에 0이 박힌다(독립 감사 지적).
+      const sync = await syncSharedDaily(s)
+      s = sync.s
+      // 출석 배열로 연속 일수를 정직하게 재계산. **내리는 것은 재계산을 믿을 수 있을 때만.**
+      s = repairStreak(s, sync.ok && sync.eventsSeen > 0)
       s = await startSession(s)
       // 보스전 승리 이력 서버 복원 (boss_slayer 뱃지 정확 판정 — 로컬 초기화에도 안전)
       if (s.learnerId) {
         try {
-          const rows = await db.select('answer_events', `learner_id=eq.${s.learnerId}&activity_type=eq.boss&is_correct=eq.true&select=module_id&order=created_at.desc&limit=2000`)
-          const wins = Array.from(new Set([...(s.bossWins || []), ...(rows as { module_id: string }[]).map(r => r.module_id)]))
+          // ★v1.4.40★ selectAll — 보스 문항이 1,000건을 넘으면 오래된 승리가 잘려 boss_slayer 뱃지가 흔들린다.
+          const r = await db.selectAll('answer_events', `learner_id=eq.${s.learnerId}&activity_type=eq.boss&is_correct=eq.true&select=module_id&order=created_at.desc`)
+          const wins = Array.from(new Set([...(s.bossWins || []), ...(r.rows as { module_id: string }[]).map(x => x.module_id)]))
           s = { ...s, bossWins: wins }
           saveLocal(s)
         } catch { /* 오프라인 — 로컬 값 유지 */ }
@@ -221,13 +242,19 @@ export default function App() {
     })()
     // 사용시간: 모바일 WebView는 pagehide가 거의 안 떠서 하트비트(30초) + 백그라운드 전환 시 확정 기록
     // 하트비트가 출석(하루 15분)을 새로 인정하면 스트릭·출석만 화면 상태에 병합 (다른 필드는 클로버링 방지)
+    /* ★v1.4.40 — 하트비트가 '지금 어느 화면인지'를 본다★
+       예전에는 `isAdminRoute`가 **마운트 시 한 번만** 계산됐고 이 effect의 deps가 `[]`였다.
+       해시 라우팅은 리마운트가 아니므로, 학습 화면 → `#/admin`으로 이동해 아빠가 관제실을 20분 보면
+       (클릭하고 있으니 입력·가시성 3조건을 전부 통과해서) **그 20분이 예한이 세션에 적립되고
+       출석 15분을 채웠다.** 관제실로 '직접' 들어간 경우만 막혀 있었다. */
     const hb = window.setInterval(() => {
-      if (!isLearnerDevice) return
+      if (!isLearnerDevice || !onLearnerRouteRef.current) return
       const ns = heartbeatSession()
       if (ns) setState(prev => ({ ...prev, streak_days: ns.streak_days, last_active_date: ns.last_active_date, attendance: ns.attendance }))
     }, 30000)
     const onEnd = () => { if (isLearnerDevice) endSession() }
-    const onVis = () => { if (!isLearnerDevice) return; if (document.hidden) endSession(); else resumeSession() }
+    // hidden에서 세션을 **닫지 않는다** — 닫으면 복귀 후 학습이 관제실에서 증발하고 P0 오경보가 뜬다(store.pauseSession 주석).
+    const onVis = () => { if (!isLearnerDevice) return; if (document.hidden) pauseSession(); else resumeSession() }
     window.addEventListener('pagehide', onEnd)
     document.addEventListener('visibilitychange', onVis)
     return () => {

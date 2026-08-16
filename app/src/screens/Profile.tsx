@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { getDailyActiveSec, ATTENDANCE_MIN_SEC, type LocalState } from '../lib/store'
+// ★v1.4.40★ 화면이 보는 '오늘 학습 시간'도 출석 판정과 **같은 값**이어야 한다.
+//   예전엔 getDailyActiveSec(=앱을 조작한 시간)을 보여 주면서 "15분 캐면 출석"이라고 적었는데,
+//   실제 출석 판정은 서버 세션 시간이었다 — 아이가 보는 숫자와 판정 기준이 서로 달랐다.
+import { todayFocusSec, ATTENDANCE_MIN_SEC, takeStreakFixNotice, type LocalState } from '../lib/store'
 import { db } from '../lib/supabase'
 import { levelProgress, levelTitle } from '../lib/xp'
 import { moduleOrder } from '../lib/content'
@@ -26,8 +29,9 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
 
   useEffect(() => {
     if (!s.learnerId) return
-    db.select('badges', `learner_id=eq.${s.learnerId}&select=badge_id&order=earned_at.desc&limit=1000`)
-      .then(rows => setBadges((rows as { badge_id: string }[]).map(r => r.badge_id)))
+    // ★v1.4.40★ selectAll — 뱃지는 71종이라 지금은 안전하지만, 규칙을 하나로 통일해 예외를 없앤다.
+    db.selectAll('badges', `learner_id=eq.${s.learnerId}&select=badge_id&order=earned_at.desc`)
+      .then(r => setBadges((r.rows as { badge_id: string }[]).map(x => x.badge_id)))
       .catch(() => {})
   }, [s.learnerId])
 
@@ -40,12 +44,15 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
   const groupOpen = (g: BadgeGroup) => openGroups[g] === true
   const anyOpen = BADGE_GROUPS.some(g => groupOpen(g))
 
-  // 오늘 학습시간 (출석 15분 판정용) — 30초마다 새로고침해 진행분 표시
-  const [dailySec, setDailySec] = useState(() => getDailyActiveSec())
+  // 오늘 '실제로 문제를 푼 시간' (출석 15분 판정과 같은 산식) — 30초마다 새로고침
+  const [dailySec, setDailySec] = useState(() => todayFocusSec())
   useEffect(() => {
-    const t = setInterval(() => setDailySec(getDailyActiveSec()), 30000)
+    const t = setInterval(() => setDailySec(todayFocusSec()), 30000)
     return () => clearInterval(t)
   }, [])
+  // ★v1.4.40★ 출석 기준을 정직하게 고치면서 연속 일수가 내려간 경우, 아이에게 **한 번만** 설명한다.
+  //   숫자를 몰래 깎지 않는다 — 왜 바뀌었는지 아이가 알아야 납득한다(Dio님 결정 2026-08-16).
+  const [streakFix] = useState(() => takeStreakFixNotice())
   const dailyMin = Math.floor(dailySec / 60)
   const needMin = Math.max(1, Math.ceil((ATTENDANCE_MIN_SEC - dailySec) / 60))
 
@@ -70,11 +77,29 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
         <div className="xpbar-seg">
           {Array.from({ length: 10 }, (_, k) => <i key={k} className={k < onSeg ? 'on' : ''} />)}
         </div>
-        <div className="xp-meta"><span>{lp.cur} / {lp.need} XP</span><span>다음 레벨 -{lp.need - lp.cur}</span></div>
+        {/* v1.4.40 — 예전엔 "다음 레벨 -1331"이라 **마이너스로 보였다**. 초6에게 마이너스는 '잃었다'로 읽힌다. */}
+        <div className="xp-meta"><span>{lp.cur} / {lp.need} XP</span><span>다음 레벨까지 {(lp.need - lp.cur).toLocaleString()}</span></div>
         <p className="note wc-lv-note">{lp.need - lp.cur} XP만 더 캐면 레벨 {lp.level + 1}! 계속 파보자 ⛏️</p>
       </div>
 
-      {/* 스트릭 히어로 (시안 07): 골드 테두리 + 불꽃 + 밈 문구. 출석 = 하루 15분 이상 학습 (7/16 규칙) */}
+      {/* v1.4.40 — 출석 기준을 정직하게 고친 뒤 연속 일수가 내려갔다면, 한 번만 설명한다.
+          "네가 잘못한 게 아니라 앱이 잘못 세고 있었다"가 핵심이다. 비교·질책 문구는 쓰지 않는다. */}
+      {streakFix && (
+        <div className="wc-streak-fix">
+          <b>🛠️ 기록을 더 정확하게 고쳤어!</b>
+          <p>
+            앱이 예전엔 <b>켜 두기만 한 시간</b>도 출석으로 세고 있었어. 이제는 <b>진짜로 문제를 푼 날</b>만 세.
+            그래서 불꽃이 {streakFix.from}일 → <b>{streakFix.to}일</b>로 바뀌었어.
+          </p>
+          <p className="note">
+            숫자는 줄었지만 <b>네가 푼 문제는 하나도 안 없어졌어.</b> 뱃지도 그대로야.
+            {(s.bestStreak || 0) > 0 && <> 최고 기록 <b>{s.bestStreak}일</b>은 명예의 전당에 남겨 뒀어 🏆</>}
+            {' '}오늘 15분만 하면 바로 이어져 🔥
+          </p>
+        </div>
+      )}
+
+      {/* 스트릭 히어로 (시안 07): 골드 테두리 + 불꽃 + 밈 문구. 출석 = 하루 15분 이상 **문제를 푼** 시간 */}
       <div className="wc-streak-hero">
         <span className="wc-flame">🔥</span>
         <h3>{s.streak_days}일 연속!</h3>
@@ -100,8 +125,16 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
       <div className="stat-row">
         <div className="stat-tile"><b>⭐ {s.xp}</b><span>총 XP</span></div>
         <div className="stat-tile"><b>🔥 {s.streak_days}</b><span>연속 출석</span></div>
+        {/* v1.4.40 — 최고 기록은 내려가지 않는다. 현재 불꽃이 꺼져도 '해낸 것'은 남는다. */}
+        <div className="stat-tile"><b>🏆 {Math.max(s.bestStreak || 0, s.streak_days)}</b><span>최고 연속</span></div>
         <div className="stat-tile"><b>🗺️ {completed}/{ORDER_V.length}</b><span>클리어</span></div>
         <div className="stat-tile"><b>⛏️ {s.reviewTotal || 0}</b><span>복습 채굴</span></div>
+        {/* v1.4.40 — 지령 미션·에코 사냥·문장 소환진처럼 **진도바를 안 움직이는 학습**.
+            실측으로 예한이가 푼 문항의 20.6%(911개)가 여기였는데 어디에도 안 보였다.
+            진도 분모는 그대로 두고(L46), '한 것'을 따로 센다. */}
+        {(s.offTrack || 0) > 0 && (
+          <div className="stat-tile"><b>⚡ {(s.offTrack || 0).toLocaleString()}</b><span>특별 훈련</span></div>
+        )}
       </div>
 
       {/* 뱃지 도감 (시안 08 + v1.2.0): 미획득 뱃지는 탭하면 획득 조건·진행도 공개 → 목표 삼기 */}

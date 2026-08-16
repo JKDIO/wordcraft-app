@@ -80,9 +80,16 @@ export function BadgeLoadout(props: { earned: string[]; onPickGroup: (g: BadgeGr
             })}
           </div>
         ) : (
-          <div className="loadout-hero" style={{ width: HERO_W * PX, height: HERO_H * PX }}>
-            <i style={{ width: PX, height: PX, boxShadow: heroShadow(stage, PX) }} />
-          </div>
+          /* v1.4.40 — 자산 서버(Supabase Storage)가 안 열리면 여기로 떨어진다.
+             예전에는 **아무 안내 없이** 각진 실루엣으로 바뀌어서, 아이는 "기사가 왜 이래?"라고만 생각하고
+             아빠는 알 방법이 없었다(2026-08-16 독립 검증에서 실제로 이 폴백을 라이브인 줄 착각했다).
+             조용한 폴백은 조용한 유실과 같다 — 한 줄이라도 말해 준다. */
+          <>
+            <div className="loadout-hero" style={{ width: HERO_W * PX, height: HERO_H * PX }}>
+              <i style={{ width: PX, height: PX, boxShadow: heroShadow(stage, PX) }} />
+            </div>
+            <p className="loadout-artfail">🛰️ 기사 그림을 못 받아왔어 — 인터넷이 잠깐 끊겼나 봐. 장비는 그대로니까 걱정 마! 잠시 뒤 다시 열면 돌아와</p>
+          </>
         )}
 
         {legendary && <div className="loadout-burst" />}

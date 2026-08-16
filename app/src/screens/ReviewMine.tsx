@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/supabase'
 import { nextDue, todayStr } from '../lib/leitner'
 // v1.4.29: 카드 조회·'오늘 캔 카드' 규칙은 lib/review.ts 단일 원천 (여기서 쿼리를 직접 짜지 않는다)
-import { dueCardsQuery, boxTotalsQuery, tallyBoxes, layerOf, minableCards, addReviewDone } from '../lib/review'
+import {
+  dueCardsQuery, boxTotalsQuery, tallyBoxes, layerOf, minableCards, todaysMine, addReviewDone,
+  gradeSwapped, DAILY_MINE_CAP, MIN_REVEAL_MS,
+} from '../lib/review'
 import { speakText, stopAudio } from '../lib/audio' // v1.4.14: 단일 오디오 채널 경유(직접 speak 금지 — L19)
 import type { LocalState } from '../lib/store'
 import { enqueue, recordAnswer, recordXp, bumpReviewCorrect, bumpLegendWord } from '../lib/store'
@@ -53,6 +56,11 @@ export function ReviewMine(props: {
   const [floatXp, setFloatXp] = useState<string | null>(null)
   const shownAt = useRef(0)
   const finishedRef = useRef(false)
+  // ★v1.4.40★ 뒷면을 볼 시간도 없는 채점을 막는 게이트 (review.ts MIN_REVEAL_MS)
+  const [canGrade, setCanGrade] = useState(false)
+  // ★v1.4.40★ '알아!'와 '헷갈려'의 좌우를 카드마다 섞는다 — 위치를 외워 연타하는 것을 막는다.
+  //   실행마다 다른 씨앗 + 카드 index로 정해, 같은 카드를 보는 동안에는 절대 안 흔들린다.
+  const shuffleSeed = useRef(Math.floor(Math.random() * 1e9))
 
   // v1.4.4: 입구('entrance') 진입마다 재조회(learnerId 지연 도착에도) — 채굴 후 낡은 목록 재채굴 봉합
   // ★v1.4.29 (P0)★: 이제 **서버가 due를 걸러서** 준다. 예전엔 카드 전체를 limit=500으로 받아
@@ -79,17 +87,26 @@ export function ReviewMine(props: {
   useEffect(() => () => stopAudio(), [])
 
   const today = todayStr()
-  // 서버가 due를 걸러 줬으므로 여기선 '오늘 이미 맞힌 카드'만 뺀다 — 뱃지와 같은 함수(minableCards)를 쓴다.
-  const dueCards = useMemo(
-    () => minableCards(all || [], today).sort((a, b) => a.box - b.box),
-    [all],
-  )
-  // 층별(박스별) 총 보유량 + 지금 캘 수 있는 수
+  // 서버가 due를 걸러 줬으므로 여기선 '오늘 이미 맞힌 카드'만 뺀다 — 뱃지와 같은 함수를 쓴다.
+  //   ★v1.4.40★ dueCards = **오늘의 몫**(상한 60장). 하단 네비 뱃지도 같은 `todaysMine`을 쓴다.
+  //   waiting = 오늘 몫에 못 들어간 나머지. 사라지는 게 아니라 내일 다시 온다.
+  const dueCards = useMemo(() => todaysMine(all || [], today), [all])
+  const allMinable = useMemo(() => minableCards(all || [], today), [all])
+  const waiting = Math.max(0, allMinable.length - dueCards.length)
+  // 층별(박스별) 총 보유량 + 오늘 몫에 들어간 수
   const layers = useMemo(() => {
     const acc = boxTotals.map(t => ({ total: t, due: 0 }))
     for (const c of dueCards) acc[layerOf(c.box)].due++
     return acc
   }, [boxTotals, dueCards])
+
+  // 뒤집은 뒤 MIN_REVEAL_MS 가 지나야 채점 버튼이 열린다. 카드가 바뀌면 다시 닫힌다.
+  useEffect(() => {
+    if (!flipped) { setCanGrade(false); return }
+    setCanGrade(false)
+    const t = setTimeout(() => setCanGrade(true), MIN_REVEAL_MS)
+    return () => clearTimeout(t)
+  }, [flipped, i])
 
   // 오늘 복습 정답 수 (콤보 진행 표시)
   const todayCorrect = props.state.reviewDay?.date === today ? props.state.reviewDay.correct : 0
@@ -104,12 +121,18 @@ export function ReviewMine(props: {
       <div className="reviewmine">
         <div className="mine-head">
           <h2>복습 광산 ⛏️</h2>
-          <span className="due">오늘 캘 카드 {dueCards.length}</span>
+          <span className="due">오늘 몫 {dueCards.length}장</span>
         </div>
         <div className="mine-xp-note">
-          💰 카드 1장 = <b>+{XP.reviewCorrect} XP</b> (모험과 동급!) · 하루 {XP.reviewComboEvery}장마다 <b>콤보 +{XP.reviewCombo}</b>
-          {dueCards.length > 0 && <> · 오늘 최대 <b>+{potential} XP</b></>}
+          💰 카드 1장 = <b>+{XP.reviewCorrect} XP</b> (모험과 동급!) · {XP.reviewComboEvery}장마다 <b>콤보 +{XP.reviewCombo}</b>
+          {dueCards.length > 0 && <> · 오늘 몫 다 캐면 <b>+{potential} XP</b></>}
         </div>
+        {waiting > 0 && dueCards.length > 0 && (
+          <p className="mine-waiting">
+            ⛰️ 광맥에 <b>{waiting}장</b>이 더 묻혀 있어. 하루에 <b>{DAILY_MINE_CAP}장</b>까지만 캐는 게 규칙이야 —
+            한 번에 다 캐면 기억에 안 남거든. 나머지는 <b>내일 그대로</b> 기다리고 있어 😎
+          </p>
+        )}
         {LAYERS.map((L, idx) => {
           const box = idx + 1
           const lay = layers[box]
@@ -125,24 +148,43 @@ export function ReviewMine(props: {
           채굴 시작! ({dueCards.length}장) ⛏️
         </button>
         {dueCards.length === 0 && (
-          <p className="tap-hint">오늘 캘 카드가 없어. 모험에서 배우거나 틀린 문제가 광산에 쌓여! 내일 다시 와봐 🌙</p>
+          <p className="tap-hint">
+            {allMinable.length === 0
+              ? '오늘 캘 카드가 없어. 모험에서 배우거나 틀린 문제가 광산에 쌓여! 내일 다시 와봐 🌙'
+              : `오늘 몫은 다 캤어! 🎉 남은 ${allMinable.length}장은 내일 리젠돼. 오늘은 모험하러 갈까? 🗺️`}
+          </p>
         )}
       </div>
     )
   }
 
   // ── 채굴 완료 리포트 ──
+  // v1.4.40-b — `doneCount`는 **맞힌 수**다. 60장을 전부 정직하게 "헷갈려"로 답한 아이는
+  //   doneCount=0이라 예전 문구로는 "🌙 오늘 캘 카드가 없어"를 보고, 바로 다음 입구에서
+  //   "오늘 몫 60장"을 봤다 — 정직하게 답한 아이만 모순을 만났다(독립 감사 지적).
+  const attempted = i > 0
   if (i >= dueCards.length) {
     if (!finishedRef.current) { finishedRef.current = true; props.onFinished?.() }
     const gained = doneCount * XP.reviewCorrect + comboCount * XP.reviewCombo
     return (
       <div className="center-box">
-        <div className="diag-big">{doneCount > 0 ? '💎' : '🌙'}</div>
-        <h2>{doneCount > 0 ? `광산 클리어! ${doneCount}개 채굴!` : '오늘 캘 카드가 없어'}</h2>
-        {doneCount > 0 ? (
+        <div className="diag-big">{doneCount > 0 ? '💎' : attempted ? '⛏️' : '🌙'}</div>
+        <h2>{doneCount > 0 ? `오늘 몫 끝! ${doneCount}개 채굴 💎` : attempted ? '오늘 몫 끝! 전부 다시 광산으로 ⛏️' : '오늘 캘 카드가 없어'}</h2>
+        {doneCount === 0 && attempted ? (
+          <>
+            <p>헷갈린다고 솔직하게 누른 카드는 <b>전부 흙 층(박스1)으로 리스폰</b>됐어. 그게 진짜 복습이야 —
+              모르는 걸 아는 척 넘기는 것보다 백 배 낫다 😎</p>
+            <p className="tap-hint">내일 이 카드들을 다시 만나. 그때 하나씩 캐면 돼 ⛏️</p>
+          </>
+        ) : doneCount > 0 ? (
           <>
             <p className="reward-xp">+{gained} XP</p>
-            <p>{comboCount > 0 ? `콤보 보너스 ${comboCount}번 포함! ㄹㅇ 광부 인정 ⛏️🔥` : '복습은 모험과 똑같이 +10씩! 내일 또 리젠돼 ⛏️'}</p>
+            <p>{comboCount > 0 ? `콤보 보너스 ${comboCount}번 포함! ㄹㅇ 광부 인정 ⛏️🔥` : '복습은 모험과 똑같이 +10씩! ⛏️'}</p>
+            <p className="tap-hint">
+              {waiting > 0
+                ? `광맥에 ${waiting}장이 남아 있지만 오늘은 여기까지! 내일 이 자리에 그대로 있어 — 하루씩 나눠 캐야 진짜 내 것이 돼 😎`
+                : '광맥을 오늘치까지 싹 비웠어! 이제 모험 갈 시간 🗺️'}
+            </p>
           </>
         ) : (
           <p>모험에서 배우거나 틀린 문제가 복습 카드로 쌓여! 내일 다시 와봐 ⛏️</p>
@@ -211,10 +253,25 @@ export function ReviewMine(props: {
         )}
         {floatXp && <span className="float-xp">{floatXp}</span>}
       </button>
-      {flipped && (
+      {/* ★v1.4.40★ 뒤집자마자 채점하는 것을 막는다.
+          뒷면을 볼 시간(MIN_REVEAL_MS)이 지나야 버튼이 열리고, 좌우 위치도 카드마다 바뀐다.
+          (2026-08-16 실측: 복습 응답시간 중앙값 246ms — 뒷면을 읽고 낸 답이 아니었다) */}
+      {flipped && !canGrade && (
+        <div className="grade-row grade-wait" aria-live="polite">
+          <span className="grade-reading">👀 뒷면 읽는 중…</span>
+        </div>
+      )}
+      {flipped && canGrade && (
         <div className="grade-row">
-          <button className="btn correct-btn" onClick={() => grade(true)}>알아! 😎</button>
-          <button className="btn wrong-btn" onClick={() => grade(false)}>헷갈려 🤔</button>
+          {(gradeSwapped(i, shuffleSeed.current)
+            ? [
+              <button key="w" className="btn wrong-btn" onClick={() => grade(false)}>헷갈려 🤔</button>,
+              <button key="c" className="btn correct-btn" onClick={() => grade(true)}>알아! 😎</button>,
+            ]
+            : [
+              <button key="c" className="btn correct-btn" onClick={() => grade(true)}>알아! 😎</button>,
+              <button key="w" className="btn wrong-btn" onClick={() => grade(false)}>헷갈려 🤔</button>,
+            ])}
         </div>
       )}
       {evoToast && (

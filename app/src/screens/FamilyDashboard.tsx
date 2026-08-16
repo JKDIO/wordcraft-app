@@ -16,13 +16,18 @@ function KidStatLine({ stat }: { stat?: KidStat }) {
     <span style={{ background: bg, borderRadius: 8, padding: '2px 8px', fontSize: 12, whiteSpace: 'nowrap' }}>{text}</span>
   )
   if (!stat) return <div style={{ fontSize: 12, opacity: 0.5, marginTop: 6 }}>요약 불러오는 중…</div>
-  const never = !stat.lastActive && stat.week.total === 0 && stat.todayMin === 0
+  const never = !stat.lastActive && stat.week.total === 0 && stat.todayAnswers === 0
   if (never) return <div style={{ marginTop: 8 }}>{chip('#3a2a12', '⏳ 아직 시작 전 — 링크를 보내주세요')}</div>
   const rate = stat.week.total ? Math.round((stat.week.correct / stat.week.total) * 100) : null
+  /* ★v1.4.40★ 예전엔 `sessions.duration_seconds` 원본 합을 "오늘 N분 ✓"으로 초록 칠했다.
+     문항 0개인 날에도 "오늘 703분 ✓"이 떴다 — 관제실은 같은 날 "0분"이라고 말하고 있었다.
+     이제 이 숫자는 관제실과 **같은 산식**(문항 기록 기반)이고, 문항이 없으면 0분이다. */
   return (
     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-      {chip(stat.todayMin >= 15 ? '#123a22' : '#1b2a3d', `오늘 ${stat.todayMin}분${stat.todayMin >= 15 ? ' ✓' : ''}`)}
-      {rate !== null && chip('#1b2a3d', `7일 정답률 ${rate}%`)}
+      {stat.todayAnswers === 0
+        ? chip('#1b2a3d', '오늘 아직 안 함')
+        : chip(stat.todayMin >= 15 ? '#123a22' : '#1b2a3d', `오늘 ${stat.todayMin}분 · ${stat.todayAnswers}문항${stat.todayMin >= 15 ? ' ✓' : ''}`)}
+      {rate !== null && chip('#1b2a3d', `7일 정답률 ${rate}% (신규)`)}
       {chip(stat.dueCards > 0 ? '#3a2a12' : '#1b2a3d', `복습 ${stat.dueCards}장`)}
       {stat.lastActive && chip('#1b2a3d', `최근 ${stat.lastActive.slice(5)}`)}
     </div>

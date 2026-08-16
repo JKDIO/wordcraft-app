@@ -6,7 +6,7 @@
  * 실행: node admin_check.mjs   (verify.sh에서 부른다)
  */
 import { execSync } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
 
 mkdirSync('.verify', { recursive: true })
 writeFileSync('.verify/admin_entry.ts', `import * as A from '../src/lib/adminMetrics'\n// @ts-ignore\nglobalThis.A = A\n`)
@@ -212,6 +212,244 @@ console.log('── ⑧ 성능: 상한을 풀었으면 계산량도 감당돼야
   }
   ok(same, 'KST 날짜 계산 결과가 Intl 방식과 완전히 일치한다')
 }
+
+
+console.log('── ⑨ 기기 분리: 아빠 PC 기록은 아이 지표가 아니다 (v1.4.40) ──')
+{
+  // 2026-08-16 실측: 세션 시간의 89.2%가 desktop, 문항도 85건이 desktop 세션에서 나왔다.
+  // v1.4.37은 "섞여 있어요"라고 경고만 하고 숫자에서 빼지 않았다.
+  const sessions = [
+    { id: 1, started_at: iso('2026-08-16T09:00:00'), ended_at: iso('2026-08-16T09:30:00'), duration_seconds: 1800, device: 'mobile' },
+    { id: 2, started_at: iso('2026-08-16T10:00:00'), ended_at: iso('2026-08-16T11:00:00'), duration_seconds: 3600, device: 'desktop' },
+  ]
+  const evs = [
+    { session_id: 1, activity_type: 'quiz', is_correct: true, module_id: 'A1', response_ms: 3000, created_at: iso('2026-08-16T09:05:00') },
+    { session_id: 2, activity_type: 'quiz', is_correct: true, module_id: 'A1', response_ms: 3000, created_at: iso('2026-08-16T10:05:00') },
+    { session_id: null, activity_type: 'quiz', is_correct: true, module_id: 'A1', response_ms: 3000, created_at: iso('2026-08-16T09:06:00') },
+  ]
+  const ex = A.excludedSessionIds(sessions)
+  ok(ex.has(2) && !ex.has(1), 'desktop 세션만 제외 대상')
+  const kid = A.learnerEvents(evs, ex)
+  ok(kid.length === 2, 'PC 문항은 빠지고 나머지는 남는다', `→ ${kid.length}`)
+  ok(kid.some(e => e.session_id === null), 'session_id 없는 옛 기록은 버리지 않는다(과소 집계도 결함이다)')
+  ok(A.learnerSessions(sessions).length === 1, 'desktop 세션은 세션 목록에서도 빠진다')
+}
+
+console.log('── ⑩ 출석: 세션 시간이 아니라 문항 기록으로 판정한다 (v1.4.40) ──')
+{
+  const mk = (day, n, spanSec, device, sid) => {
+    const base = Date.parse(iso(`${day}T12:00:00`))
+    const s = { id: sid, started_at: new Date(base).toISOString(), ended_at: new Date(base + spanSec * 1000).toISOString(), duration_seconds: spanSec, device }
+    const e = Array.from({ length: n }, (_, k) => ({
+      session_id: sid, activity_type: 'review', is_correct: true, module_id: 'A1', response_ms: 300,
+      created_at: new Date(base + Math.round(spanSec * 1000 * k / Math.max(1, n - 1))).toISOString(),
+    }))
+    return [s, e]
+  }
+  // 2026-08-16 실측 재현
+  const rows = [
+    mk('2026-08-15', 376, 157, 'mobile', 1),   // 연타 세션 — 집중 4.1분 → 출석 아님
+    mk('2026-08-14', 300, 5000, 'mobile', 2),  // 정상 → 출석
+    mk('2026-08-13', 200, 1600, 'mobile', 3),  // 정상 → 출석
+    mk('2026-08-11', 200, 1800, 'desktop', 4), // 아빠 PC → 출석 아님
+  ]
+  const sessions = rows.map(r => r[0])
+  const events = rows.flatMap(r => r[1])
+  const days = A.attendanceDays(events, sessions)
+  ok(!days.includes('2026-08-15'), '★376문항을 157초에 넘긴 날은 출석이 아니다 (집중 4.1분)', `→ ${JSON.stringify(days)}`)
+  ok(days.includes('2026-08-14') && days.includes('2026-08-13'), '정상 학습일은 출석으로 인정한다')
+  ok(!days.includes('2026-08-11'), '아빠 PC(desktop)에서 푼 날은 아이 출석이 아니다')
+  // 옛 규칙(세션 원본 합 ≥ 15분)이 되살아나면 8/15·8/11이 다시 들어온다 → 위 두 검사가 실패한다.
+  ok(A.ATTENDANCE_RULE.needFocusSec === A.GOAL_SEC, '출석 기준 시간은 GOAL_SEC 하나뿐이다(숫자 복사 금지)')
+  // 문항이 있어도 15분 미달이면 출석 아님
+  const [s5, e5] = mk('2026-08-10', 30, 600, 'mobile', 5)
+  ok(!A.attendanceDays(e5, [s5]).includes('2026-08-10'), '10분만 하면 출석이 아니다')
+  // streak — 오늘 아직 안 했으면 어제까지의 연속을 살려 준다
+  ok(A.streakFrom(['2026-08-13', '2026-08-14'], '2026-08-15') === 2, '오늘 미완이면 어제까지의 연속을 유지')
+  ok(A.streakFrom(['2026-08-13', '2026-08-14'], '2026-08-16') === 0, '하루 건너뛰면 0 (내려가는 것도 정직하게)')
+  ok(A.streakFrom(['2026-08-14', '2026-08-15', '2026-08-16'], '2026-08-16') === 3, '오늘까지 이어지면 그대로 센다')
+}
+
+console.log('── ⑪ 복습 무결성: 하루 상한 · 읽는 시간 · 버튼 섞기 (v1.4.40) ──')
+{
+  writeFileSync('.verify/rev_entry.ts', `import * as RV from '../src/lib/review'\nimport { todayStr } from '../src/lib/leitner'\n// @ts-ignore\nglobalThis.RV = { ...RV, todayStr }\n`)
+  execSync('/root/.bun/bin/bun build .verify/rev_entry.ts --outfile .verify/rev_bundle.js --target node', { stdio: 'inherit' })
+  const store = {}
+  globalThis.localStorage = {
+    getItem: k => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = String(v) },
+    removeItem: k => { delete store[k] },
+  }
+  await import('./.verify/rev_bundle.js')
+  const RV = globalThis.RV
+  const today = RV.todayStr()
+  ok(RV.DAILY_MINE_CAP === 60, '하루 상한 60장 (Dio님 결정 2026-08-16)', `→ ${RV.DAILY_MINE_CAP}`)
+  ok(RV.MIN_REVEAL_MS >= 600, '뒷면 읽는 시간 게이트가 있다', `→ ${RV.MIN_REVEAL_MS}ms`)
+  const cards = Array.from({ length: 116 }, (_, i) => ({ id: i + 1, card_id: `c${i}`, due_date: today, box: 1 + (i % 4) }))
+  const mine = RV.todaysMine(cards, today)
+  ok(mine.length === 60, '★116장이 due여도 오늘 몫은 60장 (연타 유인 제거)', `→ ${mine.length}`)
+  ok(mine.every((c, i, a) => i === 0 || a[i - 1].box <= c.box), '박스가 낮은 것(틀린 카드)부터 캔다')
+  // 이미 캔 만큼 차감되지 않으면 상한이 아무 일도 하지 않는다 (입구로 돌아오면 다시 60장이 뜬다)
+  for (const c of mine.slice(0, 60)) RV.addReviewDone(c.card_id)
+  ok(RV.minedToday() === 60, '오늘 캔 카드 수를 센다')
+  ok(RV.todaysMine(cards, today).length === 0, '★상한을 다 쓰면 오늘은 더 못 캔다 (하루 상한이지 한 판 상한이 아니다)')
+  // 버튼 좌우 섞기 — 첫 구현은 % 2(음수), 두 번째는 & 1(정확히 교대)로 둘 다 틀렸다.
+  let ones = 0, alt = 0, n = 0
+  for (let seed = 1; seed <= 300; seed++) {
+    let prev = null
+    for (let i = 0; i < 60; i++) {
+      const v = RV.gradeSwapped(i, seed); n++; if (v) ones++
+      if (prev !== null && v !== prev) alt++
+      prev = v
+    }
+  }
+  const onesPct = 100 * ones / n, altPct = 100 * alt / (n - 300)
+  ok(onesPct > 45 && onesPct < 55, '좌우가 한쪽으로 쏠리지 않는다', `→ ${onesPct.toFixed(1)}%`)
+  ok(altPct > 42 && altPct < 58, '★규칙적으로 교대하지 않는다 (& 1 회귀 감시)', `→ 연속 교대 ${altPct.toFixed(1)}%`)
+  delete globalThis.localStorage
+}
+
+console.log('── ⑫ 오프라인 큐: 재시도해야 할 실패를 버리지 않는다 (v1.4.40) ──')
+{
+  writeFileSync('.verify/store_entry.ts', `import { isPermanentFailure } from '../src/lib/store'\n// @ts-ignore\nglobalThis.PF = isPermanentFailure\n`)
+  execSync('/root/.bun/bin/bun build .verify/store_entry.ts --outfile .verify/store_bundle.js --target node', { stdio: 'inherit' })
+  const store2 = {}
+  globalThis.localStorage = { getItem: k => (k in store2 ? store2[k] : null), setItem: (k, v) => { store2[k] = String(v) }, removeItem: k => { delete store2[k] } }
+  globalThis.window = undefined
+  await import('./.verify/store_bundle.js')
+  const PF = globalThis.PF
+  for (const c of [400, 404, 409]) ok(PF(new Error(`supabase ${c}: x`)) === true, `${c}는 재시도해도 소용없다 → 버린다`)
+  for (const c of [401, 403, 408, 429, 500, 503]) ok(PF(new Error(`supabase ${c}: x`)) === false, `★${c}는 반드시 재시도한다 (학습 기록 영구 삭제 회귀 감시)`)
+  ok(PF(new TypeError('Failed to fetch')) === false, '네트워크 오류는 재시도한다')
+  delete globalThis.localStorage
+}
+
+console.log('── ⑬ 진단 패널: 죽은 신호 · 오문구 · 속도 감지 (v1.4.40) ──')
+{
+  const base = { today: { focusSec: 900, openSec: 900, rawSessionSec: 900, answers: 30, idleSuspect: false, corruptSessions: 0, devices: ['mobile'] },
+    week: [], xp: { derived: 100, stored: 100, diff: 0, diffPct: 0, truncated: false },
+    progress: { total: 52, done: 28, pct: 54, baseDone: 28, baseTotal: 28, extDone: 0, extTotal: 24, extOpen: true },
+    debt: { due: 0, overdue: 0, today: 0, oldestOverdueDays: 0, pacePerDay: 0, daysToClear: null, overCapacity: false },
+    badgeOnlyInAdmin: [], badgeOnlyInApp: [], eventsTruncated: false, sessionsTruncated: false, failedTables: [], extTouched: true }
+  // ★죽은 신호★ v1.4.37~39에서 sessionsTruncated는 선언·전달됐지만 아무도 읽지 않았다.
+  const trunc = A.integrityCheck({ ...base, sessionsTruncated: true })
+  ok(trunc.some(i => i.id === 'sessions_truncated'), '★세션 조회 절단을 실제로 알린다 (죽은 신호 회귀 감시)')
+  // ★오문구★ overdue=0인데 "그중 0장은 기한이 지났고, 가장 오래된 건 0일 지났습니다"가 뜨던 자리
+  const heavy = A.integrityCheck({ ...base, debt: { due: 116, overdue: 0, today: 116, oldestOverdueDays: 0, pacePerDay: 204, daysToClear: 1, overCapacity: true } })
+  const txt = heavy.map(i => `${i.title} ${i.detail}`).join(' ')
+  ok(!/0장은 기한이 지났/.test(txt) && !/0일 지났/.test(txt), '★"0장·0일" 문장을 만들지 않는다', `→ ${txt.slice(0, 80)}`)
+  ok(!/밀렸어요/.test(txt), '기한이 지나지 않은 오늘 몫을 "밀렸다"고 부르지 않는다')
+  // ★속도 감지★ 이 검사가 없어서 246ms 연타를 몇 주 놓쳤다
+  const fast = A.integrityCheck({ ...base, acc7: { newTotal: 100, newCorrect: 79, newPct: 79, reviewTotal: 2026, reviewCorrect: 2023, reviewPct: 100, excluded: 0, blendedPct: 89, reviewFast: 1844, reviewFastPct: 91 } })
+  ok(fast.some(i => i.id === 'review_too_fast'), '★복습을 1초 안에 넘기면 경고한다 (SRS 무력화 감지)')
+  const slow = A.integrityCheck({ ...base, acc7: { newTotal: 100, newCorrect: 79, newPct: 79, reviewTotal: 100, reviewCorrect: 90, reviewPct: 90, excluded: 0, blendedPct: 85, reviewFast: 5, reviewFastPct: 5 } })
+  ok(!slow.some(i => i.id === 'review_too_fast'), '정상 속도면 아무 말도 하지 않는다(경보 피로 방지)')
+  // 확장 월드 — 기록이 있으면 "한 번도 안 들어갔어요"라고 말하지 않는다
+  ok(!A.integrityCheck({ ...base, extTouched: true }).some(i => i.id === 'ext_untouched'), '기록이 있으면 "한 번도 안 들어갔다"고 하지 않는다')
+  ok(A.integrityCheck({ ...base, extTouched: false }).some(i => i.id === 'ext_untouched'), '정말 기록이 없으면 알려 준다')
+}
+
+console.log('── ⑭ ★소비자 검사★: 라이브러리만 고치고 화면을 두면 갈라진다 (L51) ──')
+{
+  // 2026-08-16 독립 교차 검증의 핵심 발견: 41항목 전부가 adminMetrics.ts와 supabase.ts만 봤고
+  // AdminPage.tsx(1,733줄)를 import하는 항목이 **0개**였다. 그래서 화면 안의 규칙 위반 9건이
+  // "41/41 통과" 상태로 살아 있었다. 이제 소스를 직접 읽어 금지 패턴을 막는다.
+  const src = f => readFileSync(f, 'utf8')
+  const admin = src('src/screens/AdminPage.tsx')
+  const storeSrc = src('src/lib/store.ts')
+  const supa = src('src/lib/supabase.ts')
+
+  ok(!/Math\.max\([^)]*learner\?\.xp/.test(admin), '★관제실 누적 XP에 Math.max가 없다 (가림막 회귀 감시)')
+  ok(/isNewLearning\(/.test(admin), '취약 영역·마스터리가 신규 학습 판정을 쓴다')
+  // ★2026-08-16 독립 감사가 뚫은 자리★ 아래 두 호출을 지워도 71/71이 통과했다.
+  //   "규칙 함수가 존재하는가"가 아니라 "화면이 그 함수를 **실제로 부르는가**"를 본다.
+  ok(/events = learnerEvents\(/.test(admin) && /sessions = learnerSessions\(/.test(admin),
+    '★관제실이 기기 분리를 실제로 적용한다 (호출 삭제 회귀 감시)')
+  ok(/excludedSessionIds\(/.test(admin), '관제실이 제외 세션 집합을 만든다')
+  ok(/todaysMine\(/.test(src('src/screens/ReviewMine.tsx')),
+    '★복습 광산이 하루 상한 함수를 실제로 부른다 (minableCards 회귀 감시)')
+  ok(!/db\.select\('answer_events'/.test(admin), '★관제실이 answer_events를 selectAll 없이 조회하지 않는다 (문제 다시보기 절단 회귀 감시)')
+  ok(!/db\.select\('answer_events'/.test(supa) && !/db\.select\('sessions'/.test(supa), '가족 대시보드도 selectAll을 쓴다')
+  ok(!/duration_seconds \|\| 0\) \/ 60/.test(supa), '★가족 대시보드가 세션 원본 시간을 "오늘 N분"으로 쓰지 않는다')
+  ok(/attendanceDays\(/.test(storeSrc), '학습자 앱이 출석 판정을 adminMetrics에서 가져온다')
+  ok(!/secByDay\[k\] \+= /.test(storeSrc) && !/secByDay\[k\] \|\| 0\) \+ \(se\.duration_seconds/.test(storeSrc),
+    '★학습자 앱이 세션 원본 시간을 날짜별로 합쳐 출석을 판정하지 않는다 (거짓 출석 회귀 감시)')
+  ok(!/serverTodaySec > getDailyActiveSec\(\)/.test(storeSrc), '★DAILY_KEY를 서버 세션 합으로 덮어쓰지 않는다 (L45 규칙4 회귀 감시)')
+  ok(/todaysMine\(/.test(src('src/App.tsx')), '하단 네비 뱃지가 광산과 같은 함수를 쓴다')
+  ok(!/db\.select\('review_cards'/.test(src('src/App.tsx')), '네비 뱃지 조회도 selectAll이다')
+  ok(/onLearnerRouteRef/.test(src('src/App.tsx')), '하트비트가 현재 화면을 본다(마운트 시 1회가 아니라)')
+
+  // 남아 있는 `db.select(... limit=` 지점을 전수로 보고한다 (query_check 대체)
+  const risky = []
+  for (const f of ['src/App.tsx', 'src/lib/store.ts', 'src/lib/supabase.ts', 'src/screens/AdminPage.tsx',
+                   'src/screens/ReviewMine.tsx', 'src/screens/RewardBoard.tsx', 'src/screens/Profile.tsx']) {
+    src(f).split('\n').forEach((line, i) => {
+      if (/db\.select\(/.test(line) && /limit=\$?\{?\d{4,}/.test(line)) risky.push(`${f}:${i + 1}`)
+    })
+  }
+  ok(risky.length === 0, '1,000행을 넘길 수 있는 db.select(limit=)가 남아 있지 않다', `→ ${risky.join(', ')}`)
+}
+
+console.log('── ⑮ 성능: 날짜별 집계가 O(날짜 × 문항)이 아니다 (v1.4.40) ──')
+{
+  // 2026-08-16 실측: 예전 daySecFromEvents는 날짜마다 events 전수 스캔 + studyTimeOfDay(내부 2회 전수 필터).
+  // 4,445문항 × 35일에서 dayAgg+week7만 544ms였고, 비용이 날짜수 × 문항수라 120일이면 제곱으로 늘어난다.
+  const N = 12000, DAYS = 120
+  const base = Date.parse(iso('2026-04-01T09:00:00'))
+  const evs = Array.from({ length: N }, (_, i) => ({ created_at: new Date(base + i * 700_000).toISOString() }))
+  const t0 = process.hrtime.bigint()
+  const tsByDay = new Map()
+  for (const e of evs) {
+    const t = Date.parse(e.created_at)
+    const k = A.kstDayOf(e.created_at)
+    const arr = tsByDay.get(k); if (arr) arr.push(t); else tsByDay.set(k, [t])
+  }
+  for (const arr of tsByDay.values()) arr.sort((a, b) => a - b)
+  let sum = 0
+  for (const k of tsByDay.keys()) sum += A.focusSecOfTimestamps(tsByDay.get(k))
+  const ms = Number(process.hrtime.bigint() - t0) / 1e6
+  ok(ms < 300, `문항 ${N}건 × ${DAYS}일 색인 집계가 300ms 안에 끝난다`, `→ ${Math.round(ms)}ms`)
+  ok(sum > 0, '집계 결과가 실제로 나온다')
+}
+
+
+
+console.log('── ⑯ 독립 감사(2026-08-16)가 잡은 결함의 회귀 감시 (v1.4.40-b) ──')
+{
+  ok(A.FAST_REVIEW_MS > 900, '★복습 속도 임계값이 읽기 게이트(900ms)보다 크다 (자기 게이트로 즉사 회귀 감시)', `→ ${A.FAST_REVIEW_MS}ms`)
+  ok(A.FAST_REVIEW_MS >= 1200 && A.FAST_REVIEW_MS <= 2000, '임계값이 실측 연타 하한(1,177ms)을 잡는 범위에 있다', `→ ${A.FAST_REVIEW_MS}`)
+
+  const store3 = {}
+  globalThis.localStorage = { getItem: k => (k in store3 ? store3[k] : null), setItem: (k, v) => { store3[k] = String(v) }, removeItem: k => { delete store3[k] } }
+  const RV = globalThis.RV
+  const today = RV.todayStr()
+  const normal = Array.from({ length: 80 }, (_, i) => ({ id: 100 + i, card_id: `n${i}`, due_date: today, box: 3, last_result: true }))
+  const respawn = Array.from({ length: 10 }, (_, i) => ({ id: 900 + i, card_id: `w${i}`, due_date: today, box: 1, last_result: false }))
+  const fresh = Array.from({ length: 5 }, (_, i) => ({ id: 800 + i, card_id: `f${i}`, due_date: today, box: 1, last_result: null }))
+  for (let i = 0; i < 60; i++) RV.addReviewDone(`n${i}`)
+  const mine = RV.todaysMine([...normal, ...respawn, ...fresh], today)
+  ok(mine.length === 10 && mine.every(c => c.card_id.startsWith('w')),
+    '★상한 소진 후에도 오늘 틀린 카드 10장은 전부 나온다 (당일 리스폰 약속)', `→ ${mine.length}장`)
+  ok(!mine.some(c => c.card_id.startsWith('f')), '새로 시드된 박스1 카드는 상한을 우회하지 않는다')
+  delete globalThis.localStorage
+}
+{
+  const storeSrc = readFileSync('src/lib/store.ts', 'utf8')
+  ok(/repairStreak\(s: LocalState, trusted = false\)/.test(storeSrc),
+    '★repairStreak이 신뢰 플래그를 받는다 (조회 실패로 streak을 0으로 덮어쓰던 회귀 감시)')
+  ok(/if \(run < s\.streak_days && !trusted\)/.test(storeSrc), '신뢰할 수 없으면 내리지 않는다')
+  ok(/created_at: new Date\(\)\.toISOString\(\)/.test(storeSrc),
+    '★문항에 클라이언트 시각을 실어 보낸다 (오프라인 학습이 한 시각으로 뭉개지던 회귀 감시)')
+  ok(/unsyncedLocal/.test(storeSrc), '서버가 모르는 날의 로컬 출석은 지우지 않는다')
+  ok(/if \(!flushing && item\.kind === 'update'/.test(storeSrc), '★flush 중에는 큐 병합을 하지 않는다 (마지막 갱신 유실 회귀 감시)')
+  ok(/FLUSH_CHUNK/.test(storeSrc), '★큐 flush가 묶음 처리다 (O(n²) 회귀 감시)')
+  ok(/tickSession\(false, true\)/.test(storeSrc), '백그라운드 전환 저장이 오프라인 큐를 탄다')
+  const appSrc = readFileSync('src/App.tsx', 'utf8')
+  ok(/repairStreak\(s, sync\.ok && sync\.eventsSeen > 0\)/.test(appSrc), '앱이 조회 성공 여부를 넘긴다')
+  ok(/SESSION_LIMIT = 20000/.test(readFileSync('src/screens/AdminPage.tsx', 'utf8')),
+    '★세션 조회 상한이 기기 분리를 감당한다 (400 회귀 감시)')
+}
+
 
 console.log(fail === 0 ? '\n✅ admin_check 통과' : `\n❌ admin_check 실패 ${fail}건`)
 process.exit(fail === 0 ? 0 : 1)

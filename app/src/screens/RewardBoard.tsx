@@ -61,8 +61,9 @@ export function RewardBoard(props: {
   useEffect(() => {
     if (!s.learnerId) return
     const since = new Date(Date.now() - 14 * 86400_000).toISOString()
-    db.select('xp_events', `learner_id=eq.${s.learnerId}&created_at=gte.${since}&select=amount,created_at&order=created_at.desc&limit=5000`)
-      .then(rows => setPace(dailyXpAverage(rows as unknown as { amount: number; created_at: string }[])))
+    // ★v1.4.40★ selectAll — 정답 1건당 xp_events 1행이라 14일치는 수천 건이 된다(실측 4,110행).
+    db.selectAll('xp_events', `learner_id=eq.${s.learnerId}&created_at=gte.${since}&select=amount,created_at&order=created_at.desc`)
+      .then(r => setPace(dailyXpAverage(r.rows as unknown as { amount: number; created_at: string }[])))
       .catch(() => { /* 오프라인 — 예상일 미표시 */ })
   }, [s.learnerId])
 

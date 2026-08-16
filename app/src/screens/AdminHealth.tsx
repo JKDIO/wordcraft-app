@@ -15,7 +15,7 @@ import { useState } from 'react'
 import { db } from '../lib/supabase'
 import { BADGE_DEFS } from '../lib/badges'
 import type { IntegrityIssue, CoachTip, StudyTime, AccuracySplit, ReviewDebt, ProgressView } from '../lib/adminMetrics'
-import { GOAL_SEC } from '../lib/adminMetrics'
+import { GOAL_SEC, FAST_REVIEW_MIN_N, FAST_REVIEW_SUSPECT_PCT } from '../lib/adminMetrics'
 
 const LEVEL_STYLE: Record<string, { bg: string; bd: string; tag: string; label: string }> = {
   P0: { bg: 'rgba(198,40,40,.14)', bd: '#c62828', tag: '#ff8a9a', label: '지금 확인' },
@@ -36,6 +36,7 @@ export function TodayBriefing(props: {
 }) {
   const { time, acc, debt, progress, tips } = props
   const goalMet = time.focusSec >= GOAL_SEC
+  const tooFast = acc.reviewTotal >= FAST_REVIEW_MIN_N && (acc.reviewFastPct ?? 0) >= FAST_REVIEW_SUSPECT_PCT
   const pctOfGoal = Math.min(100, Math.round((time.focusSec / GOAL_SEC) * 100))
   return (
     <div className="adm-panel ah-brief">
@@ -76,15 +77,31 @@ export function TodayBriefing(props: {
         </div>
         <div className="ah-split-cell">
           <span className="k">⛏️ 복습 정답률</span>
-          <b className={acc.reviewPct === null ? '' : acc.reviewPct < 70 ? 'bad' : acc.reviewPct < 85 ? 'mid' : 'good'}>
+          {/* v1.4.40 — 정답률이 100%에 붙었는데 응답이 1초 미만이면 그건 '기억 신호'가 아니다.
+              초록으로 칠하면 아빠가 칭찬으로 읽는다 — 속도를 같이 보여 주고 색을 낮춘다. */}
+          <b className={
+            acc.reviewPct === null ? ''
+              : tooFast ? 'mid'
+                : acc.reviewPct < 70 ? 'bad' : acc.reviewPct < 85 ? 'mid' : 'good'
+          }>
             {acc.reviewPct === null ? '—' : `${acc.reviewPct}%`}
           </b>
-          <span className="d">{acc.reviewCorrect}/{acc.reviewTotal}장 · 기억 신호</span>
+          <span className="d">
+            {acc.reviewCorrect}/{acc.reviewTotal}장 · {tooFast ? `⚠️ ${acc.reviewFastPct}%가 1초 미만` : '기억 신호'}
+          </span>
         </div>
         <div className="ah-split-cell">
-          <span className="k">📚 밀린 복습</span>
-          <b className={debt.overCapacity ? 'bad' : debt.due > 0 ? 'mid' : 'good'}>{debt.due}장</b>
-          <span className="d">{debt.overdue > 0 ? `기한 지난 것 ${debt.overdue}장` : '밀린 것 없음'}</span>
+          {/* v1.4.40 — '밀린 것(기한 지남)'과 '오늘 몫'은 다른 말이다.
+              예전엔 큰 글씨 "밀린 복습 116장" 바로 아래 작은 글씨 "밀린 것 없음"이 같이 떴다. */}
+          <span className="k">📚 {debt.overdue > 0 ? '밀린 복습' : '오늘 복습'}</span>
+          <b className={debt.overdue > 0 ? 'bad' : debt.due > 0 ? 'mid' : 'good'}>
+            {debt.overdue > 0 ? debt.overdue : debt.due}장
+          </b>
+          <span className="d">
+            {debt.overdue > 0
+              ? `기한 지남 · 오늘 만기까지 ${debt.due}장`
+              : debt.due > 0 ? '기한 지난 것 없음' : '오늘 캘 카드 없음'}
+          </span>
         </div>
         <div className="ah-split-cell">
           <span className="k">🗺️ 진도</span>

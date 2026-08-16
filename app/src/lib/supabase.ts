@@ -7,6 +7,12 @@ const AUTH_BASE = `${SUPA}/auth/v1`
 const ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdieW52enhnYnBtb3Fkc3Jpb3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NzE5NTksImV4cCI6MjA5OTM0Nzk1OX0.tMtlmdyHgq_AURSNe_D5JdHqORZ60C4I_fh1lJ19T8U'
 
+// ★v1.4.40★ 보호자 대시보드 숫자도 관제실과 **같은 규칙**을 쓴다(L27·L51 — 라이브러리만 고치고 소비자를 두면 갈라진다).
+import {
+  studyTimeOfDay, accuracyOf, excludedSessionIds, learnerEvents, learnerSessions, kstDayOf,
+  type MetricEvent, type MetricSession,
+} from './adminMetrics'
+
 export const FAMILY_CODE = 'wc-yehan-7351'
 
 type Row = Record<string, unknown>
@@ -143,6 +149,23 @@ async function req(path: string, init: RequestInit = {}): Promise<Row[]> {
   if (!res.ok) throw new Error(`supabase ${res.status}: ${await res.text()}`)
   const text = await res.text()
   return text ? JSON.parse(text) : []
+}
+
+/** ★v1.4.40★ **행을 받지 않고 개수만** 센다. PostgREST `Prefer: count=exact` + `Range: 0-0`.
+ *  아이 폰에서 4,432행을 끌어와 세는 것은 낭비다 — 헤더 한 줄이면 된다.
+ *  (`req()`는 본문만 돌려주므로 여기서만 직접 fetch한다.) */
+export async function countRows(table: string, query: string): Promise<number | null> {
+  const call = (token: string) => fetch(`${URL_BASE}/${table}?${query}`, {
+    headers: { apikey: ANON_KEY, Authorization: `Bearer ${token}`, Prefer: 'count=exact', Range: '0-0' },
+  })
+  try {
+    let res = await call(session?.access_token || ANON_KEY)
+    if (res.status === 401 && session && await refreshSession()) res = await call(session.access_token)
+    if (!res.ok && res.status !== 206) return null
+    const cr = res.headers.get('content-range')          // 예: "0-0/4432"
+    const n = cr ? Number(cr.split('/')[1]) : NaN
+    return Number.isFinite(n) ? n : null
+  } catch { return null }
 }
 
 export const db = {
@@ -289,34 +312,64 @@ export async function guardianRemoveLearner(learnerId: string): Promise<void> {
 /** v1.4.16 — 보호자 대시보드용 아이별 한눈 요약.
  *  가족 아이 전원의 (오늘 학습 분 · 최근7일 정답률 · 밀린 복습 카드 · 마지막 학습일)을 3회 질의로 모아 계산한다.
  *  RLS: 보호자는 자기 가족 아이의 행만 읽으므로 learner_id in.(...) 만으로 안전하다. */
-export interface KidStat { todayMin: number; week: { total: number; correct: number }; dueCards: number; lastActive: string | null }
+export interface KidStat {
+  /** 오늘 **실제로 문제를 푼** 시간(분) — 관제실의 '오늘 학습'과 같은 산식 */
+  todayMin: number
+  /** 오늘 푼 문항 수. 0이면 todayMin도 0이다(증거 없는 시간은 학습이 아니다 — L45) */
+  todayAnswers: number
+  /** 최근 7일 **신규 학습** 정답률 (복습·자기채점·진단 제외 — 섞으면 실력이 안 보인다) */
+  week: { total: number; correct: number }
+  dueCards: number
+  lastActive: string | null
+}
 function kstDayStr(offsetDays = 0): string {
   const d = new Date(Date.now() + 9 * 3600_000 + offsetDays * 86400_000)
   return d.toISOString().slice(0, 10)
 }
+/* ★★v1.4.40 — 이 함수가 "오늘 703분 ✓"를 다른 라우트에서 부활시키고 있었다★★
+   2026-08-16 독립 교차 검증:
+     · `todayMin`이 `sessions.duration_seconds` **원본 합**이었다 — 문항 증거도, 벽시계 클램프도,
+       3시간 상한도, 기기 분리도 없다. `adminMetrics.ts` 머리말이 "거짓이었다"고 못 박은 그 계산 그대로다.
+       같은 아빠가 같은 시각에 관제실에선 "0분", 가족 카드에선 "오늘 865분 ✓"(초록)를 봤다.
+     · 주간 정답률은 복습·자기채점을 섞었고, 조회 3건 모두 `db.select`라 **1,000행에서 잘렸다**
+       (8/14 하루가 1,179건 — "7일 정답률"이 실제로는 하루도 안 되는 표본이었다).
+     · v1.4.38의 selectAll 전환이 AdminPage와 ReviewMine만 훑고 이 파일 안의 이 함수를 빠뜨렸다.
+   → 규칙은 adminMetrics 하나만 쓴다. 숫자를 여기서 다시 만들지 않는다(L27·L51). */
 export async function guardianKidStats(ids: string[]): Promise<Record<string, KidStat>> {
   const out: Record<string, KidStat> = {}
-  for (const id of ids) out[id] = { todayMin: 0, week: { total: 0, correct: 0 }, dueCards: 0, lastActive: null }
+  for (const id of ids) out[id] = { todayMin: 0, todayAnswers: 0, week: { total: 0, correct: 0 }, dueCards: 0, lastActive: null }
   if (!ids.length) return out
   const inList = `in.(${ids.join(',')})`
-  const todayKstStartUtc = new Date(`${kstDayStr()}T00:00:00+09:00`).toISOString()
+  const todayKey = kstDayStr()
   const weekAgoUtc = new Date(`${kstDayStr(-6)}T00:00:00+09:00`).toISOString()
   const [ses, ans, cards] = await Promise.all([
-    db.select('sessions', `learner_id=${inList}&started_at=gte.${weekAgoUtc}&select=learner_id,started_at,duration_seconds&order=started_at.desc&limit=5000`).catch(() => [] as Row[]),
-    db.select('answer_events', `learner_id=${inList}&created_at=gte.${weekAgoUtc}&select=learner_id,is_correct&order=created_at.desc&limit=20000`).catch(() => [] as Row[]),
-    db.select('review_cards', `learner_id=${inList}&due_date=lte.${kstDayStr()}&select=learner_id&order=id.asc&limit=20000`).catch(() => [] as Row[]),
+    selectAll('sessions', `learner_id=${inList}&started_at=gte.${weekAgoUtc}&select=id,learner_id,started_at,ended_at,duration_seconds,device&order=started_at.asc`).catch(() => ({ rows: [] as Row[], truncated: false })),
+    selectAll('answer_events', `learner_id=${inList}&created_at=gte.${weekAgoUtc}&select=learner_id,session_id,activity_type,is_correct,created_at,module_id,response_ms&order=created_at.asc`).catch(() => ({ rows: [] as Row[], truncated: false })),
+    selectAll('review_cards', `learner_id=${inList}&due_date=lte.${todayKey}&select=learner_id&order=id.asc`).catch(() => ({ rows: [] as Row[], truncated: false })),
   ])
-  for (const r of ses as { learner_id: string; started_at: string; duration_seconds: number | null }[]) {
-    const s = out[r.learner_id]; if (!s) continue
-    if (r.started_at >= todayKstStartUtc) s.todayMin += Math.round((r.duration_seconds || 0) / 60)
-    const day = new Date(new Date(r.started_at).getTime() + 9 * 3600_000).toISOString().slice(0, 10)
-    if (!s.lastActive || day > s.lastActive) s.lastActive = day
+  type SesRow = MetricSession & { learner_id: string }
+  type AnsRow = MetricEvent & { learner_id: string }
+  const sesRows = ses.rows as unknown as SesRow[]
+  const ansRows = ans.rows as unknown as AnsRow[]
+  // 아빠 PC(desktop) 세션에서 나온 것은 전부 뺀다 — 아이 지표가 아니다.
+  const excluded = excludedSessionIds(sesRows)
+
+  // v1.4.40-b — '최근'은 **문항 기준**이다. 세션 기준이면 앱만 열어 본 날이 "최근 학습"으로 뜬다.
+  const byKid = new Map<string, AnsRow[]>()
+  for (const e of learnerEvents(ansRows, excluded)) {
+    const arr = byKid.get(e.learner_id); if (arr) arr.push(e); else byKid.set(e.learner_id, [e])
   }
-  for (const r of ans as { learner_id: string; is_correct: boolean }[]) {
-    const s = out[r.learner_id]; if (!s) continue
-    s.week.total++; if (r.is_correct) s.week.correct++
+  for (const [kid, evs] of byKid) {
+    const s = out[kid]; if (!s) continue
+    const kidSessions = learnerSessions(sesRows.filter(x => x.learner_id === kid))
+    const t = studyTimeOfDay(evs, kidSessions, todayKey)
+    for (const e of evs) { const d = kstDayOf(e.created_at); if (!s.lastActive || d > s.lastActive) s.lastActive = d }
+    s.todayMin = Math.round(t.focusSec / 60)
+    s.todayAnswers = t.answers
+    const a = accuracyOf(evs)                       // 신규 학습만 (복습·자기채점·진단 제외)
+    s.week = { total: a.newTotal, correct: a.newCorrect }
   }
-  for (const r of cards as { learner_id: string }[]) { const s = out[r.learner_id]; if (s) s.dueCards++ }
+  for (const r of cards.rows as { learner_id: string }[]) { const s = out[r.learner_id]; if (s) s.dueCards++ }
   return out
 }
 

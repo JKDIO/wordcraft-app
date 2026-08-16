@@ -4,6 +4,8 @@ import { MODULE_ORDER, WORLDS, RUNE_MODULES, EXT_MODULE_ORDER, EXT_WORLDS } from
 // v1.4.35 — 아빠 화면에 뜨는 숫자의 단일 원천. 규칙을 이 파일에 복사하지 않는다(L27).
 import {
   studyTimeOfDay, accuracyOf, progressView, reviewDebtOf, xpAudit, integrityCheck, coachTips, isAssessed, kstDayOf,
+  // v1.4.40 — 기기 분리 · 집중시간 산식 · '신규 학습만' 판정을 화면이 다시 구현하지 않는다(L27·L51).
+  excludedSessionIds, learnerEvents, learnerSessions, focusSecOfTimestamps, isNewLearning,
   GOAL_SEC as GOAL_SEC_M, type StudyTime, type AccuracySplit, type ReviewDebt, type ProgressView,
   type XpAudit, type IntegrityIssue, type CoachTip, type MetricEvent, type MetricSession, type MetricProgress,
 } from '../lib/adminMetrics'
@@ -27,6 +29,8 @@ interface AnswerEvent {
   id: number; module_id: string; activity_type: string; question_id: string
   question_text: string | null; given_answer: string | null; correct_answer: string | null
   is_correct: boolean; response_ms: number | null; created_at: string
+  /** v1.4.40 — 어느 기기에서 나온 문항인지 알려면 필요하다(answer_events에는 device 컬럼이 없다). */
+  session_id: number | null
 }
 interface ModProgress { module_id: string; status: string; best_score: number | null; attempts: number; total_time_seconds: number; first_started_at: string | null; completed_at: string | null; updated_at: string; stars?: number | null; mastered_at?: string | null }
 interface Session { id: number; started_at: string; ended_at: string | null; duration_seconds: number | null; device: string | null }
@@ -90,7 +94,11 @@ const DIAG_DONE_XP = 30 // App.tsx onDiagComplete 보너스와 동일
    상한에 조용히 잘리면 정답률·취약 영역·누적 XP가 전부 과소 집계된다. 그래서 숫자를 올리는 것으로
    끝내지 않고, `rows.length === LIMIT`이면 정합성 진단이 P0으로 띄운다. */
 export const EVENT_LIMIT = 12000
-export const SESSION_LIMIT = 400
+/** ★v1.4.40★ 400 → 20,000.
+ *  v1.4.40부터 **기기 분리(desktop 제외)가 이 목록에 의존한다.** 세션이 400건을 넘겨 잘리면
+ *  그보다 오래된 아빠 PC 문항을 걸러낼 수 없어 아이 지표로 되돌아온다(독립 감사 지적).
+ *  세션 행은 6개 컬럼짜리라 2만 행이어도 가볍다. */
+export const SESSION_LIMIT = 20000
 export const CARD_LIMIT = 20000
 export const PROGRESS_LIMIT = 5000
 
@@ -190,6 +198,8 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
   const [badges, setBadges] = useState<BadgeRow[]>([])
   const [rewards, setRewards] = useState<RewardRow[]>([])
   const [goals, setGoals] = useState<RewardGoal[]>([])
+  /** v1.4.40 — XP 지급 원장 합계. learners.xp와 벌어지면 지급 기록이 유실됐다는 신호다. */
+  const [xpEventsSum, setXpEventsSum] = useState<number | null>(null)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const [loading, setLoading] = useState(false)
   const [viewerOpen, setViewerOpen] = useState(false)
@@ -225,7 +235,7 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
           return r.rows
         } catch { failed.push(label); return [] }
       }
-      const [ev, pr, se, rc, bd, rw, rg] = await Promise.all([
+      const [ev, pr, se, rc, bd, rw, rg, xe] = await Promise.all([
         get('활동 기록', 'answer_events', `learner_id=eq.${l.id}&created_at=gte.${sinceIso}&order=created_at.desc`, EVENT_LIMIT),
         get('모듈 진도', 'module_progress', `learner_id=eq.${l.id}&order=module_id.asc`, PROGRESS_LIMIT),
         get('세션', 'sessions', `learner_id=eq.${l.id}&order=started_at.desc`, SESSION_LIMIT),
@@ -233,6 +243,9 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
         get('뱃지', 'badges', `learner_id=eq.${l.id}&order=earned_at.desc`, 2000),
         get('지급 이력', 'parent_rewards', `learner_id=eq.${l.id}&order=granted_at.desc`, 2000),
         get('보상 목표', 'reward_goals', `learner_id=eq.${l.id}&order=threshold_xp.asc`, 200),
+        // v1.4.40 — XP 지급 원장. 저장값과 벌어지면 '기록이 유실됐다'는 신호다(진단 패널 xp_ledger_gap).
+        // v1.4.40-b — 날짜 창을 준다(무한 성장 방지). 다른 조회와 같은 120일.
+        get('XP 기록', 'xp_events', `learner_id=eq.${l.id}&created_at=gte.${sinceIso}&select=amount&order=created_at.desc`, 50000),
       ])
       // 실패한 조회는 빈 배열이 온다 — 그걸 그대로 반영하면 "기록이 사라진 것처럼" 보인다.
       // 그래서 **실패한 테이블만 이전 값을 유지**하고, 화면에는 실패 사실을 띄운다.
@@ -243,10 +256,15 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
       if (!failed.includes('뱃지')) setBadges(bd as unknown as BadgeRow[])
       if (!failed.includes('지급 이력')) setRewards(rw as unknown as RewardRow[])
       if (!failed.includes('보상 목표')) setGoals(rg as unknown as RewardGoal[])
+      if (!failed.includes('XP 기록')) setXpEventsSum((xe as { amount: number }[]).reduce((a, x) => a + (x.amount || 0), 0))
       // ★v1.4.38★ "받은 행 수 == 내 limit"으로 포화를 판정하면, 서버 상한이 내 상한보다 작을 때
       //   그 검사는 **영원히 통과한다.** 이제 페이지네이터가 "더 있는데 못 받았다"를 직접 알려준다.
+      // v1.4.40-b — XP 기록이 잘리면 xp_ledger_gap이 거짓 경고를 낸다. 잘렸으면 감사 자체를 끈다.
       setCaps({ events: !!cut['활동 기록'], sessions: !!cut['세션'] })
-      if (failed.length < 7) setUpdatedAt(new Date())
+      if (cut['XP 기록']) setXpEventsSum(null)
+      // v1.4.40 — 예전엔 7개 중 6개가 실패해도 "지금 기준" 시각을 갱신해 최신인 척했다.
+      //   실패가 하나라도 있으면 시각을 갱신하지 않는다(P0 배너와 헤더가 서로 다른 말을 하지 않도록).
+      if (failed.length === 0) setUpdatedAt(new Date())
     } catch { failed.push('아이 정보') /* 오프라인 — 기존 데이터 유지 */ }
     setFailedTables(failed)
     setLoading(false)
@@ -341,8 +359,8 @@ function Dashboard(props: { learner?: Learner; onExit?: () => void } = {}) {
   const worldsReady = !!latest?.worlds_ready
   const M = useMemo(
     () => computeMetrics(events, progress, sessions, cards, badges, learner, todayKey, yKey, weekStart,
-      worldsReady, { events: caps.events, sessions: caps.sessions }, failedTables),
-    [events, progress, sessions, cards, badges, learner, todayKey, yKey, weekStart, worldsReady, caps.events, caps.sessions, failedTables],
+      worldsReady, { events: caps.events, sessions: caps.sessions }, failedTables, xpEventsSum),
+    [events, progress, sessions, cards, badges, learner, todayKey, yKey, weekStart, worldsReady, caps.events, caps.sessions, failedTables, xpEventsSum],
   )
 
   const lp = levelProgress(learner?.xp ?? 0)
@@ -445,10 +463,21 @@ function computeMetrics(
   events: AnswerEvent[], progress: ModProgress[], sessions: Session[], cards: ReviewCard[],
   badgeRows: BadgeRow[], learner: Learner | null, todayKey: string, yKey: string, weekStart: string,
   worldsReady: boolean, caps: { events: boolean; sessions: boolean }, failedTables: string[],
+  xpEventsSum: number | null,
 ): Metrics {
   // ★v1.4.39★ toLocaleString 경유 비교는 이 함수 안에서만 수십만 번 불린다 → 전부 dayOf(고정 오프셋)로 통일.
   const dayOf = (iso: string) => kstDayOf(iso)
   const progMap = new Map(progress.map(p => [p.module_id, p]))
+
+  /* ★★v1.4.40 — 아빠 PC 기록을 아이 지표에서 뺀다★★
+     2026-08-16 실측: 기록된 세션 시간의 89.2%가 desktop(70.0시간 vs 폰 8.4시간)이었고,
+     문항도 85건이 desktop 세션에서 나왔다. v1.4.37은 "PC 기록이 섞여 있어요"라고 **말만 했고
+     빼지는 않았다.** 이제 실제로 뺀다 — 단, 경고는 계속 띄워야 하므로 원본은 따로 들고 있는다. */
+  const rawSessions = sessions as unknown as MetricSession[]
+  const excludedSess = excludedSessionIds(rawSessions)
+  const pcEventCount = events.length - learnerEvents(events, excludedSess).length
+  events = learnerEvents(events, excludedSess)
+  sessions = learnerSessions(rawSessions) as unknown as Session[]
 
   const todayEvents = events.filter(e => dayOf(e.created_at) === todayKey)
   const todayCorrect = todayEvents.filter(e => e.is_correct).length
@@ -464,8 +493,24 @@ function computeMetrics(
   const metricSessions = sessions as unknown as MetricSession[]
   const metricProgress = progress as unknown as MetricProgress[]
   const time = studyTimeOfDay(metricEvents, metricSessions, todayKey)
-  const daySecFromEvents = (key: string): number =>
-    events.some(e => dayOf(e.created_at) === key) ? studyTimeOfDay(metricEvents, metricSessions, key).focusSec : 0
+  /* ★v1.4.40 — "그러면 계산량은?"(L50)★
+     예전 `daySecFromEvents`는 날짜마다 `events.some(...)` 전수 스캔 + `studyTimeOfDay`(내부에서 또 두 번 전수 필터)를
+     불렀다. 즉 O(날짜수 × 문항수)다. 컨테이너 실측: 4,445문항 × 35일에서 dayAgg+week7만 **544ms**.
+     120일 창이 다 차면 제곱으로 늘어난다 — v1.4.39가 100배 빠르게 만든 뒤에도 성장 곡선은 그대로였다.
+     → 날짜별 타임스탬프 색인을 **한 번만** 만들고, 이후는 그 배열만 본다. O(n log n). */
+  const tsByDay = new Map<string, number[]>()
+  for (const e of events) {
+    const t = Date.parse(e.created_at)
+    if (!Number.isFinite(t)) continue
+    const k = dayOf(e.created_at)
+    const arr = tsByDay.get(k)
+    if (arr) arr.push(t); else tsByDay.set(k, [t])
+  }
+  for (const arr of tsByDay.values()) arr.sort((a, b) => a - b)
+  const daySecFromEvents = (key: string): number => {
+    const arr = tsByDay.get(key)
+    return arr && arr.length ? focusSecOfTimestamps(arr) : 0
+  }
   const todaySec = time.focusSec
 
   const yEvents = events.filter(e => dayOf(e.created_at) === yKey)
@@ -507,7 +552,13 @@ function computeMetrics(
     + progress.filter(p => p.status === 'completed' || p.status === 'mastered').reduce((a, p) => a + moduleBonus(p), 0)
     + progress.reduce((a, p) => a + ghostBonus(p), 0) // v1.3.0 유령 보스 보너스
     + comboOn(() => true)
-  const totalXp = Math.max(learner?.xp ?? 0, totalXpData)
+  /* ★v1.4.40 — `Math.max`를 걷어낸다★
+     `supabase.ts`가 직접 지목한 안티패턴이다: "아무도 몰랐던 이유는 누적 XP가 Math.max(앱 저장값, 파생값)으로
+     **가려져** 있었기 때문이다." max는 언제나 큰 쪽을 고르므로 어느 한쪽이 부풀어도 화면이 조용해진다.
+     앱이 아이에게 실제로 준 XP는 `learner.xp`다(아이 화면에 뜨는 그 숫자). 파생값은 최근 120일만 덮으므로
+     이력이 120일을 넘으면 구조적으로 작아진다 — 헤드라인이 될 수 없다.
+     → 헤드라인은 **저장값**, 파생값은 **감사(xp_gap)** 로만 쓴다. 차이는 진단 패널이 말한다(L47). */
+  const totalXp = learner?.xp ?? 0
   // 학습 밸런스 (모험 vs 복습 XP — 50:50 목표)
   const balanceOf = (pred: (k: string) => boolean) => {
     let course = 0, review = 0
@@ -567,7 +618,9 @@ function computeMetrics(
   for (const e of events) {
     // ★v1.4.35★ 채점이 아닌 것(진단·문장 발견)과 자기 채점(말하기)은 취약 영역 분모에서 뺀다.
     //   말하기는 아이가 "말했다"를 누르면 무조건 정답이라, 두면 약한 단원이 멀쩡해 보인다.
-    if (!isAssessed(e as unknown as MetricEvent)) continue
+    //   ★v1.4.40★ 복습도 뺀다. `isAssessed`는 복습을 통과시켜서 취약 영역이 통째로 희석돼 있었다
+    //   (실측 R0: 화면 70% ↔ 신규 39%). 순위가 뒤바뀌어 **엉뚱한 단원이 처방으로 나갔다.**
+    if (!isNewLearning(e as unknown as MetricEvent)) continue
     if (!modAgg[e.module_id]) modAgg[e.module_id] = { total: 0, correct: 0 }
     modAgg[e.module_id].total++; if (e.is_correct) modAgg[e.module_id].correct++
   }
@@ -642,7 +695,9 @@ function computeMetrics(
   const masteryIds = worldsReady ? [...MODULE_ORDER, ...EXT_MODULE_ORDER] : MODULE_ORDER
   const mastery = masteryIds.map(id => {
     const p = progMap.get(id)
-    const evs = events.filter(e => e.module_id === id && e.activity_type !== 'diagnostic')
+    // ★v1.4.40★ 예전엔 `activity_type !== 'diagnostic'` 하나만 걸러서 말하기(자기채점 100%)·
+    //   문장 발견(항상 100%)·복습(99.9%)이 전부 분모에 있었다. 취약 영역과 **같은 기준**을 쓴다.
+    const evs = events.filter(e => e.module_id === id && isNewLearning(e as unknown as MetricEvent))
     const acc = evs.length ? Math.round((evs.filter(e => e.is_correct).length / evs.length) * 100) : null
     return { id, status: p?.status || 'locked', acc, attempts: p?.attempts || 0, timeSec: p?.total_time_seconds || 0, best: p?.best_score ?? null, n: evs.length, stars: p?.stars ?? null }
   })
@@ -706,11 +761,28 @@ function computeMetrics(
   const badgeOnlyInAdmin = [...earnedBadges].filter(id => !tableIds.has(id) && BADGE_DEFS[id] && !BADGE_DEFS[id].localOnly)
   const badgeOnlyInApp = [...tableIds].filter(id => !earnedBadges.has(id))
 
-  const week7: StudyTime[] = Array.from({ length: 7 }, (_, i) =>
-    studyTimeOfDay(metricEvents, metricSessions, addDays(todayKey, -i)))
+  // ★v1.4.40★ week7만은 **원본 세션**으로 만든다 — desktop을 지표에서 뺐어도
+  //   "아빠가 PC로 열었다"는 사실 자체는 계속 알려야 하기 때문이다(뺐다는 것도 알려야 한다).
+  /* v1.4.40-b — week7에서 실제로 쓰는 값은 `devices` 하나뿐인데(진단 패널의 PC 혼입 판정),
+     `studyTimeOfDay`를 7번 부르면 내부에서 문항을 14번 전수 필터한다. 세션만 훑으면 된다. */
+  const week7: StudyTime[] = Array.from({ length: 7 }, (_, i) => {
+    const key = addDays(todayKey, -i)
+    const devs = Array.from(new Set(rawSessions.filter(s => dayOf(s.started_at) === key).map(s => s.device || '알 수 없음'))).sort()
+    return { focusSec: 0, openSec: 0, rawSessionSec: 0, answers: 0, idleSuspect: false, corruptSessions: 0, devices: devs }
+  })
+  // 월드 7~10을 "한 번도 안 들어갔다"고 말하려면 완료 여부가 아니라 **기록**을 봐야 한다.
+  //   (실측: P1에 이미 6문항이 있는데 진단 패널은 "통째로 비어 있어요"라고 말하고 있었다)
+  const extTouched = events.some(e => EXT_MODULE_ORDER.includes(e.module_id))
+  /* v1.4.40 — 진도 시스템 밖의 학습. 2026-08-16 실측으로 전체의 20.6%(911문항)가 여기였다:
+     지령 미션 CMD 619 · 복습(카드 규칙 밖) 144 · 문장 소환진 FORGE 130 · 에코 12 · P1 6.
+     아이는 619문항을 풀었는데 진도바가 1도 안 움직인다 — 결함은 아니지만 큰 누락이다. */
+  const trackedIds = new Set([...MODULE_ORDER, ...EXT_MODULE_ORDER])
+  const offTrackCount = events.filter(e =>
+    !trackedIds.has(e.module_id) && !VOCAB_PACK_RE.test(e.module_id) && !GOLEM_RE.test(e.module_id)
+    && e.activity_type !== 'diagnostic').length
   const issues = integrityCheck({
     today: time, week: week7, xp: xpChk, progress: prog, debt,
-    badgeOnlyInAdmin, badgeOnlyInApp,
+    badgeOnlyInAdmin, badgeOnlyInApp, extTouched, pcEventCount, acc7, offTrackCount, xpEventsSum: xpEventsSum ?? undefined,
     eventsTruncated: caps.events, sessionsTruncated: caps.sessions, failedTables,
   })
   const weakest = weakAreas.length ? { name: moduleName(weakAreas[0].id), pct: weakAreas[0].pct } : null
@@ -920,7 +992,7 @@ function ReviewTab(props: { M: Metrics; cards: ReviewCard[] }) {
     <div className="adm-screen">
       <div className="adm-stat-grid">
         <div className="adm-stat"><span className="k">🃏 전체 카드</span><span className="v">{total}장</span><span className="d flat">라이트너 5칸</span></div>
-        <div className="adm-stat"><span className="k">💎 장기기억</span><span className="v">{M.masteredCards}장</span><span className="d flat">박스5 도달</span></div>
+        <div className="adm-stat"><span className="k">💎 장기기억</span><span className="v">{M.masteredCards}장</span><span className="d flat">전체 카드 중 박스5</span></div>
         <div className="adm-stat"><span className="k">🎯 복습 정답률</span><span className="v">{M.reviewAcc === null ? '—' : `${M.reviewAcc}%`}</span><span className="d flat">누적 {M.reviewCount}회</span></div>
         <div className="adm-stat"><span className="k">📅 오늘 예정</span><span className="v">{M.dueToday}장</span>{M.reviewedToday ? <span className="d up">완료 ✓</span> : <span className="d flat">대기</span>}</div>
       </div>
@@ -1167,7 +1239,7 @@ function VocabPanel(props: { M: Metrics }) {
         <div className="adm-stat"><span className="k">어휘 정답률</span><span className="v">{V.acc === null ? '—' : `${V.acc}%`}</span><span className="d flat">{V.events.toLocaleString()}문항</span></div>
         <div className="adm-stat"><span className="k">⚔️ 단어 골렘</span><span className="v">{V.golems}/40</span><span className="d flat">구역 5개마다 출현</span></div>
         <div className="adm-stat"><span className="k">깨어난 수호자</span><span className="v">{V.guardians}/10</span><span className="d flat">한 구역 20팩 = 1명</span></div>
-        <div className="adm-stat"><span className="k">👑 전설 워드몬</span><span className="v">{V.legend}</span><span className="d flat">잡은 {V.caught}마리 중</span></div>
+        <div className="adm-stat"><span className="k">👑 전설 워드몬</span><span className="v">{V.legend}</span><span className="d flat">어휘 카드 {V.caught}장 중 박스5</span></div>
       </div>
 
       {/* 워드몬 진화 분포 — 어휘 카드만 (모듈 오답 카드는 제외해야 의미가 있다) */}
@@ -1577,8 +1649,18 @@ function ProblemViewer(props: { learnerId: string; baseEvents: AnswerEvent[]; on
     let alive = true
     const d30 = new Date(); d30.setDate(d30.getDate() - 89)
     const since = encodeURIComponent(`${d30.toLocaleDateString('sv', { timeZone: 'Asia/Seoul' })}T00:00:00+09:00`)
-    db.select('answer_events', `learner_id=eq.${props.learnerId}&created_at=gte.${since}&order=created_at.asc&limit=6000`)
-      .then(rows => { if (alive && rows.length) setEvents(rows as unknown as AnswerEvent[]) })
+    /* ★★v1.4.40 — 이 한 줄이 "문제 다시보기"를 통째로 망가뜨리고 있었다★★
+       2026-08-16 라이브 실측: 날짜 드롭다운에 **7/15·7/16·7/17 세 날짜만** 떴고,
+       기본 선택된 7/17은 "이 날짜에는 푼 문제가 없어요"라고 답했다(실제로는 167문항).
+       원인 두 겹:
+         ① `db.select`(limit=6000)는 서버 `Max rows` 1,000에서 잘린다. `order=asc`라 **가장 오래된 1,000건**만 왔다
+            (7/15 155 + 7/16 749 + 7/17 167 = 1,071 — 딱 그 경계다). v1.4.38이 고친 것을
+            같은 화면의 다른 컴포넌트가 되돌리고 있었다.
+         ② 그 잘린 배열이 `refresh()`가 selectAll로 받아 둔 4,432건을 **덮어썼고**,
+            먼저 정해진 `dateKey`(오늘)는 새 목록에 없어서 화면이 빈 상태가 됐다.
+       → selectAll로 받고, 목록이 바뀌면 선택 날짜를 다시 맞춘다. */
+    db.selectAll('answer_events', `learner_id=eq.${props.learnerId}&created_at=gte.${since}&order=created_at.asc`)
+      .then(r => { if (alive && r.rows.length) setEvents(r.rows as unknown as AnswerEvent[]) })
       .catch(() => { /* baseEvents 유지 */ })
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
@@ -1591,7 +1673,9 @@ function ProblemViewer(props: { learnerId: string; baseEvents: AnswerEvent[]; on
   }, [events])
 
   useEffect(() => {
-    if (dateKey || !availDates.length) return
+    if (!availDates.length) return
+    // 선택한 날짜가 목록에 **없으면** 반드시 다시 맞춘다 — 없으면 "푼 문제가 없어요"만 남는다.
+    if (dateKey && availDates.includes(dateKey)) return
     setDateKey(availDates.includes(todayKey) ? todayKey : availDates[0])
   }, [availDates, dateKey, todayKey])
 
@@ -1631,7 +1715,15 @@ function ProblemViewer(props: { learnerId: string; baseEvents: AnswerEvent[]; on
         {loading && !problems.length ? (
           <div className="pv-empty">불러오는 중…</div>
         ) : !cur ? (
-          <div className="pv-empty">{wrongOnly ? '이 날짜엔 오답이 없어요 — 굿!' : '이 날짜에는 푼 문제가 없어요.'}</div>
+          // v1.4.40 — 빈 상태에 '왜 비었는지'와 '무엇을 하면 되는지'를 같이 준다.
+          //   예전엔 조회가 1,000행에서 잘려 목록에 없는 날짜가 선택돼도 이 문장만 떴다 — 아빠는 원인을 알 길이 없었다.
+          <div className="pv-empty">
+            {wrongOnly
+              ? '이 날짜엔 오답이 없어요 — 굿! 🎉'
+              : availDates.length === 0
+                ? '아직 기록이 없어요. 예한이가 한 판 하면 여기에 문제가 그대로 남습니다.'
+                : `이 날짜에는 푼 문제가 없어요. 위 날짜 목록에서 다른 날(기록 있는 날 ${availDates.length}일)을 골라 보세요.`}
+          </div>
         ) : (
           <>
             <div className="pv-body">

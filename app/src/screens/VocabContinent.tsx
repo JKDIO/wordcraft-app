@@ -195,8 +195,19 @@ function ContinentMap(props: {
               {pending > 0 && unlocked && <span style={{ fontSize: 11, fontWeight: 800, color: '#ffb45c' }}>⚔️ 골렘 출현</span>}
             </h2>
 
+            {/* v1.4.40 — 예전엔 잠긴 구역 9개에 **완전히 같은 문장**이 9번 반복돼 시각적 소음이었다.
+                지금 몇 개 남았는지를 넣어 '다음 목표'로 읽히게 한다. */}
             {!unlocked && (
-              <p className="world-locked-note">앞 구역을 {Math.ceil(t.packs.length * 0.8)}개 정복하면 열려! 지금 구역부터 차근차근 💪</p>
+              <p className="world-locked-note">{(() => {
+                const prev = data.tiers.find(x => x.tier === t.tier - 1)
+                if (!prev) return '앞 구역부터 차근차근! 💪'
+                const need = Math.ceil(prev.packs.length * 0.8)
+                const have = tierDoneCount(state.progress, prev)
+                const left = Math.max(0, need - have)
+                return left > 0
+                  ? `T${prev.tier}을 ${need}개 정복하면 열려 — 지금 ${have}/${need}, ${left}개만 더! 💪`
+                  : '조건 달성! 곧 열려 🔓'
+              })()}</p>
             )}
 
             {unlocked && !isOpen && (

@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { APP_VERSION, type VersionInfo } from '../lib/version'
+// v1.4.40 — 전송 못 하고 버려진 기록을 눈에 보이게 한다(조용한 유실 금지).
+import { getDeadLetters, clearDeadLetters } from '../lib/store'
 
 /* 정보 화면 (하단 내비 4번째 'ℹ️ 정보') — 아빠의 메시지 + 버전/원격 업데이트
    - 아빠의 메시지: 이 앱을 왜/어떻게 만들었는지, 예한이 응원
@@ -14,6 +17,10 @@ export function AppInfo(props: {
   onRecheck: () => void
 }) {
   const { latest, checking, rechecking, updateAvailable } = props
+  /* ★v1.4.40★ 오프라인 큐가 버린 기록. 예전에는 4xx를 전부 "재시도 무의미"로 보고
+     `answer_events`까지 조용히 지웠다 — 아무 흔적도 남지 않아 아무도 몰랐다.
+     이제 진짜로 버릴 것만 버리고, 버린 것은 **여기서 보인다**. */
+  const [dead, setDead] = useState(() => getDeadLetters())
   return (
     <div className="appinfo">
       <div className="ai-hero">
@@ -62,6 +69,21 @@ export function AppInfo(props: {
           {rechecking ? '확인 중…' : '↻  다시 확인'}
         </button>
       </div>
+
+      {dead.length > 0 && (
+        <div className="ai-card">
+          <h3 className="ai-h">📮 전송하지 못한 기록</h3>
+          <p className="ai-p">
+            서버에 보내지 못한 기록이 <b>{dead.length}건</b> 있어요. 학습은 정상이지만
+            아빠 관제실 숫자에는 이 기록이 빠져 있을 수 있어요.
+          </p>
+          <div className="ai-row"><span>가장 최근</span><b>{dead[dead.length - 1].table}</b></div>
+          <p className="ai-notes">{dead[dead.length - 1].error}</p>
+          <button className="ai-btn ai-recheck" onClick={() => { clearDeadLetters(); setDead([]) }}>
+            확인했어요 (목록 비우기)
+          </button>
+        </div>
+      )}
 
       <p className="ai-foot">
         아빠가 예한이를 위해 만든 앱 💙
