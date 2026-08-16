@@ -1,5 +1,4 @@
-# v1.4.42 (4/4) — 번호 연속성 검사 신설 + 나머지 라벨.
-29f7b89908dec3cac8214545e9bf6eabca32e779  app/badge_check.mjs
+# v1.4.42 (4a/5)
 e4329110720736dcebc741d15b8c726c8b213719  app/src/engine/SummonExercise.tsx
 942e060c7d91a6c598dcd5b9fbdfd9f6b3dabf61  app/src/lib/adminMetrics.ts
 d11d731555f35ad92e5e91bd65adccf895d6c517  app/src/screens/Profile.tsx
