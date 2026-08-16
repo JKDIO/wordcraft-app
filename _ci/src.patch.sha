@@ -1,2 +1,7 @@
-# v1.4.42 (3/4) — 관제실 라벨·주석의 월드 번호.
-eb80deeac8d9ebb813b26017e6ac4300204a3c4d  app/src/screens/AdminPage.tsx
+# v1.4.42 (4/4) — 번호 연속성 검사 신설 + 나머지 라벨.
+29f7b89908dec3cac8214545e9bf6eabca32e779  app/badge_check.mjs
+e4329110720736dcebc741d15b8c726c8b213719  app/src/engine/SummonExercise.tsx
+942e060c7d91a6c598dcd5b9fbdfd9f6b3dabf61  app/src/lib/adminMetrics.ts
+d11d731555f35ad92e5e91bd65adccf895d6c517  app/src/screens/Profile.tsx
+48beec34a41283fab5dd4362b814cae705ff60df  app/src/screens/WorldMap.tsx
+92b9b1b6abd968fe1eca6185901c5879fa5d1801  app/verify.sh
