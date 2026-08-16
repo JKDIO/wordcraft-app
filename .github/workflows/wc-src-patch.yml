@@ -12,12 +12,11 @@
 #   즉 결과는 둘 중 하나뿐이다 — **바이트 단위로 정확한 배포**, 또는 **배포 안 함**. 중간은 없다.
 #
 # 쓰는 법
-#   ① `_ci/src.patch.b64` — `git diff` 결과를 **gzip + base64** 한 것 (권장).
-#      왜 base64인가: 순수 diff는 문맥 줄의 **앞 공백 한 칸**까지 정확해야 한다.
-#      모델이 그걸 옮겨 적다 공백 하나를 잃으면 `corrupt patch`다. base64는 그 위험이 없고 길이도 1/2다.
-#      (평문 `_ci/src.patch`도 계속 지원한다 — b64가 없으면 그걸 쓴다.)
-#   ② `_ci/src.patch.sha`  — 패치가 건드리는 **모든** 파일의 `git hash-object` 값. "<sha>  <경로>" 한 줄씩
-#   두 파일을 한 커밋으로 밀면 실행된다. 결과는 `_ci/PATCH_REPORT.txt`.
+#   ① `_ci/src.patch`     — `git diff` 출력 그대로 (a/ b/ 접두사 포함, 저장소 루트 기준). **이게 우선**된다.
+#      한 번에 올릴 수 있는 양은 경험상 **8~10KB**다. 더 크면 파일을 나눠 여러 번 배포하라.
+#   ② `_ci/src.patch.b64` — gzip+base64 (평문이 없을 때만 쓴다)
+#   ③ `_ci/src.patch.sha` — 패치가 건드리는 **모든** 파일의 `git hash-object` 값. "<sha>  <경로>" 한 줄씩
+#   ③가 밀릴 때 실행된다 — 본문(①②)을 먼저 올려 확인한 뒤 ③를 밀면 안전하다. 결과는 `_ci/PATCH_REPORT.txt`.
 name: WC Source Patch
 
 on:
@@ -42,15 +41,18 @@ jobs:
         run: |
           set -euo pipefail
           test -f _ci/src.patch.sha || { echo "::error::_ci/src.patch.sha 가 없다"; exit 1; }
-          if [ -f _ci/src.patch.b64 ]; then
+          # v1.4.42 정정 — **평문 우선**. 옛 릴리스의 .b64 가 남아 있으면 그게 먼저 잡혀
+          #   엉뚜한(또는 잘린) 패치를 적용하려 든다. 실제로 그렇게 두 번 실패했다.
+          #   평문 diff는 사람이 읽고 검토할 수 있다는 장점도 있다.
+          if [ -f _ci/src.patch ]; then
+            echo "패치 형식: 평문 diff"
+            cp _ci/src.patch /tmp/src.patch
+          elif [ -f _ci/src.patch.b64 ]; then
             echo "패치 형식: gzip+base64"
             base64 -d _ci/src.patch.b64 | gunzip > /tmp/src.patch \
               || { echo "::error::base64/gzip 해독 실패 — 전송 중 손상되었다. 아무것도 하지 않는다."; exit 1; }
-          elif [ -f _ci/src.patch ]; then
-            echo "패치 형식: 평문 diff"
-            cp _ci/src.patch /tmp/src.patch
           else
-            echo "::error::_ci/src.patch.b64 도 _ci/src.patch 도 없다"; exit 1
+            echo "::error::_ci/src.patch 도 _ci/src.patch.b64 도 없다"; exit 1
           fi
           echo "패치 크기: $(stat -c%s /tmp/src.patch) bytes"
           echo "── 적용 대상 ──"
