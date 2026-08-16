@@ -111,6 +111,9 @@ jobs:
           git config user.email 'ci@wordcraft.local'
           # 적용한 ops는 지운다 — 남겨 두면 다음 릴리스에서 옛 패치가 다시 도는 것처럼 보인다.
           rm -f _ci/content_ops.b64 _ci/content_ops.json _ci/content_ops.meta
-          git add -A content.json app/public/content.json _ci/CONTENT_REPORT.txt _ci/content_ops.b64 _ci/content_ops.json _ci/content_ops.meta || true
+          # ★v1.4.42 봉합★ 예전엔 경로를 일일이 나열했는데, 그 중 하나라도 없으면
+          #   `git add`가 통째로 실패하고 `|| true`가 그걸 삼켜 **아무것도 스테이징되지 않았다.**
+          #   그래서 "성공"으로 끝나면서 content.json은 그대로였다(2026-08-16 실제 발생).
+          git add -A
           git commit -m 'ci: apply content ops [skip ci]' || { echo 'no change'; exit 0; }
           git push
