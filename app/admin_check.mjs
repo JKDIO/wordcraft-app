@@ -6,7 +6,7 @@
  * 실행: node admin_check.mjs   (verify.sh에서 부른다)
  */
 import { execSync } from 'node:child_process'
-import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs'
 
 mkdirSync('.verify', { recursive: true })
 writeFileSync('.verify/admin_entry.ts', `import * as A from '../src/lib/adminMetrics'\n// @ts-ignore\nglobalThis.A = A\n`)
@@ -380,14 +380,39 @@ console.log('── ⑭ ★소비자 검사★: 라이브러리만 고치고 화
   ok(/onLearnerRouteRef/.test(src('src/App.tsx')), '하트비트가 현재 화면을 본다(마운트 시 1회가 아니라)')
 
   // 남아 있는 `db.select(... limit=` 지점을 전수로 보고한다 (query_check 대체)
+  //
+  // ★2026-08-16 (v1.4.41) 왜 파일 목록을 손으로 적지 않게 바꿨나★
+  //   v1.4.40에서 이 목록에 `WorldMap.tsx`가 빠져 있었다. 그래서 U-3(마이너스 표기 제거)를
+  //   Profile.tsx에서만 고치고 월드맵을 놓쳤고, 배포된 라이브 화면에 **"다음 레벨 -1331"**이
+  //   그대로 남았다 — 소비자 검사를 만들면서 소비자 목록을 손으로 적어 **L51을 내가 재발시킨 것**이다.
+  //   목록은 이제 폴더에서 읽는다. 화면이 새로 생기면 자동으로 검사 대상이 된다.
+  const learnerScreens = readdirSync('src/screens')
+    .filter(f => f.endsWith('.tsx'))
+    .filter(f => !/^(Admin|SuperConsole|FamilyDashboard|DiagnosticRun)/.test(f))  // 아빠 화면은 제외
+    .map(f => `src/screens/${f}`)
+  const scanned = ['src/App.tsx', 'src/lib/store.ts', 'src/lib/supabase.ts',
+                   'src/screens/AdminPage.tsx', ...learnerScreens]
+
   const risky = []
-  for (const f of ['src/App.tsx', 'src/lib/store.ts', 'src/lib/supabase.ts', 'src/screens/AdminPage.tsx',
-                   'src/screens/ReviewMine.tsx', 'src/screens/RewardBoard.tsx', 'src/screens/Profile.tsx']) {
+  for (const f of scanned) {
     src(f).split('\n').forEach((line, i) => {
       if (/db\.select\(/.test(line) && /limit=\$?\{?\d{4,}/.test(line)) risky.push(`${f}:${i + 1}`)
     })
   }
   ok(risky.length === 0, '1,000행을 넘길 수 있는 db.select(limit=)가 남아 있지 않다', `→ ${risky.join(', ')}`)
+
+  // ★아이가 보는 화면에 마이너스 숫자를 쓰지 않는다 (U-3 전수 감시, v1.4.41)★
+  //   "남은 XP"를 -1331로 쓰면 초6은 '잃었다'로 읽는다. 남은 양은 항상 양수로 말한다.
+  //   패턴: JSX 안에서 `-{...}` 로 시작하는 값 출력 (문자열 리터럴 안의 하이픈은 걸리지 않는다).
+  const minus = []
+  for (const f of learnerScreens) {
+    src(f).split('\n').forEach((line, i) => {
+      if (/^\s*\/\//.test(line)) return                       // 주석 줄은 건너뛴다
+      if (/>[^<>]*-\{/.test(line) || /}\s*-\{/.test(line)) minus.push(`${f}:${i + 1}`)
+    })
+  }
+  ok(minus.length === 0, '★아이 화면에 "-{숫자}" 표기가 없다 (U-3 회귀 감시 · 학습자 화면 전수)',
+    `→ ${minus.join(', ')}`)
 }
 
 console.log('── ⑮ 성능: 날짜별 집계가 O(날짜 × 문항)이 아니다 (v1.4.40) ──')

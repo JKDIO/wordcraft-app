@@ -49,7 +49,9 @@ node admin_check.mjs | tail -6
 echo "── ⑧ 배포물 버전 3자 대조 (L25) ──"
 if [ -f dist/main.js ]; then
   B=$(grep -o '1\.4\.[0-9]\{1,2\}' dist/main.js | sort -u | tr '\n' ' ')
-  V=$(python3 -c "import json;print(json.load(open('dist/version.json'))['version'])")
+  # v1.4.41 정정: dist/version.json은 옛 빌드가 남긴 찌꺼기다(build.sh가 만들지 않는다).
+  #   실제로 배포되는 것은 **저장소 루트의 version.json** 하나뿐이므로 그것을 본다.
+  V=$(python3 -c "import json;print(json.load(open('../version.json'))['version'])")
   S=$(grep -o "'1\.4\.[0-9]*'" src/lib/version.ts | tr -d "'")
   echo "  번들:$B / version.json:$V / 소스:$S"
   [ "$(echo $B | tr -d ' ')" = "$V" ] && [ "$V" = "$S" ] && echo "  일치" || { echo "  ★불일치★"; exit 1; }

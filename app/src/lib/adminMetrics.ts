@@ -509,7 +509,8 @@ export function integrityCheck(i: IntegrityInput): IntegrityIssue[] {
   if (i.sessionsTruncated) {
     out.push({
       id: 'sessions_truncated', level: 'P1', title: '세션 기록이 조회 상한에 닿았어요',
-      detail: '앱을 연 기록을 다 받아오지 못했습니다. v1.4.40부터 **아빠 PC 기록을 걸러내는 데 이 목록을 쓰기 때문에**, 잘린 구간의 PC 문항이 예한이 정답률·학습 시간에 섞여 있을 수 있어요.',
+      // v1.4.41 — 문구에서 버전 번호를 뺐다. 번들에 버전 문자열이 둘이 되면 배포 3자 대조가 오탐한다(L25).
+      detail: '앱을 연 기록을 다 받아오지 못했습니다. **아빠 PC 기록을 걸러내는 데 이 목록을 쓰기 때문에**, 잘린 구간의 PC 문항이 예한이 정답률·학습 시간에 섞여 있을 수 있어요.',
       action: '조회 상한을 올려야 합니다(코드 수정 필요).',
     })
   }

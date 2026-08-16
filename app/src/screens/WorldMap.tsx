@@ -148,7 +148,9 @@ export function WorldMap(props: {
           <div className="xpbar-seg">
             {Array.from({ length: 10 }, (_, k) => <i key={k} className={k < onSeg ? 'on' : ''} />)}
           </div>
-          <div className="xp-meta"><span>{lp.cur} / {lp.need} XP</span><span>다음 레벨 -{lp.need - lp.cur}</span></div>
+          {/* v1.4.41 — "다음 레벨 -1331"로 보이던 것. 내 정보(Profile)만 고치고 여기를 놓쳤다(L51 재발).
+              초6에게 마이너스는 '잃었다'로 읽힌다. 남은 양은 양수로만 말한다. */}
+          <div className="xp-meta"><span>{lp.cur} / {lp.need} XP</span><span>다음 레벨까지 {(lp.need - lp.cur).toLocaleString()}</span></div>
         </div>
       </div>
 
@@ -340,7 +342,8 @@ function RewardStrip(props: { goals: RewardGoal[]; totalXp: number; onOpen: () =
           <span style={{ fontSize: 11, opacity: .7 }}>{next.goal.threshold_xp.toLocaleString()} XP에서 열린다</span>
         </span>
         <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-          <b style={{ fontSize: 17, color: '#ffd050' }}>-{next.remaining.toLocaleString()}</b>
+          {/* v1.4.41 — 여기도 "-380 / XP 남음"이었다. 라벨이 이미 '남음'이므로 부호는 필요 없다. */}
+          <b style={{ fontSize: 17, color: '#ffd050' }}>{next.remaining.toLocaleString()}</b>
           <span style={{ fontSize: 10.5, opacity: .7, display: 'block' }}>XP 남음</span>
         </span>
       </div>
