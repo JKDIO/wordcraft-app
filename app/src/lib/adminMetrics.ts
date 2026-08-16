@@ -358,7 +358,7 @@ export interface ProgressView {
   pct: number
   /** 기준선(월드 1~5) */
   baseDone: number; baseTotal: number
-  /** 확장(월드 7~10) */
+  /** 확장(월드 6~9) */
   extDone: number; extTotal: number
   /** 아이 화면에 확장 월드가 열려 있는가 */
   extOpen: boolean
@@ -473,7 +473,7 @@ export interface IntegrityInput {
   sessionsTruncated: boolean
   /** 데이터를 못 불러온 테이블 */
   failedTables: string[]
-  /** v1.4.40 — 확장 월드(7~10)에 **기록이 하나라도** 있는가. 완료 여부가 아니라 기록으로 판정한다. */
+  /** v1.4.40 — 확장 월드(6~9)에 **기록이 하나라도** 있는가. 완료 여부가 아니라 기록으로 판정한다. */
   extTouched?: boolean
   /** v1.4.40 — 아이 지표에서 실제로 제외한 PC 문항 수 */
   pcEventCount?: number
@@ -631,7 +631,7 @@ export function integrityCheck(i: IntegrityInput): IntegrityIssue[] {
   }
   if (i.progress.extOpen && i.progress.extDone === 0 && !i.extTouched) {
     out.push({
-      id: 'ext_untouched', level: 'info', title: '월드 7~10이 열렸지만 아직 한 번도 안 들어갔어요',
+      id: 'ext_untouched', level: 'info', title: '월드 6~9가 열렸지만 아직 한 번도 안 들어갔어요',
       detail: `아이 화면 기준 진도는 ${i.progress.done}/${i.progress.total}입니다. 새 월드 24개가 통째로 비어 있어요.`,
       action: '독해 던전 P1(그림자 문장)부터 같이 한 판 해 보세요.',
     })
@@ -671,7 +671,7 @@ export function coachTips(a: {
     out.push({ emoji: '📊', text: `최근 7일 복습 ${a.acc7.reviewPct}% vs 신규 ${a.acc7.newPct}%. 아는 걸 다시 보는 시간이 많아요 — 새 단원 비중을 조금 올려도 됩니다.` })
   }
   if (a.progress.extOpen && a.progress.extDone === 0 && a.progress.baseDone === a.progress.baseTotal) {
-    out.push({ emoji: '📖', text: '기준 커리큘럼 28개를 전부 끝냈어요. 월드 7~10(24단원)이 다음 목표입니다.' })
+    out.push({ emoji: '📖', text: '기준 커리큘럼 28개를 전부 끝냈어요. 월드 6~9(24단원)이 다음 목표입니다.' })
   }
   return out.slice(0, 4)
 }

@@ -65,7 +65,7 @@ echo "     measure20.mjs      문항 입력 방식·정답 위치·무결성 (L2
 echo "     golem_check.mjs    단어 골렘·속사 무결성"
 echo "     summon_check.mjs   문장 소환 scene↔문장 일치 (v1.4.24)"
 echo "     summon_smoke.mjs   소환 화면 스모크 (dist + 로컬 서버 필요)"
-echo "     w710_check.mjs     월드 7~10 콘텐츠 전수"
+echo "     w710_check.mjs     확장 월드(6~9) 콘텐츠 전수"
 echo "   → 전부 content.json/vocab.json을 보는 콘텐츠 검사다. 코드 변경만 하는 릴리스에는 영향이 없지만,"
 echo "     콘텐츠를 건드리는 릴리스라면 이 다섯을 먼저 복원할 것."
 echo

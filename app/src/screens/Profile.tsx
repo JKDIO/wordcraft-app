@@ -14,7 +14,7 @@ const DOW = ['월', '화', '수', '목', '금', '토', '일']
 
 export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
   const s = props.state
-  // v1.4.23: 승인 전에는 월드 7~10이 '클리어 n/28' 분모에 들어가지 않는다
+  // v1.4.23: 승인 전에는 확장 월드(6~9)가 '클리어 n/28' 분모에 들어가지 않는다
   const ORDER_V = moduleOrder(props.worldsReady)
   const lp = levelProgress(s.xp)
   const onSeg = Math.min(10, Math.round((lp.cur / lp.need) * 10))

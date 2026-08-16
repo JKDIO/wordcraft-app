@@ -37,7 +37,7 @@ function shuffle<T>(arr: T[], seed: number): T[] {
 }
 
 /** 정답과 비교해 "어디까지 맞았는지"를 알려주는 정직한 진단.
- *  문법 엔진이 못 보는 문장(월드 7~10의 긴 문장 등)에서도 아이에게 다음 수를 준다. */
+ *  문법 엔진이 못 보는 문장(확장 월드 6~9의 긴 문장 등)에서도 아이에게 다음 수를 준다. */
 function positionalHint(built: string[], answer: string, focus?: string): string {
   const want = answer.trim().split(/\s+/)
   const okUpto = (() => {

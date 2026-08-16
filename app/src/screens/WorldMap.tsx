@@ -47,11 +47,11 @@ export function WorldMap(props: {
   onOpenRewards: () => void
   /** 음원 감사 PASS 전에는 입구를 열지 않는다(L22 — 무음 콘텐츠 노출 금지) */
   vocabReady?: boolean
-  /** v1.4.23 월드 7~10 — Dio님 승인 전에는 그려지지도 않는다 */
+  /** v1.4.23 확장 월드(6~9) — Dio님 승인 전에는 그려지지도 않는다 */
   worldsReady?: boolean
 }) {
   const s = props.state
-  // ★승인 전에는 월드 7~10이 목록에도, 진행률·잠금 계산에도 들어가지 않는다★
+  // ★승인 전에는 확장 월드(6~9)가 목록에도, 진행률·잠금 계산에도 들어가지 않는다★
   const WORLDS_V = worldList(props.worldsReady)
   const ORDER_V = moduleOrder(props.worldsReady)
   const lp = levelProgress(s.xp)
