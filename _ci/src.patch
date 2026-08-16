@@ -1,17 +1,14 @@
 diff --git a/app/badge_check.mjs b/app/badge_check.mjs
-index 0b76a61..b6c264b 100644
+index 0b76a61..0c5d37e 100644
 --- a/app/badge_check.mjs
 +++ b/app/badge_check.mjs
-@@ -89,2 +89,27 @@ console.log('── ④ 월드 정복 뱃지는 그 월드를 **전부** 클리
+@@ -89,2 +89,23 @@ console.log('── ④ 월드 정복 뱃지는 그 월드를 **전부** 클리
  
 +console.log('── ④-b 월드 번호가 중간에 비지 않는다 (v1.4.42) ──')
 +{
-+  /* ★왜 이 검사가 생겼나★
-+   *   옛 월드 6(문장 소환진)을 v1.4.24에서 해체한 뒤 **6번이 비어 있었다.**
-+   *   그래서 아이 화면에서 5 다음이 7로 건너뛰었고, Dio님이 "6만 없으니까 이상하다"고 알려 주셨다.
-+   *   코드는 정상 동작했다 — 번호가 비는 건 어떤 타입 검사도 잡지 못한다.
-+   *   v1.4.42에서 7~10을 6~9로 당겼고, 다시 벌어지지 않게 여기서 잠근다.
-+   *   (1.5 수정 동굴처럼 의도된 소수 번호는 정수 연속성 판정에서 버린다.) */
++  /* 월드 6이 비어 있어 5 다음이 7로 건너뛰던 것을 v1.4.42에서 6~9로 당겨 고쳤다.
++   * 번호가 비는 것은 타입 검사로 잡히지 않으므로 여기서 잠근다.
++   * (1.5 수정 동굴 같은 소수 번호는 연속성 판정에서 제외한다.) */
 +  const nums = [...C.WORLDS, ...C.EXT_WORLDS]
 +    .filter(w => w.modules.length && Number.isInteger(w.world))
 +    .map(w => w.world)
@@ -21,8 +18,7 @@ index 0b76a61..b6c264b 100644
 +  ok(nums[0] === 1, `월드 번호가 1부터 시작한다 (실제 ${nums[0]})`)
 +  ok(gaps.length === 0, '★월드 번호에 빈칸이 없다 (5 다음이 7로 건너뛰던 회귀 감시)', `→ 끕긴 곳: ${gaps.join(', ')}`)
 +
-+  /* 뱃지 ID는 `world${world}_clear`로 자동 생성된다 — 번호를 바꾸고 도감을 안 바꾸면
-+   * 도감에 없는 ID가 발급돼 **조용히 안 보이는 뱃지**가 된다. ④에서 이미 보지만 의도를 여기 남긴다. */
++  /* 뱃지 ID는 world 번호로 자동 생성된다. 도감에 없는 ID가 발급되면 안 보이는 뱃지가 된다. */
 +  const orphan = Object.keys(B.BADGE_DEFS)
 +    .filter(k => /^world[\d.]+_clear$/.test(k))
 +    .filter(k => ![...C.WORLDS, ...C.EXT_WORLDS].some(w => `world${w.world}_clear` === k))
