@@ -1,0 +1,7 @@
+# v1.4.41 — 패치 적용 후 이 값과 어긋나면 CI가 아무것도 커밋하지 않고 실패한다.
+5ce5c82e2b6925197f93ebc33ca7e9d65999c719  app/admin_check.mjs
+fdb09d4d800eca90d74addd933237479516c2932  app/src/lib/adminMetrics.ts
+ab1192b254a4f94cf05d43746a4ef2246541fa9a  app/src/lib/version.ts
+0edf63fb1f32bbe75cab4c3e241901149a3d4907  app/src/screens/WorldMap.tsx
+5edea9fb9fa7af7a0cd5215fdb6b0f08288343ef  app/verify.sh
+c10c8e7faf52eb20626f21357816bb074695ea09  version.json
