@@ -1,2 +1,2 @@
-# v1.4.42 (2/4) — 뱃지 도감의 월드 번호·뱃지 ID.
-38aba310fad5a3e7ec47f8ad93c875e1e7c45648  app/src/lib/badges.ts
+# v1.4.42 (3/4) — 관제실 라벨·주석의 월드 번호.
+eb80deeac8d9ebb813b26017e6ac4300204a3c4d  app/src/screens/AdminPage.tsx
