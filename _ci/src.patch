@@ -1,67 +1,95 @@
-diff --git a/app/src/lib/content.ts b/app/src/lib/content.ts
-index 06a5e1c..e6644e4 100644
---- a/app/src/lib/content.ts
-+++ b/app/src/lib/content.ts
-@@ -21,3 +21,3 @@ export interface MatchPair extends TtsText { left: string; right: string }
-  *
-- * ★`alt_answers` — v1.4.35 추가 (월드 7~10 적대적 검증에서 확인된 결함 봉합)★
-+ * ★`alt_answers` — v1.4.35 추가 (옛 월드 7~10 = 지금의 6~9, 적대적 검증에서 확인된 결함 봉합)★
-  *   같은 토큰으로 **문법적으로 똑같이 맞는 다른 어순**이 나오는 문항이 30개 넘게 있었다.
-@@ -117,3 +117,5 @@ export const WORLDS = [
-   { world: 5, name_ko: '시제 시간여행', emoji: '⏳', modules: ['T1', 'T2', 'T3'] },
--  // v1.4.24 — 월드 6 '문장 소환진 공방'(독립 화면)은 제거했다. 소환은 이제 문법 단원 안의 스텝이다.
-+  // v1.4.24 — '문장 소환진 공방'(옛 월드 6, 독립 화면)은 제거했다. 소환은 이제 문법 단원 안의 스텝이다.
-+  // ★v1.4.42 — 그래서 6번이 비어 있었다. Dio님 지시로 뒤의 월드를 한 칸씩 당겨 6~9로 다시 번호를 붙였다.
-+  //   (번호만 바뀐다. module_id P/W/S/G는 그대로라 예한이 학습 기록에는 아무 영향이 없다.)
- ]
-@@ -121,3 +123,3 @@ export const MODULE_ORDER = ['A1', 'A2', 'A3', 'A4', 'R0', 'R1', 'R2', 'R3', 'R4
+diff --git a/app/src/lib/badges.ts b/app/src/lib/badges.ts
+index 7361483..38aba31 100644
+--- a/app/src/lib/badges.ts
++++ b/app/src/lib/badges.ts
+@@ -22,6 +22,6 @@ export type BadgeGroup =
+   | '문장과 문법'    // 월드 2 문법 성 · 문장 소환
+-  | '읽기의 눈'      // 월드 7 독해 던전
+-  | '단어 조립'      // 월드 8 어휘 대장간
+-  | '말하기'         // 월드 4 생존 캠프 · 월드 9 회화 아레나
+-  | '쓰기'           // 월드 10 서술 마스터리
++  | '읽기의 눈'      // 월드 6 독해 던전
++  | '단어 조립'      // 월드 7 어휘 대장간
++  | '말하기'         // 월드 4 생존 캠프 · 월드 8 회화 아레나
++  | '쓰기'           // 월드 9 서술 마스터리
+   | '꾸준함'         // 습관
+@@ -49,3 +49,3 @@ export interface BadgeFacts {
+   perfectModule: boolean
+-  /** v1.4.27 — 월드 7~10 모듈 중 100점이 하나라도 있는가 */
++  /** v1.4.27 — 확장 월드(6~9) 모듈 중 100점이 하나라도 있는가 */
+   perfectExt: boolean
+@@ -82,5 +82,5 @@ const isDone = (st?: string) => st === 'completed' || st === 'mastered'
+ export function factsFromLocal(s: LocalState): BadgeFacts {
+-  // v1.4.25: 월드 7~10을 포함한다. 빠뜨리면 그 월드 정복 뱃지가 **조용히 영영 안 나온다**
++  // v1.4.25: 확장 월드(6~9)를 포함한다. 빠뜨리면 그 월드 정복 뱃지가 **조용히 영영 안 나온다**
+   // (v1.4.21에서 '수호자 수'를 호출자가 채우게 했다가 똑같은 사고를 냈다 — 파생은 규칙 안에서 계산한다).
+-  // 아이 화면에 월드 7~10이 안 보이는 동안엔 그 모듈이 completed가 될 일 자체가 없으므로 안전하다.
++  // 아이 화면에 확장 월드(6~9)가 안 보이는 동안엔 그 모듈이 completed가 될 일 자체가 없으므로 안전하다.
+   const done = [...MODULE_ORDER, ...EXT_MODULE_ORDER].filter(id => isDone(s.progress[id]?.status))
+@@ -97,3 +97,3 @@ export function factsFromLocal(s: LocalState): BadgeFacts {
+     modulesDone: done,
+-    // v1.4.27: 관제실(AdminPage)은 이미 월드 7~10까지 보고 있었다 — 여기만 28개 기준이라 어긋나 있었다(봉합)
++    // v1.4.27: 관제실(AdminPage)은 이미 확장 월드까지 보고 있었다 — 여기만 28개 기준이라 어긋나 있었다(봉합)
+     perfectModule: [...MODULE_ORDER, ...EXT_MODULE_ORDER].some(id => (s.progress[id]?.best_score ?? 0) >= 100),
+@@ -150,3 +150,3 @@ const p = (get: (f: BadgeFacts) => number, max: number) =>
+   (s: LocalState) => ({ cur: Math.min(get(factsFromLocal(s)), max), max })
+-/** 지정한 모듈들을 몇 개 깼는지 — 월드 7~10 콘텐츠 뱃지의 진행도 */
++/** 지정한 모듈들을 몇 개 깼는지 — 확장 월드(6~9) 콘텐츠 뱃지의 진행도 */
+ const mods = (...ids: string[]) => (s: LocalState) => {
+@@ -168,10 +168,15 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
+   world5_clear: { emoji: '⏳', name: '시간의 지배자', desc: '월드 5 전체 클리어', hint: '월드 5(시제 시간여행)의 모든 챕터를 클리어하면 획득!', group: '정복', progress: s => worldDone(s, 5) },
+-  // v1.4.25 — 월드 7~10 개방과 같은 릴리스에서 뱃지도 만든다.
++  // v1.4.25 — 확장 월드 개방과 같은 릴리스에서 뱃지도 만든다.
+   // 24모듈을 클리어했는데 받을 뱃지가 하나도 없으면, 아이 입장에서 그 월드는 '보상이 없는 방'이다.
+-  world7_clear: { emoji: '📖', name: '던전 해독가', desc: '월드 7 전체 클리어', hint: '독해 던전(P1~P6)의 모든 층을 클리어하면 획득! 그림자 문장이 전부 읽힌다', group: '읽기의 눈', progress: s => worldDone(s, 7) },
+-  world8_clear: { emoji: '🔨', name: '단어 대장장이', desc: '월드 8 전체 클리어', hint: '어휘 대장간(W1~W6)을 전부 클리어하면 획득! 모르는 단어도 분해해서 뜻을 추리하게 된다', group: '단어 조립', progress: s => worldDone(s, 8) },
+-  world9_clear: { emoji: '💬', name: '아레나 챔피언', desc: '월드 9 전체 클리어', hint: '회화 아레나(S1~S6)를 전부 클리어하면 획득! 관중이 다시 소리를 낸다', group: '말하기', progress: s => worldDone(s, 9) },
+-  world10_clear: { emoji: '✍️', name: '잉크의 계승자', desc: '월드 10 전체 클리어', hint: '서술 마스터리(G1~G6)를 전부 클리어하면 획득! 흩어진 이야기책이 다시 이어진다', group: '쓰기', progress: s => worldDone(s, 10) },
++  //
++  // ★v1.4.42 — 월드 번호를 7~10 → 6~9로 당기면서 뱃지 ID도 같이 당겼다.★
++  //   뱃지 ID는 `world${w.world}_clear`로 **자동 생성**되므로(아래 earnedFrom),
++  //   content.ts의 숫자만 바꾸고 여기를 안 바꾸면 도감에 없는 ID가 발급돼 **조용히 안 보이는 뱃지**가 된다.
++  //   안전 확인: 배포 전 DB 조회에서 world7~10_clear를 받은 학습자는 **0명**이었다(옛 ID 유실 없음).
++  world6_clear: { emoji: '📖', name: '던전 해독가', desc: '월드 6 전체 클리어', hint: '독해 던전(P1~P6)의 모든 층을 클리어하면 획득! 그림자 문장이 전부 읽힌다', group: '읽기의 눈', progress: s => worldDone(s, 6) },
++  world7_clear: { emoji: '🔨', name: '단어 대장장이', desc: '월드 7 전체 클리어', hint: '어휘 대장간(W1~W6)을 전부 클리어하면 획득! 모르는 단어도 분해해서 뜻을 추리하게 된다', group: '단어 조립', progress: s => worldDone(s, 7) },
++  world8_clear: { emoji: '💬', name: '아레나 챔피언', desc: '월드 8 전체 클리어', hint: '회화 아레나(S1~S6)를 전부 클리어하면 획득! 관중이 다시 소리를 낸다', group: '말하기', progress: s => worldDone(s, 8) },
++  world9_clear: { emoji: '✍️', name: '잉크의 계승자', desc: '월드 9 전체 클리어', hint: '서술 마스터리(G1~G6)를 전부 클리어하면 획득! 흩어진 이야기책이 다시 이어진다', group: '쓰기', progress: s => worldDone(s, 9) },
+   newland_half: {
+-    emoji: '🌗', name: '새 대륙 절반', desc: '월드 7~10 중 12모듈 클리어', hint: '새로 열린 네 월드에서 12개 스테이지를 깨면 획득! 딱 절반 지점이야', group: '정복',
++    emoji: '🌗', name: '새 대륙 절반', desc: '월드 6~9 중 12모듈 클리어', hint: '새로 열린 네 월드에서 12개 스테이지를 깨면 획득! 딱 절반 지점이야', group: '정복',
+     progress: s => ({ cur: Math.min(doneModules(s).filter(id => EXT_MODULE_ORDER.includes(id)).length, 12), max: 12 }),
+@@ -179,3 +184,3 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
+   perfect_newland: {
+-    emoji: '💠', name: '새 월드 퍼펙트', desc: '월드 7~10 모듈을 정확도 100%로 클리어', hint: '새 월드(7~10)의 스테이지 하나를 하나도 안 틀리고 깨면 획득!', group: '정복',
++    emoji: '💠', name: '새 월드 퍼펙트', desc: '월드 6~9 모듈을 정확도 100%로 클리어', hint: '새 월드(6~9)의 스테이지 하나를 하나도 안 틀리고 깨면 획득!', group: '정복',
+     progress: () => null,
+@@ -183,3 +188,3 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
+   all_worlds: {
+-    emoji: '🌐', name: '세계 정복', desc: '전 월드 52모듈 클리어', hint: '월드 1부터 10까지 52개 스테이지를 전부 클리어하면 획득. 여기까지 온 사람은 아직 없다', group: '정복',
++    emoji: '🌐', name: '세계 정복', desc: '전 월드 52모듈 클리어', hint: '월드 1부터 9까지 52개 스테이지를 전부 클리어하면 획득. 여기까지 온 사람은 아직 없다', group: '정복',
+     progress: s => ({ cur: doneModules(s).length, max: MODULE_ORDER.length + EXT_MODULE_ORDER.length }),
+@@ -187,3 +192,3 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
  
--/* ─── v1.4.23 월드 7~10 (선행 개발 — Dio님 승인 전까지 노출 금지) ─────────────────
-+/* ─── v1.4.23 확장 월드 (선행 개발 — Dio님 승인 전까지 노출 금지) ─────────────────
-    콘텐츠·코드는 배포하되 **보이지 않는다**. 스위치는 서버의 `version.json.worlds_ready` 하나.
-@@ -125,8 +127,14 @@ export const MODULE_ORDER = ['A1', 'A2', 'A3', 'A4', 'R0', 'R1', 'R2', 'R3', 'R4
-    조용히 "n/52"로 바뀐다. 아이 입장에서 그건 어느 날 갑자기 진도가 반토막 나는 경험이다.
--   그래서 기준선(WORLDS·MODULE_ORDER)은 건드리지 않고, 접근자에서 합친다. */
-+   그래서 기준선(WORLDS·MODULE_ORDER)은 건드리지 않고, 접근자에서 합친다.
-+
-+   ★v1.4.42 번호 정정★ 옛 월드 6(문장 소환진)이 해체돼 6번이 비어 있었고,
-+   아이 화면에 5 다음이 7로 건너뛰어 보였다. 7~10 → **6~9**로 한 칸씩 당겼다.
-+   ┌ 옛 → 새 ┐  7→6 독해 던전 · 8→7 어휘 대장간 · 9→8 회화 아레나 · 10→9 서술 마스터리
-+   여기 `world` 숫자가 **단일 원천**이다 — 화면 라벨도, `world{N}_clear` 뱃지 ID도 여기서 나온다.
-+   module_id(P/W/S/G)는 손대지 않았으므로 DB 기록·복습 카드·진도는 전혀 영향받지 않는다. */
- export const EXT_WORLDS = [
--  { world: 7, name_ko: '독해 던전', emoji: '📖', modules: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] },
--  { world: 8, name_ko: '어휘 대장간', emoji: '🔨', modules: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'] },
--  { world: 9, name_ko: '회화 아레나', emoji: '💬', modules: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'] },
--  { world: 10, name_ko: '서술 마스터리', emoji: '✍️', modules: ['G1', 'G2', 'G3', 'G4', 'G5', 'G6'] },
-+  { world: 6, name_ko: '독해 던전', emoji: '📖', modules: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] },
-+  { world: 7, name_ko: '어휘 대장간', emoji: '🔨', modules: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'] },
-+  { world: 8, name_ko: '회화 아레나', emoji: '💬', modules: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'] },
-+  { world: 9, name_ko: '서술 마스터리', emoji: '✍️', modules: ['G1', 'G2', 'G3', 'G4', 'G5', 'G6'] },
- ]
-@@ -150,3 +158,3 @@ export function isOffTrackModuleId(id: string): boolean {
- }
--/** 월드 7~10에 속한 모듈인가 (승인 전에는 아이 화면 어디에도 나오면 안 된다) */
-+/** 확장 월드(6~9)에 속한 모듈인가 (승인 전에는 아이 화면 어디에도 나오면 안 된다) */
- export const isExtModule = (id: string) => EXT_SET.has(id)
-diff --git a/app/src/lib/version.ts b/app/src/lib/version.ts
-index ab1192b..980f271 100644
---- a/app/src/lib/version.ts
-+++ b/app/src/lib/version.ts
-@@ -2,3 +2,3 @@
- // 배포 시 반드시 APP_VERSION과 dist/version.json의 version을 함께 올릴 것 (RELEASE_LOG 규칙)
--export const APP_VERSION = '1.4.41'
-+export const APP_VERSION = '1.4.42'
+-  // ── 📖 읽기의 눈 (월드 7 독해 던전) ─────────────────────
++  // ── 📖 읽기의 눈 (월드 6 독해 던전) ─────────────────────
+   // 한국어 화자가 영어 문장에서 실제로 막히는 지점 하나하나를 뱃지로 만들었다.
+@@ -206,3 +211,3 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
  
-@@ -9,3 +9,3 @@ export interface VersionInfo {
-   vocab_ready?: boolean
--  /** v1.4.23 — 월드 7~10 입구 스위치. 콘텐츠·코드는 배포돼 있지만 이 값이 true가 되기 전까지
-+  /** v1.4.23 — 확장 월드(6~9) 입구 스위치. 콘텐츠·코드는 배포돼 있지만 이 값이 true가 되기 전까지
-    *  월드맵에 **그려지지도 않고** 진행률·잠금 계산에도 들어가지 않는다.
-diff --git a/version.json b/version.json
-index c10c8e7..10780ff 100644
---- a/version.json
-+++ b/version.json
-@@ -1 +1 @@
--{"version": "1.4.41", "date": "2026-08-16", "notes": "🔧 월드맵 위쪽 숫자가 마이너스로 보이던 것 고쳤어 — 다음 레벨까지 남은 XP야, 잃은 게 아니야!", "vocab_ready": true, "worlds_ready": true}
-+{"version": "1.4.42", "date": "2026-08-16", "notes": "🗺️ 월드 번호가 정리됐어! 5 다음이 바로 6이야 — 독해 던전이 월드 6, 서술 마스터리가 월드 9!", "vocab_ready": true, "worlds_ready": true}
+-  // ── 🔨 단어 조립 (월드 8 어휘 대장간) ───────────────────
++  // ── 🔨 단어 조립 (월드 7 어휘 대장간) ───────────────────
+   // 외우는 게 아니라 **분해하고 조립하는** 능력을 증명한다.
+@@ -225,3 +230,3 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
+ 
+-  // ── 💬 말하기 (월드 9 회화 아레나) ──────────────────────
++  // ── 💬 말하기 (월드 8 회화 아레나) ──────────────────────
+   arena_chunk: {
+@@ -243,3 +248,3 @@ export const BADGE_DEFS: Record<string, BadgeDef> = {
+ 
+-  // ── ✍️ 쓰기 (월드 10 서술 마스터리) ─────────────────────
++  // ── ✍️ 쓰기 (월드 9 서술 마스터리) ─────────────────────
+   write_combine: {
+@@ -460,3 +465,3 @@ export function earnedFrom(f: BadgeFacts): string[] {
+ 
+-  // ── v1.4.27 월드 7~10 콘텐츠 뱃지 ──────────────────────────
++  // ── v1.4.27 확장 월드(6~9) 콘텐츠 뱃지 ──────────────────────
+   // ⚠️ 파생은 여기서 직접 센다(호출자가 채우게 하면 조용히 안 나온다 — v1.4.21에서 겪었다).
