@@ -4,7 +4,7 @@
 #   저장소에 이미 있는 tgz를 CI가 풀면 토큰이 0이다.
 #
 # 방아쇠: `_ci/bootstrap.txt` 를 밀면 실행된다. 내용은 풀 tgz 경로 한 줄.
-name: WC Bootstrap Source
+name: 예한이앱 · WC Bootstrap Source
 
 on:
   push:
