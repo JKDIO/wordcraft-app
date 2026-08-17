@@ -17,7 +17,7 @@
 #   ② `_ci/src.patch.b64` — gzip+base64 (평문이 없을 때만 쓴다)
 #   ③ `_ci/src.patch.sha` — 패치가 건드리는 **모든** 파일의 `git hash-object` 값. "<sha>  <경로>" 한 줄씩
 #   ③가 밀릴 때 실행된다 — 본문(①②)을 먼저 올려 확인한 뒤 ③를 밀면 안전하다. 결과는 `_ci/PATCH_REPORT.txt`.
-name: WC Source Patch
+name: 예한이앱 · WC Source Patch
 
 on:
   push:
