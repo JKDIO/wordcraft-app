@@ -6,7 +6,7 @@
 #   작은 소스 파일만 커밋하고 번들은 CI가 만들게 하면 토큰이 거의 안 든다.
 #
 # ⚠️ index.html / content.json / vocab.json 은 건들지 않는다 — 배포본이 더 최신일 수 있다.
-name: WC Build
+name: 예한이앱 · WC Build
 
 on:
   push:
