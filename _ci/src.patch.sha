@@ -1,3 +1,4 @@
+# v1.4.46 재전송 (1차는 base85 156행에 공백 1칸이 끼어 git apply 실패)
 a462a370c3f53f7f3a06dd04e9b0e41d671b415b  app/src/App.tsx
 b38027dc4c4cca1aba3e692ea01d702b8609ec48  app/src/engine/QuestionCard.tsx
 e1100653ed05c14ac890b9e633364f660308e600  app/src/lib/dailyLedger.ts
