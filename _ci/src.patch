@@ -1,28 +1,441 @@
-diff --git a/app/badge_check.mjs b/app/badge_check.mjs
-index 0b76a61..0c5d37e 100644
---- a/app/badge_check.mjs
-+++ b/app/badge_check.mjs
-@@ -89,2 +89,23 @@ console.log('── ④ 월드 정복 뱃지는 그 월드를 **전부** 클리
- 
-+console.log('── ④-b 월드 번호가 중간에 비지 않는다 (v1.4.42) ──')
-+{
-+  /* 월드 6이 비어 있어 5 다음이 7로 건너뛰던 것을 v1.4.42에서 6~9로 당겨 고쳤다.
-+   * 번호가 비는 것은 타입 검사로 잡히지 않으므로 여기서 잠근다.
-+   * (1.5 수정 동굴 같은 소수 번호는 연속성 판정에서 제외한다.) */
-+  const nums = [...C.WORLDS, ...C.EXT_WORLDS]
-+    .filter(w => w.modules.length && Number.isInteger(w.world))
-+    .map(w => w.world)
-+    .sort((a, b) => a - b)
-+  const gaps = []
-+  for (let i = 1; i < nums.length; i++) if (nums[i] !== nums[i - 1] + 1) gaps.push(`${nums[i - 1]}→${nums[i]}`)
-+  ok(nums[0] === 1, `월드 번호가 1부터 시작한다 (실제 ${nums[0]})`)
-+  ok(gaps.length === 0, '★월드 번호에 빈칸이 없다 (5 다음이 7로 건너뛰던 회귀 감시)', `→ 끕긴 곳: ${gaps.join(', ')}`)
+diff --git a/app/public/css.d/41-v1443-integrity.css b/app/public/css.d/41-v1443-integrity.css
+new file mode 100644
+index 0000000..7339f9b
+--- /dev/null
++++ b/app/public/css.d/41-v1443-integrity.css
+@@ -0,0 +1,19 @@
++/* v1.4.43 — C4 복습 조회 실패 화면 · C4 뱃지 캐시 안내 · N2 앞면 듣기 버튼 · N1 반복 라운드 안내 */
++.mine-loaderr { gap: 10px; }
++.mine-loaderr p { margin: 0 0 4px; line-height: 1.5; }
++.wc-dex-stale {
++  margin: -2px 0 10px; padding: 8px 10px; border-radius: 10px;
++  background: rgba(74, 158, 255, .10); border: 1px solid rgba(74, 158, 255, .28);
++  font-size: 13px; line-height: 1.5; color: #cfe4ff;
++}
++.flash-listen {
++  display: inline-block; margin-top: 12px; padding: 10px 16px; min-height: 44px; line-height: 24px;
++  border-radius: 999px; background: rgba(74, 158, 255, .16); border: 1px solid rgba(74, 158, 255, .40);
++  color: #cfe4ff; font-size: 15px; font-weight: 700; cursor: pointer;
++}
++.flash-listen:active { background: rgba(74, 158, 255, .28); }
++.arcade-note {
++  margin: 6px 0 2px; padding: 9px 11px; border-radius: 10px;
++  background: rgba(255, 208, 80, .10); border: 1px solid rgba(255, 208, 80, .30);
++  font-size: 13.5px; line-height: 1.55; color: #ffe6a8;
++}
+diff --git a/app/src/engine/QuestionCard.tsx b/app/src/engine/QuestionCard.tsx
+index d38c451..982a60d 100644
+--- a/app/src/engine/QuestionCard.tsx
++++ b/app/src/engine/QuestionCard.tsx
+@@ -26,2 +26,6 @@ export function QuestionCard(props: {
+   listen?: boolean
++  /** ★v1.4.43 (N1)★ 이번 정답으로 실제 붙는 XP. 생략하면 기존대로 10.
++   *  소리 훈련소에서 같은 날 같은 문항을 다시 맞히면 0이 들어온다 —
++   *  그때 화면이 "+10 XP"라고 말하면 그것 자체가 거짓말이 된다. */
++  xpForCorrect?: number
+   onAnswer: (r: AnswerResult) => void
+@@ -30,2 +34,3 @@ export function QuestionCard(props: {
+   const { item, listen } = props
++  const xpGain = props.xpForCorrect ?? 10
+   const [picked, setPicked] = useState<number | null>(null)
+@@ -139,3 +144,5 @@ export function QuestionCard(props: {
+               {correct
+-                ? `✔ ${meme.ok}${meme.ok.includes('+10 XP') ? '' : ' +10 XP'}`
++                ? (xpGain > 0
++                  ? `✔ ${meme.ok}${meme.ok.includes('+10 XP') ? '' : ` +${xpGain} XP`}`
++                  : `✔ ${meme.ok.replace('+10 XP 획득!', '정확해!')} · 오늘 이미 캔 지령이라 XP는 없어 🔁`)
+                 : `⛏️ ${meme.no}`}
+diff --git a/app/src/lib/review.ts b/app/src/lib/review.ts
+index 25bacc4..fc423d8 100644
+--- a/app/src/lib/review.ts
++++ b/app/src/lib/review.ts
+@@ -42,2 +42,7 @@ export const DUE_CARD_COLS = 'id,card_id,card_front,card_back,box,due_date,revie
+ export const DAILY_MINE_CAP = 60
++/** ★v1.4.43★ 상한을 다 쓴 뒤에도 **모험에서 새로 틀린 카드**는 오늘 만나야 한다 — 그 별도 몫.
++ *  독립 감사가 잡은 회귀: 상한을 채운 오후에 모험에서 5문제를 틀리면, 그 5장이 오늘 안 나오고
++ *  화면은 "내일 리젠돼"라고 말했다. 「틀린 건 그날 다시 만난다」는 약속이 또 조용히 깨진 것이다.
++ *  그렇다고 무제한으로 두면 v1.4.40-b의 역인센티브가 돌아오므로 **하루 총량을 못 박는다.** */
++export const DAILY_RESPAWN_EXTRA = 15
+ /** 카드를 뒤집은 뒤 채점 버튼이 열리기까지의 최소 시간(ms). 뒷면을 볼 시간도 없는 채점을 막는다. */
+@@ -90,2 +95,22 @@ export function addReviewDone(cardId: string): void {
+
++// ── 오늘 채점한 횟수 (★v1.4.43 — C6★) ────────────────────────
++// reviewDone(위)은 '오늘 맞힌 카드'만 세서 재채굴을 막는다. 상한의 분모로 그것을 쓰면
++// **오답은 상한을 소모하지 않아** 「헷갈려」를 누를수록 오늘 몫이 늘어난다 —
++// 2026-08-17 실사용에서 「헷갈려」 23회가 오늘 몫을 60→106회로 늘렸다(정직 처벌, 헌법 §3-3 위반).
++// 그래서 상한의 분모는 정오답 구분 없는 **채점 이벤트 수**로 따로 센다.
++export const REVIEW_GRADED_KEY = 'wordcraft_review_graded_v1'
 +
-+  /* 뱃지 ID는 world 번호로 자동 생성된다. 도감에 없는 ID가 발급되면 안 보이는 뱃지가 된다. */
-+  const orphan = Object.keys(B.BADGE_DEFS)
-+    .filter(k => /^world[\d.]+_clear$/.test(k))
-+    .filter(k => ![...C.WORLDS, ...C.EXT_WORLDS].some(w => `world${w.world}_clear` === k))
-+  ok(orphan.length === 0, '★도감에 실재하지 않는 월드의 정복 뱃지가 남아 있지 않다', `→ ${orphan.join(', ')}`)
++export function gradedToday(): number {
++  try {
++    const d = JSON.parse(localStorage.getItem(REVIEW_GRADED_KEY) || 'null') as { date: string; n: number } | null
++    return d && d.date === todayStr() ? Math.max(0, Number(d.n) || 0) : 0
++  } catch { return 0 }
 +}
 +
- console.log('── ⑤ ★규칙이 두 곳에 복사돼 있지 않은가 (L27·L46)★ ──')
++export function addGradedToday(): void {
++  try {
++    localStorage.setItem(REVIEW_GRADED_KEY, JSON.stringify({ date: todayStr(), n: gradedToday() + 1 }))
++  } catch { /* 저장 실패해도 학습은 계속된다 */ }
++}
++
+ /** 실제로 지금 캘 수 있는 카드 = 서버가 준 due 목록 − 오늘 이미 맞힌 카드.
+@@ -114,17 +139,25 @@ export function todaysMine<T extends { card_id: string; due_date?: string; box?:
+   //   상한이 아무 일도 하지 않는다.
+-  const budget = Math.max(0, cap - getReviewDone().size)
++  /* ★v1.4.43 (C6) — 상한의 분모는 '오늘 채점 이벤트 수'다★
++     v1.4.40-b는 오답 리스폰을 상한 **밖**에 두고 budget도 소모시키지 않았다.
++     2026-08-17 실사용(세션 262): 상한 60인데 서로 다른 카드 83장·총 106회가 나갔고,
++     초과분 23 = 「헷갈려」를 누른 횟수 23과 정확히 같았다. **정직하게 모른다고 할수록 오늘 할 일이 늘었다.**
++     헌법 §3-3("오답 = 리스폰, 절대 처벌 아님") 정면 위반이라 설계를 바꾼다.
++     이제 리스폰도 상한 **안**에 들어오되 **맨 앞자리**를 차지한다 —
++     「틀린 건 오늘 꼭 다시 만나」는 지켜지고, 총량은 60을 넘지 않는다. */
++  const graded = gradedToday()
++  const budget = Math.max(0, cap - graded)
++  const isRespawn = (c: T) => (c.box ?? 1) === 1 && c.last_result === false
+   const sorted = minableCards(rows, today).slice().sort((a, b) =>
+-    (a.box ?? 1) - (b.box ?? 1)
++    (isRespawn(a) ? 0 : 1) - (isRespawn(b) ? 0 : 1)
++    || (a.box ?? 1) - (b.box ?? 1)
+     || String(a.due_date ?? '').localeCompare(String(b.due_date ?? ''))
+     || (a.id ?? 0) - (b.id ?? 0))
+-  /* ★v1.4.40-b — 리스폰 카드는 상한을 넘는다★
+-     독립 감사 지적: 상한이 소진되면 **방금 모험에서 틀린 카드조차 오늘 만날 수 없었다.**
+-     "틀린 모든 문제는 그날 복습으로 리스폰한다"는 이 앱의 약속이 상한 도입으로 조용히 깨졌다.
+-     구분 기준: 박스1 + `last_result === false` = 실제로 틀려서 내려온 카드(새로 시드된 카드는 last_result가 null).
+-     상한의 목적은 '연타로 XP 파밍'을 막는 것이지 '틀린 문제를 숨기는 것'이 아니다. */
+-  const isRespawn = (c: T) => (c.box ?? 1) === 1 && c.last_result === false
+-  const respawn = sorted.filter(isRespawn)
+-  const rest = sorted.filter(c => !isRespawn(c)).slice(0, budget)
+-  const seen = new Set(respawn.map(c => c.card_id))
+-  return [...respawn, ...rest.filter(c => !seen.has(c.card_id))]
++  if (budget > 0) return sorted.slice(0, budget)
++  /* ★상한 소진 뒤의 유일한 예외 — 오늘 틀린 카드★ (독립 감사 2026-08-17이 잡은 회귀 봉합)
++     `slice(0, 0)`은 리스폰이든 뭐든 전부 잘라낸다. 그러면 오후 모험에서 틀린 카드를
++     오늘 다시 만날 수 없고, 화면은 "내일 리젠돼"라는 **거짓말**을 한다.
++     그래서 상한 밖 별도 몫을 두되, 그 몫도 하루 총량(cap + EXTRA)으로 못 박는다 —
++     이미 쓴 초과분을 빼기 때문에 「헷갈려」를 눌러 되돌아와도 몫이 다시 늘지 않는다. */
++  const extraLeft = Math.max(0, DAILY_RESPAWN_EXTRA - (graded - cap))
++  return extraLeft > 0 ? sorted.filter(isRespawn).slice(0, extraLeft) : []
+ }
+diff --git a/app/src/lib/version.ts b/app/src/lib/version.ts
+index 980f271..182633a 100644
+--- a/app/src/lib/version.ts
++++ b/app/src/lib/version.ts
+@@ -2,3 +2,3 @@
+ // 배포 시 반드시 APP_VERSION과 dist/version.json의 version을 함께 올릴 것 (RELEASE_LOG 규칙)
+-export const APP_VERSION = '1.4.42'
++export const APP_VERSION = '1.4.43'
+
+diff --git a/app/src/screens/AdminPage.tsx b/app/src/screens/AdminPage.tsx
+index eb80dee..ab2bae3 100644
+--- a/app/src/screens/AdminPage.tsx
++++ b/app/src/screens/AdminPage.tsx
+@@ -112,8 +112,18 @@ export const PROGRESS_LIMIT = 5000
+  *  여는 방법: 서버 `version.json`의 `worlds_ready`를 true로 (앱 재배포 불필요). */
+-const FUTURE_WORLDS: { world: number; emoji: string; name: string; desc: string }[] = [
+-  { world: 7, emoji: '📖', name: '독해 던전', desc: '청킹 읽기 · 후치수식 · 대명사 추적 · 담화 표지 · 요지 · 순서 배열 (6단원)' },
+-  { world: 8, emoji: '🔨', name: '어휘 대장간', desc: '접두사 · 접미사 · 라틴/그리스 어근 · 구동사 파티클 (6단원)' },
+-  { world: 9, emoji: '💬', name: '회화 아레나', desc: '덩어리 표현 · 강세 리듬 · 연음 · 4/3/2 타임어택 · 역할극 (6단원)' },
+-  { world: 10, emoji: '✍️', name: '서술 마스터리', desc: '문장 결합 · 문단 구조 · 모방 개조 · 조건 영작 (6단원)' },
+-]
++/** ★v1.4.43 (C2)★ 번호·이름은 `EXT_WORLDS`(단일 원천)에서 파생한다 — 여기 하드코딩 금지.
++ *  v1.4.42 재정렬(7~10 → 6~9) 때 이 상수만 옛 번호로 남아, 같은 화면 안에서
++ *  「월드 7 독해 던전」(이 패널)과 「월드 7 어휘 대장간」(월드 지도)이 공존했고
++ *  「월드 10」은 존재하지 않는 번호를 조회해 진도가 영원히 '미시작'이었다.
++ *  desc(단원 요약)만 모듈 접두사 키로 유지한다 — 콘텐츠에 없는 관제실 전용 문구라서다. */
++const FUTURE_WORLD_DESC: Record<string, string> = {
++  P: '청킹 읽기 · 후치수식 · 대명사 추적 · 담화 표지 · 요지 · 순서 배열 (6단원)',
++  W: '접두사 · 접미사 · 라틴/그리스 어근 · 구동사 파티클 (6단원)',
++  S: '덩어리 표현 · 강세 리듬 · 연음 · 4/3/2 타임어택 · 역할극 (6단원)',
++  G: '문장 결합 · 문단 구조 · 모방 개조 · 조건 영작 (6단원)',
++}
++const FUTURE_WORLDS: { world: number; emoji: string; name: string; desc: string }[] =
++  EXT_WORLDS.map(w => ({
++    world: w.world, emoji: w.emoji, name: w.name_ko,
++    desc: FUTURE_WORLD_DESC[(w.modules[0] || '')[0]] || `${w.modules.length}단원`,
++  }))
+
+diff --git a/app/src/screens/ListenArcade.tsx b/app/src/screens/ListenArcade.tsx
+index d2bcda6..38613fc 100644
+--- a/app/src/screens/ListenArcade.tsx
++++ b/app/src/screens/ListenArcade.tsx
+@@ -12,2 +12,39 @@ const ROUND_SIZE = 10
+
++/* ═══ ★v1.4.43 (N1) — 소리 훈련소가 하루짜리 XP 농장이었다★ ═══════════════════
++   2026-08-17 실측: 세션 263에서 **서로 다른 문항 10개를 정확히 14바퀴** 돌아
++   140문항·1,170 XP가 적립됐다. 원인 두 가지가 겹쳤다.
++     ① 라운드 시드가 `cmd-${날짜}` — 하루 종일 같은 10개가 같은 순서로 나온다.
++        (게다가 QuestionCard는 선택지를 섞지 않으므로 정답 위치까지 같다.)
++     ② 라운드 횟수 제한도, 같은 문항 재정답에 대한 XP 제한도 없다.
++   이 앱의 XP는 아빠가 건 실물 보상 사다리의 눈금이다 — 반복만으로 보상이 앞당겨진다.
++   또 관제실은 이것을 「신규 학습 정답률 · 실력 신호」라고 부른다(14번째 만난 문항인데).
++   봉합: (가) 같은 날 같은 문항의 정답 XP는 **최초 1회만** (기록은 그대로 남긴다)
++        (나) 라운드 번호를 시드에 넣어 **판마다 새 조합**이 나오게 한다(40/96개 풀을 실제로 쓴다).
++   ※ 라운드 횟수 자체는 막지 않는다 — 더 하고 싶은 아이를 막는 건 이 프로젝트 제1원칙에 어긋난다. */
++const ARCADE_XP_KEY = 'wordcraft_arcade_xp_v1'
++const ARCADE_ROUND_KEY = 'wordcraft_arcade_round_v1'
++
++function arcadeXpDone(): Set<string> {
++  try {
++    const d = JSON.parse(localStorage.getItem(ARCADE_XP_KEY) || 'null') as { date: string; ids: string[] } | null
++    return d && d.date === todayStr() ? new Set(d.ids) : new Set<string>()
++  } catch { return new Set<string>() }
++}
++function markArcadeXp(key: string): void {
++  try {
++    const cur = arcadeXpDone(); cur.add(key)
++    localStorage.setItem(ARCADE_XP_KEY, JSON.stringify({ date: todayStr(), ids: [...cur] }))
++  } catch { /* 저장 실패해도 학습은 계속된다 */ }
++}
++/** 오늘 이 모드를 몇 번째 도는지 — 시드에 섞어 판마다 다른 문항이 나오게 한다. */
++function nextRoundNo(mode: 'echo' | 'cmd'): number {
++  try {
++    const d = JSON.parse(localStorage.getItem(ARCADE_ROUND_KEY) || 'null') as { date: string; echo: number; cmd: number } | null
++    const base = d && d.date === todayStr() ? d : { date: todayStr(), echo: 0, cmd: 0 }
++    const n = (Number(base[mode]) || 0) + 1
++    localStorage.setItem(ARCADE_ROUND_KEY, JSON.stringify({ ...base, date: todayStr(), [mode]: n }))
++    return n
++  } catch { return 1 }
++}
++
+ /** 날짜 기반 결정적 셔플 — 매일 다른 라운드가 나오지만 같은 날엔 일정 (새로고침 어뷰징 방지 아님, 단순 다양화) */
+@@ -36,3 +73,3 @@ export function ListenArcade(props: {
+   const [idx, setIdx] = useState(0)
+-  const [stats, setStats] = useState({ total: 0, correct: 0 })
++  const [stats, setStats] = useState({ total: 0, correct: 0, xp: 0 })
+   const [lastMode, setLastMode] = useState<'echo' | 'cmd'>('echo')
+@@ -49,2 +86,3 @@ export function ListenArcade(props: {
+     const day = todayStr()
++    const round = nextRoundNo(m)   // ★v1.4.43 (N1-나)★ 판마다 새 조합
+     let picked: ChoiceItem[]
+@@ -61,3 +99,3 @@ export function ListenArcade(props: {
+       } as ChoiceItem)))
+-      picked = seededPick(all, ROUND_SIZE, `echo-${day}`)
++      picked = seededPick(all, ROUND_SIZE, `echo-${day}-r${round}`)
+     } else {
+@@ -67,3 +105,3 @@ export function ListenArcade(props: {
+       } as ChoiceItem))
+-      picked = seededPick(all, ROUND_SIZE, `cmd-${day}`)
++      picked = seededPick(all, ROUND_SIZE, `cmd-${day}-r${round}`)
+     }
+@@ -71,3 +109,3 @@ export function ListenArcade(props: {
+     setIdx(0)
+-    setStats({ total: 0, correct: 0 })
++    setStats({ total: 0, correct: 0, xp: 0 })
+     setLastMode(m)
+@@ -122,4 +160,8 @@ export function ListenArcade(props: {
+           <h2>라운드 클리어!</h2>
+-          <p className="arcade-score">{stats.correct}/{stats.total} 명중 · +{stats.correct * XP.correct} XP</p>
++          <p className="arcade-score">{stats.correct}/{stats.total} 명중 · +{stats.xp} XP</p>
+           <p>{pct >= 80 ? '귀가 만렙이다 ㄷㄷ' : pct >= 50 ? '좋아, 귀가 점점 트인다!' : '괜찮아 — 들을수록 귀가 자란다. 내일 또 도전!'}</p>
++          {/* ★v1.4.43 (N1)★ 반복 라운드는 XP가 0이다 — 화면이 거짓말하지 않게 그 사실을 적는다. */}
++          {stats.xp < stats.correct * XP.correct && (
++            <p className="arcade-note">🔁 오늘 이미 맞힌 지령은 XP가 다시 붙지 않아. 대신 <b>다음 판엔 새 문항</b>이 나와 — 계속 들어도 돼!</p>
++          )}
+           <button className="btn primary wide" onClick={() => start(lastMode)}>한 라운드 더 🔁</button>
+@@ -133,2 +175,5 @@ export function ListenArcade(props: {
+   const modId: 'ECHO' | 'CMD' = mode === 'echo' ? 'ECHO' : 'CMD'
++  // ★v1.4.43 (N1-가)★ 오늘 이미 XP를 받은 문항이면 이번 정답은 0 XP — 화면도 그렇게 말한다.
++  const xpKey = `${modId}:${it.id}`
++  const xpNow = arcadeXpDone().has(xpKey) ? 0 : XP.correct
+   return (
+@@ -146,4 +191,9 @@ export function ListenArcade(props: {
+         listen={true}
++        xpForCorrect={xpNow}
+         onAnswer={r => {
+-          setStats(s => ({ total: s.total + 1, correct: s.correct + (r.correct ? 1 : 0) }))
++          setStats(s => ({ total: s.total + 1, correct: s.correct + (r.correct ? 1 : 0), xp: s.xp + (r.correct ? xpNow : 0) }))
++          // ★v1.4.43 (N1-가)★ 같은 날 같은 문항의 정답 XP는 최초 1회만.
++          //   answer_events 기록은 그대로 남긴다(무삭제 원칙 — CONTRACT).
++          const gained = r.correct ? xpNow : 0
++          if (r.correct && xpNow > 0) markArcadeXp(xpKey)
+           props.onEvent(modId, {
+@@ -151,3 +201,3 @@ export function ListenArcade(props: {
+             given_answer: it.choices[r.givenIdx], correct_answer: it.choices[it.answer_idx],
+-            is_correct: r.correct, response_ms: r.ms, xp: r.correct ? XP.correct : 0,
++            is_correct: r.correct, response_ms: r.ms, xp: gained,
+           })
+diff --git a/app/src/screens/Profile.tsx b/app/src/screens/Profile.tsx
+index d11d731..609d2fa 100644
+--- a/app/src/screens/Profile.tsx
++++ b/app/src/screens/Profile.tsx
+@@ -14,2 +14,13 @@ const DOW = ['월', '화', '수', '목', '금', '토', '일']
+
++/** ★v1.4.43 (C4)★ 뱃지 도감 오프라인 캐시 — 마지막으로 성공한 목록(읽기 전용 사본). */
++/** ★학습자별로 스코프한다★ — 이 앱은 형제(다가구)를 지원한다. 전역 키 하나로 두면
++ *  기기에서 아이가 바뀐 뒤 조회가 실패했을 때 **다른 아이의 뱃지**를 보여 줄 수 있다. */
++const badgeCacheKey = (lid: string | null) => `wordcraft_badges_cache_v1:${lid || 'anon'}`
++function readBadgeCache(lid: string | null): string[] {
++  try { const v = JSON.parse(localStorage.getItem(badgeCacheKey(lid)) || '[]'); return Array.isArray(v) ? v as string[] : [] } catch { return [] }
++}
++function writeBadgeCache(lid: string | null, ids: string[]) {
++  try { localStorage.setItem(badgeCacheKey(lid), JSON.stringify(ids)) } catch { /* */ }
++}
++
+ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
+@@ -20,3 +31,7 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
+   const onSeg = Math.min(10, Math.round((lp.cur / lp.need) * 10))
+-  const [badges, setBadges] = useState<string[]>([])
++  // ★v1.4.43 (C4)★ 뱃지 조회 실패를 조용히 삼키면 도감이 「0/71 · 맨손의 도전자」가 된다.
++  //   실제로는 28개를 갖고 있고, 같은 화면 위에는 로컬 XP가 정상 표시된다 — 한 화면 안에서 모순이 난다.
++  //   RewardBoard가 이미 쓰는 패턴(마지막 성공값 캐시)을 그대로 가져온다.
++  const [badges, setBadges] = useState<string[]>(() => readBadgeCache(props.state.learnerId))
++  const [badgeStale, setBadgeStale] = useState(false)
+   const [reveal, setReveal] = useState<string | null>(null)
+@@ -33,4 +48,7 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
+     db.selectAll('badges', `learner_id=eq.${s.learnerId}&select=badge_id&order=earned_at.desc`)
+-      .then(r => setBadges((r.rows as { badge_id: string }[]).map(x => x.badge_id)))
+-      .catch(() => {})
++      .then(r => {
++        const ids = (r.rows as { badge_id: string }[]).map(x => x.badge_id)
++        setBadges(ids); setBadgeStale(false); writeBadgeCache(s.learnerId, ids)
++      })
++      .catch(() => { setBadgeStale(true) })   // ★v1.4.43★ 캐시를 유지한 채 '못 불러옴'을 표시한다
+   }, [s.learnerId])
+@@ -141,2 +159,8 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
+       <h3 className="section-title wc-dex-head">🏆 뱃지 도감 <span className="wc-dex-count">{badges.length}/{Object.keys(BADGE_DEFS).length}</span></h3>
++      {/* ★v1.4.43 (C4)★ 못 불러온 것과 '없는 것'을 구분해서 말한다. */}
++      {badgeStale && (
++        <p className="wc-dex-stale">
++          📡 방금 서버에서 못 불러왔어 — {badges.length > 0 ? '마지막으로 저장해 둔 도감을 보여주는 중이야.' : '연결되면 도감이 채워질 거야.'} 뱃지가 사라진 건 아니야!
++        </p>
++      )}
+       {/* v1.4.28 ⚔️ 룬 장비창 — 도감(59칸 목록)보다 먼저, '지금 내가 얼마나 강해졌는가'를 한 그림으로 */}
+diff --git a/app/src/screens/ReviewMine.tsx b/app/src/screens/ReviewMine.tsx
+index d3f5fb8..88b2e67 100644
+--- a/app/src/screens/ReviewMine.tsx
++++ b/app/src/screens/ReviewMine.tsx
+@@ -6,3 +6,3 @@ import {
+   dueCardsQuery, boxTotalsQuery, tallyBoxes, layerOf, minableCards, todaysMine, addReviewDone,
+-  gradeSwapped, DAILY_MINE_CAP, MIN_REVEAL_MS,
++  addGradedToday, gradeSwapped, DAILY_MINE_CAP, MIN_REVEAL_MS,
+ } from '../lib/review'
+@@ -48,2 +48,5 @@ export function ReviewMine(props: {
+   const [boxTotals, setBoxTotals] = useState<number[]>([0, 0, 0, 0, 0, 0])
++  // ★v1.4.43 (C4)★ 조회 실패 상태 — '카드 없음'과 절대 같은 화면을 쓰지 않는다.
++  const [loadError, setLoadError] = useState(false)
++  const [reloadTick, setReloadTick] = useState(0)
+   const [phase, setPhase] = useState<'entrance' | 'mining'>('entrance')
+@@ -58,2 +61,4 @@ export function ReviewMine(props: {
+   const finishedRef = useRef(false)
++  const gradingRef = useRef(-1)   // ★v1.4.43★ 이번 카드(index)를 이미 채점했는가 — 더블탭 방어
++  const reqRef = useRef(0)        // ★v1.4.43★ 최신 조회 요청 번호 (재시도 경합 방어)
+   // ★v1.4.40★ 뒷면을 볼 시간도 없는 채점을 막는 게이트 (review.ts MIN_REVEAL_MS)
+@@ -70,2 +75,3 @@ export function ReviewMine(props: {
+     if (phase !== 'entrance') return
++    reqRef.current = reloadTick
+     const lid = props.state.learnerId
+@@ -76,5 +82,12 @@ export function ReviewMine(props: {
+     //   ("뱃지엔 40인데 광산은 0"). 그때는 창(window)이 문제였고, 이번엔 서버 상한이다. 원인만 다르고 증상은 같다.
++    // ★v1.4.43 (C4)★ 조회 실패를 빈 목록으로 삼키지 않는다.
++    //   예전엔 `.catch(() => setAll([]))` 였고, 그 결과 오프라인에서 화면이
++    //   「오늘 캘 카드가 없어. 내일 다시 와봐 🌙」라고 말했다 — 실제로는 오늘 만기 96장·기한 지남 62장이었다.
++    //   BadgeLoadout.tsx가 이미 적어 둔 원칙 그대로: **조용한 폴백은 조용한 유실과 같다.**
++    setLoadError(false)
++    // ★v1.4.43★ '다시 시도'를 연타하면 늦게 온 옛 응답이 새 결과를 덮을 수 있다 — 최신 요청만 반영한다.
++    const myTick = reloadTick
+     db.selectAll('review_cards', dueCardsQuery(lid))
+-      .then(r => setAll(r.rows as unknown as Card[]))
+-      .catch(() => setAll([]))
++      .then(r => { if (myTick !== reqRef.current) return; setAll(r.rows as unknown as Card[]); setLoadError(false) })
++      .catch(() => { if (myTick !== reqRef.current) return; setAll(null); setLoadError(true) })
+     // 층별 총 보유량 — 표시 전용이라 실패해도 채굴은 막지 않는다(0으로 남을 뿐).
+@@ -83,3 +96,3 @@ export function ReviewMine(props: {
+       .catch(() => { /* 표시 전용 */ })
+-  }, [phase, props.state.learnerId])
++  }, [phase, props.state.learnerId, reloadTick])
+
+@@ -102,2 +115,14 @@ export function ReviewMine(props: {
+
++  // ★v1.4.43 (N2)★ 카드가 화면에 뜨는 순간 앞면 음성을 한 번 자동 재생한다(뒤집기 전).
++  //   W:CMD/W:ECHO 카드는 앞면 한국어가 범용 문구라, 소리 없이는 문제 자체가 존재하지 않는다.
++  useEffect(() => {
++    if (phase !== 'mining' || flipped) return
++    const card = dueCards[i]
++    const tts = card ? props.backsMap[card.card_id]?.tts : null
++    if (tts) speakText(tts)
++    // flipped 제외: 가드(위)가 이미 뒤집힌 상태를 걸러낸다. 뒤집을 때 다시 트는 호출은
++    //   v1.4.43에서 제거했다 — 앞면 자동재생을 아이가 듣는 도중에 끊고 처음부터 되감기 때문.
++    // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, [phase, i])
++
+   // 뒤집은 뒤 MIN_REVEAL_MS 가 지나야 채점 버튼이 열린다. 카드가 바뀌면 다시 닫힌다.
+@@ -114,2 +139,17 @@ export function ReviewMine(props: {
+
++  // ★v1.4.43 (C4)★ 조회 실패 화면 — 원인을 말하고 다시 시도할 수단을 준다.
++  if (loadError) {
++    return (
++      <div className="reviewmine">
++        <div className="mine-head"><h2>복습 광산 ⛏️</h2></div>
++        <div className="center-box mine-loaderr">
++          <p>📡 광산이랑 연결이 안 됐어. <b>오늘 캘 카드가 없는 게 아니라, 아직 못 불러온 거야.</b></p>
++          <p className="tap-hint">와이파이나 데이터가 켜져 있는지 보고 다시 눌러줘!</p>
++          <button className="btn primary wide" onClick={() => { setLoadError(false); setAll(null); setReloadTick(t => t + 1) }}>
++            다시 시도 🔄
++          </button>
++        </div>
++      </div>
++    )
++  }
+   if (all === null) return <div className="center-box"><p className="loading-msg">⛏️ 광산 탐색 중…</p></div>
+@@ -201,2 +241,6 @@ export function ReviewMine(props: {
+   function grade(correct: boolean) {
++    // ★v1.4.43★ 더블탭 방어. C6 이후 addGradedToday()가 상한의 분모라, 한 번 누른 것이 두 번 세지면
++    //   아이가 30장만 봤는데 60장을 쓴 것이 된다. answer_events 중복 기록도 함께 막는다(무삭제 테이블).
++    if (gradingRef.current === i) return
++    gradingRef.current = i
+     const { box, due_date } = nextDue(c.box, correct)
+@@ -212,2 +256,5 @@ export function ReviewMine(props: {
+     })
++    // ★v1.4.43 (C6)★ 상한의 분모는 정·오답 **양쪽**을 센다. 여기가 빠지면 오답이 상한을 소모하지 않아
++    //   「헷갈려」를 누를수록 오늘 몫이 늘어나던 그 구조가 그대로 돌아온다.
++    addGradedToday()
+     if (correct) {
+@@ -237,2 +284,3 @@ export function ReviewMine(props: {
+     setI(i + 1)
++    gradingRef.current = -1      // 다음 카드는 다시 채점 가능
+     shownAt.current = Date.now() // 다음 카드 응답시간 기준점
+@@ -247,5 +295,22 @@ export function ReviewMine(props: {
+       <p className="combo-meter">🔥 콤보까지 {toCombo}장 <em>(오늘 {todayCorrect}장 채굴)</em></p>
+-      <button className={`flashcard ${flipped ? 'flipped' : ''}`} onClick={() => { setFlipped(true); if (meta?.tts) speakText(meta.tts!) }}>
++      <button className={`flashcard ${flipped ? 'flipped' : ''}`} onClick={() => setFlipped(true)}>
+         {!flipped ? (
+-          <><p className="flash-front">{c.card_front}</p><p className="tap-hint">카드를 탭해서 뒤집기 👆</p></>
++          <>
++            <p className="flash-front">{c.card_front}</p>
++            {/* ★v1.4.43 (N2)★ 소리를 뒤집기 **전에** 들려준다.
++                예전엔 speakText가 뒤집기 핸들러 안에만 있어서, 지령·에코 카드처럼
++                앞면이 「본부에서 긴급 지령! 잘 들어봐」 같은 범용 문구인 카드는
++                무엇을 떠올려야 할지 알 수 없었다(같은 앞면 4장의 답이 각각 달랐다).
++                인출 연습은 문제를 만난 뒤에야 성립한다. */}
++            {meta?.tts && (
++              <span
++                role="button" tabIndex={0} className="flash-listen"
++                onClick={(e: { stopPropagation: () => void }) => { e.stopPropagation(); speakText(meta.tts!) }}
++                onKeyDown={(e: { key: string; stopPropagation: () => void }) => {
++                  if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); speakText(meta.tts!) }
++                }}
++              >🔊 다시 듣기</span>
++            )}
++            <p className="tap-hint">카드를 탭해서 뒤집기 👆</p>
++          </>
+         ) : (
+diff --git a/app/src/screens/RewardBoard.tsx b/app/src/screens/RewardBoard.tsx
+index 5802911..69d69fc 100644
+--- a/app/src/screens/RewardBoard.tsx
++++ b/app/src/screens/RewardBoard.tsx
+@@ -177,3 +177,5 @@ export function RewardBoard(props: {
+                     }}>
+-                      {st.granted ? '🏆 받았다!' : st.reached ? '🎉 달성' : isNext ? `-${st.remaining.toLocaleString()}` : `-${st.remaining.toLocaleString()}`}
++                      {/* ★v1.4.43 (C3)★ 아이 화면 마이너스 금지(U-3). 삼항 양쪽이 같은 음수 표기였다 —
++                          같은 화면 히어로("5,431 XP 남았다!")·푸터("XP는 줄어들지 않아")와 어긋나던 세 번째 표현. */}
++                      {st.granted ? '🏆 받았다!' : st.reached ? '🎉 달성' : `${st.remaining.toLocaleString()} 남음`}
+                     </span>
+diff --git a/version.json b/version.json
+index 10780ff..d890fc1 100644
+--- a/version.json
++++ b/version.json
+@@ -1 +1 @@
+-{"version": "1.4.42", "date": "2026-08-16", "notes": "🗺️ 월드 번호가 정리됐어! 5 다음이 바로 6이야 — 독해 던전이 월드 6, 서술 마스터리가 월드 9!", "vocab_ready": true, "worlds_ready": true}
++{"version": "1.4.43", "date": "2026-08-17", "notes": "⛏️ 복습 규칙이 정직해졌어! 「헷갈려」를 눌러도 오늘 몫이 늘지 않아. 그리고 지령 카드는 이제 소리부터 들려줘 🔊", "vocab_ready": true, "worlds_ready": true}
