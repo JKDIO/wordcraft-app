@@ -1,66 +1,314 @@
-diff --git a/app/admin_check.mjs b/app/admin_check.mjs
-index f269ced..31b3dff 100644
---- a/app/admin_check.mjs
-+++ b/app/admin_check.mjs
-@@ -468,2 +468,8 @@ console.log('── ⑭-b ★v1.4.43 신규 봉인 (C2 · C4 · N1 · N2)★ ─
-   ok(/flash-listen/.test(rm), '★복습 카드 앞면에 다시 듣기 버튼이 있다 (N2)')
-+  // ★v1.4.45 (N2 봉합의 봉합 · 2026-08-18 격리 실기 검증)★ 렌더러만 고치면 소용없다 —
-+  //   `W:CMD:*`/`W:ECHO:*` 카드는 모듈 콘텐츠가 아니라 listening 에서 나오므로,
-+  //   backsMap 을 모듈에서만 채우면 **정작 그 17장에만 음성이 안 붙는다.** 공급 쪽을 잠근다.
-+  const appx = src('src/App.tsx')
-+  ok(/loadListening\(\)/.test(appx) && /W:CMD:\$\{/.test(appx) && /W:ECHO:\$\{/.test(appx),
-+    '★backsMap이 지령·에코 카드(W:CMD/W:ECHO)의 음성을 실제로 공급한다 (N2 — 렌더러가 아니라 데이터)')
-   // ★v1.4.43-b (AUDIT 지적)★ 실제 하루 최대는 cap + RESPAWN_EXTRA 다. 화면이 "60장까지만"이라고
+diff --git a/app/public/css.d/42-v1446.css b/app/public/css.d/42-v1446.css
+index 22e7833b2cfd546831bc08f16acf6bc2728ea006..eb589e60be2cf278ddf023272d70a6290a00be7a 100644
+GIT binary patch
+delta 12
+TcmdlWc3o`4bLPzlm<!keCA<YY
+
+delta 12
+TcmcaEwn1#ebLP!_ES~HDBKHJi
+
 diff --git a/app/src/App.tsx b/app/src/App.tsx
-index fb00963..b8edd3b 100644
---- a/app/src/App.tsx
-+++ b/app/src/App.tsx
-@@ -25,3 +25,3 @@ import { XP } from './lib/xp'
- import { db, consumeAuthRedirect, getAuthUser, myDeviceLearner, ensureAnonSession, bindLegacyDevice, authKind, type Learner } from './lib/supabase'
--import { DIAG_ORDER, moduleOrder, loadModule } from './lib/content'
-+import { DIAG_ORDER, moduleOrder, loadModule, loadListening } from './lib/content'
- import { computeEarnedBadges } from './lib/badges'
-@@ -281,2 +281,27 @@ export default function App() {
- 
-+  /* ★v1.4.45 (N2 봉합의 봉합) — 2026-08-18 격리 실기 검증에서 잡혔다★
-+     지령·에코 오답 카드(`W:CMD:*` / `W:ECHO:*`)는 **모듈 콘텐츠가 아니라 `listening`에서 나온다**
-+     (`onModuleEvent`가 `W:${moduleId}:${question_id}` 로 시드한다).
-+     그런데 위 effect는 `moduleOrder()`의 모듈 review_cards만 훑으므로, 그 카드들은 backsMap에
-+     **항목이 아예 없다** → `meta?.tts`가 undefined → v1.4.43이 넣은 앞면 자동재생·🔊 버튼이
-+     **정작 그 카드에만 안 걸렸다.** 앞면이 「본부에서 긴급 지령! 잘 들어봐」 같은 범용 문구인
-+     바로 그 17장이다 — 소리가 없으면 문제 자체가 존재하지 않는다.
-+     화면(렌더러)은 옳았고 **데이터 공급이 빠져 있었다**(L51 계열). 여기서 채운다. */
-+  useEffect(() => {
-+    loadListening().then(c => {
-+      setBacksMap(prev => {
-+        const nx = { ...prev }
-+        for (const it of c.commands || []) {
-+          nx[`W:CMD:${it.id}`] = { back: it.choices?.[it.answer_idx] ?? '', tts: it.tts || it.play || null }
-+        }
-+        for (const st of c.echo_sets || []) {
-+          for (const it of st.items || []) {
-+            nx[`W:ECHO:${it.id}`] = { back: it.choices?.[it.answer_idx] ?? '', tts: it.tts || it.play || null }
-+          }
-+        }
-+        return nx
-+      })
-+    }).catch(() => { /* 리스닝 콘텐츠 실패 — 복습은 계속된다 */ })
-+  }, [])
-+
-   // ── 이벤트 핸들러 ──
+index b8edd3bcd77fba6aa83dbb8a492dc843a20f3221..a462a370c3f53f7f3a06dd04e9b0e41d671b415b 100644
+GIT binary patch
+delta 2389
+zcmZ`*&u<z>7*(oNk)rmRsy%)7Aq&WXxOG#h0jktFB&z!(P1{szd*H_=M#gN!Vp|bK
+zi!pVH!3r)W#uiYl;Ml2%wC0D|$nM4Wp86j+QV%<`Qm?)Bo884Mq(vOqnc125-uK=&
+zl>a*O^FL?g_s&UUAo8&(K6sChPVv5IgpcCLgGk`IFBE=Yj6(wMMul16oUU-l?~3yC
+zA%1~7?{dLO>8JT|=Y(_O3fLy!x8ozIii}^N8_%_34Nj8lKr3x?ly2l{x(r&e3~F<U
+zR?<MFV%nT1+Z9?qBHLx41;v<GR5|H9ADX={L}L(#ARZjxzZAl}4*I&~(H|B9Gkow)
+zG!)~-F$jsD3jR=-|N7bxc4G?*c8P&!xUaoC0e5)+H%JX=w%(&r%_9c7n<m*kgG{PH
+zsyQU0HgiBS856R$S)>((X3JWtPFB`|<dQU716tf??C44zzdE&QgDF5-ZM9WH9msgL
+zZebXmi`?eJcPFR$z|0VGu{YkjaW4D1^k33jgszm#3OIqR%6Pc8*wB{NXeG%?L0Sr1
+z%c-4)+Weiv-=uPcV6COt$YUL3x|_uD6{JKMP+%Xrw5Ul-Wk!b->c|6VHN!~bKD1oZ
+z>7!a&u|!fOL$qR=R7*fAHPZnvlPF;WkuWjTR)-uU(Ji><Wpb759HFpjvePEd+Td`|
+zrw>tAhXb_DbsS;9iF|gQBy)w%n<Jlmhb6UIg8lvhJTNEnw`0B-@8-gWtvUD+IKeOS
+z(Rn_~d2Kd3c)S)*+3c-9-dJ@?07J%}x-zain-O|~ytZ;`3zaH?dXS@K1d7t7%cPk`
+zMVv;-(byXZvzXJpPMR4YyH$EnLJ@6bEf3n#^W&~*F}0JY&GvDZq-u1x3=(N2u_(+z
+z<VD(UYW_+{ZKBiUbu(x;>H_mZC^(#5TW`|kuvq35!}o1289q13jw9PKB(X_XIs+jl
+zySW}Tw8SVaWzfy6HrgZEEHYirk*5ue51<dw70gSdjkbDnMAHi0S|8P=8wk`vQqs^~
+zsB}L>Xo3HWQEE?B+RT{_hp7RAv8i1JtwbJS70~$WNA$4XgOsh)n(kaHxP}3a9jPj}
+zWUMX&O|g13!*aBYC+I#t&7d<T8Z;_EWrc3bc5t|?Rj>xRb>r%vmzk}s73lX%J%d1g
+z+am=GRK@I>+cMpHrd6479u9=iHZ}1<&lNbQl~^(vbed{l--6>V&`sRPm@-tyF^N8I
+zlgEdwYiVnWNf@2$aIkJ{Mr$LFF{8CboMxh0Vu+Gr%JW!HQ^^5K=rzul^>=g~0zyQL
+zfjBKJd~OEr=EuG$rg9`An77R2G+rq@T)YUrx!5#IEsS_Pz=Z{0Fci7Ru^BVk;9(QJ
+z=(gStfB)J$aqH%6Z(MHED^R!<xgaeBF7?)5^82Er-o8E1A#T6-?_bxj6<W1-yZl3|
+z#QVO;;1D)Hw73ymra5jD@831pQ9c5WDI=Yx#psgzc)5{$$t)x-marNa01iF`jvltP
+z!k(6vxdelNofx~x7}~DaAGI}Xhz$jed)&oNsLJW%?zdmy@o^5g!~ij!8uoF?gvsty
+z*2rr~THV1^^#H7NNH)XD#ZHV5T%Jh63zwOkZZFvI1y#wYFLLZn#&&3JLfvn(J<KC8
+zG#Ts`dvDp@F7F^Tw+rPgYzr5pA;f{OPZU4%&GMenfvUwKqeCl&$YeManDNAo)*WX}
+zvHvH)cG~FeSIrsbD$6h=7^JVz0OrTrucm2h>s^Eef|KQ6kltJ@CJZ>i?FxqG`_`~0
+JTH%O%_Fs2yc`N_`
+
+delta 56
+zcmV-80LTA_`2n2f0kAU%6(D^eW^!+BASW&_Y-wUIa%FaDWp}gT2#W=?;17o`v&KNd
+OFtgBdS^~4+cc%nxKNmy*
+
+diff --git a/app/src/engine/QuestionCard.tsx b/app/src/engine/QuestionCard.tsx
+index 982a60d3d56b4557414575c1bd3997f1a8b43b5f..b38027dc4c4cca1aba3e692ea01d702b8609ec48 100644
+GIT binary patch
+delta 1751
+zcmZuxO>Y}j6jf0c(2_1v5E3l7i%N_~(O40IMWujRKnMv$MRr71$9SIO5%JiXnY59j
+zU?-VYCNYXrXA&pajw_NT6-ITiOB@<D`49aA>CW$sV9kpA-m_b$)Y4cp@8jNc?m73~
+zegEj=!dnAhkz{Ih=uRdahSSpRn<Lt&Hu@nbpNxd?6PQ;E7AtHoi*MCVyP-knu*{A&
+zStSco=67KyF&&Rj5zTcV@XOF?HrYmj?&X11b98w}VH<V4#k?}$7h5g^+bfG`{t{hU
+z!?loh-b|)b_B9t~A(lv)F>;;Q$!Rz0nkj1-EHdL>w~0e6xiU_O0do+yQ%QJF)53iq
+z4%UBoHKTGCFA#y#?AmiCboUrZwCVj8P#=MMRf$C2I}iM)r)-1R6T#*heb8dn0=-|4
+zz!<Qf3$)pm-?|30-VXfVSOo($)+pwnekRY!ce&EPR$2L&KFrd4Wl^5q1rLJNHf9C7
+zvdR3M(mTK6v6=_}Y_H8juu>2F{g8wsGx7_aW{uT+S}5Zc)S@ATcpjE!u*#J@Y5=r^
+z&t9G`l#l|@;sLAfLa?>Xa-~iK<t)`{<rq{I1JT_!>cvT_D&NC9thCQF$n>Y#$DmI;
+zWE>?RI<Qs_HO1N>r+o~^3(ATOo`z-o97uGs=vW)}xP@e>mk*XC=d)GIv-K8T@qn$j
+z>0XX)wfM0@>5NGv3;>1s9<7!Hn9t&I5_1(z(}rQfbV*V(jYue?3v!F|!D5-?LQd@V
+za^ROl@gCLLy+(+8xJ|d~0`Tv@K9jKoELUb5Eg|T9rE`?$An3xr^oIs&7=gr6mg9o(
+z2RZ_)!W&2t2$c|I#y<MLixmM+n%mK)h&AaZUhZsp(lkP$VG*%MY#3e=BErvbhlEuX
+zx>o&mqkzrED#!(Gvizv4D^|{{vPv81-JMWB4=0hjWnHzLTf{~-f|X`k2ATOfF0n+#
+z-VM{3X<mHo?^hx?Cemi?dt!tq?WjQvURPC>*`JvRc+c--v5>;1T_{1mz~4~oGsnBl
+z!A}<dy`Ws^gVY>(J#j7*7CrsqWTK6A-dxyObfHC?E&h*K^hxt3vA!^7bcsy1EFgFK
+z(*axB5r*&jTC_T_J9&EKq5okN$ConhlJqyzmPPE7!%xlVq?JiIt{KCnlfy4f$0gQP
+zJBG|p4nI%e&b6rPPLUAz4E8SlBP(>1kwNcQZNk=i*dn^XUFV}j7|s)|TC8CaMBnrm
+zC{yoEth^W`?3ZJ7?wK@Qkq9z(9hv2ZT+{g|P*t|^Bi%aS6B;Xp;&9K)+_)#^mmgH~
+zLM&l&i9c<p(vDW#9(?=VK2e6DN8^e#%!C<fJ{fEe3`+YXqiIEP?Be#&oA1bGiJ`U5
+zRKl@ik>Z1)KR@UT8-m$>PGH7CkxqlLu`%d7*{of<c<z#Zc~-<UjkznAXEEZO-hBAR
+H(}Dj0w%b;?
+
+delta 163
+zcmdmKKgoE4_(X-q%_)pE9Gk6pUouT@7EtBSEJ@APOUx@SPc4eiOsUwsSs;UP@+4se
+z88itUh4jp_)I86W3M+-o%@>7tus~EKXXIxlrxxqwCKhODB<m<-YAV>;DO68BCb0|M
+Y?8)7d^5|llw@UIcGG=bRCiR#F03{zg)&Kwi
+
+diff --git a/app/src/lib/dailyLedger.ts b/app/src/lib/dailyLedger.ts
+index 0c8127fec2dc1f59e5a40b4708c0c445b2e986fc..e1100653ed05c14ac890b9e633364f660308e600 100644
+GIT binary patch
+delta 33
+rcmV++0N($!LAOD$=K%q%v*-aS2mz>*5(??F_zDjO0))J?2@$Ig?0yW?
+
+delta 33
+pcmdn)xW#e9b4JFV%`X@=IT+VW7UFuj`5zY#8&hk;W*))S`~c{I41)jw
+
+diff --git a/app/src/lib/review.ts b/app/src/lib/review.ts
+index fc423d864a6a7e8e661a8ffb014713511e80e3bf..77c965c4b3c0952d0a3fa57f259a0a4e7b9ad38d 100644
+GIT binary patch
+delta 1191
+zcmb`Gv2W8*5XObXlocc<q!SB?35gH|BqRn<Dh7&#S{5c6Y7<3-1UV5<DzKBfRcV9d
+z7TUVtgjBRmKmoalX<U&mU748KI=*-QAGqhF1i{MW=cjvj-~H~p@AA*IGksKx$Kk-5
+zd3-K56dSroC-9do{-FW5ZD7p=|81GI4L<({(6D*S0Jc*`+X&0abY^lykyDBq;p;Y_
+z^@X*%d|@L7xNPvM1^achHu$_X$n+lP=+E(R-HC<L4<F^!0%%hqfRvh)75R2fPEJN4
+zDa+UY{LdG1YBHr<Q*#fLY!vd7*@?uUI9(`(o{kYEsb&>53XhbmoX(~aN~VyE!u8Rs
+ziQ&ZE8^d>^q33X4%{_$EvG}3>BdNA_bnJw78S({{9>JAA9)v=1NzfSpg7C=2bHF-X
+z-u8%;%UVtZ4s@bZaRGN-eCzs#6X2@2SR*b0HRkAjaD1~1%vqrbV%1Ac06^;v;QWiB
+z3%F{EM}qijlX(tgaudnSSdRkL*`vGt4!(BiEAnE!h_yw)>Kv}l1p{CmkH2^LD<@FJ
+zoFySnk`4zuUG$f2tXRNz4F0JhNt8tsBDiVsk1iDlny|l00k5~2_cCbBYVt~#Id53I
+zMo4en2KLoNr$N1#SZWF#m)N$86@&EXSS$J~LQ5EHI#xFU7dHHI19+1n%5X5d1Q@6w
+z+Z5T?CU9-5i8Bij4`eKo?WR9dSyFQt$mx<h4#fKe&f->us-Eo^;JXICGqGw?fZ!q!
+z@lp-zHt@F2T6<`Bg-v--ClV8Nux9Wb9Zva0mur<S)x#CfpZ7#FtYhQunt+7$MStZb
+zWfs@mv`+zn4H#JsL0e=J4fPj=#yg%#-}~(^+K*TvKOXM+0D2;c&%i8j2Kc&W<2S-k
+zT4OFvwA3Vf{k2x24rvZ7(f5ZW2}WB6ua|+O-~#nma(Ub3C6E3k@~&{^Y+2B$n&DC9
+zaawtDGo4lTI|Z?9`QDkebd738f)00dzUc<;tC~bhoP?jsI^h%jf)o!aPlMf^`hSai
+O?BC6W_K%a#j{gF6KyqUM
+
+delta 238
+zcmcbec{*i7Gt1^SR)28?1zQF6^8BKd<f6p1lK7(3vdq--`1GR0l+={?GDCH)$@h)L
+z1X4osQxYpRG_4f!N^_G^izfF=icYST&}MTFa&&QZnY>0qg)<K>c~`<n(KoRqLoYY6
+zLc>5u!4IrQBSkMyQ=z6t!9Y{NO2J^Vp`?hpfkG`;Ef-g6ML~X1i9%XwUUErhex5>N
+zN{Tz!1#oN2@-tHus<{*tN{T8Kswbb4RD@amUQ$y8Xf?#eQ1uGh3Wk$ar93vLDwK%;
+E0Ni>`VgLXD
+
+diff --git a/app/src/lib/selfCheck.ts b/app/src/lib/selfCheck.ts
+index b6ef69d216512f4a3efe0419ebd108385e161f33..89f1ab1015bd83e5f6653d6a2871fda706a7dd41 100644
+GIT binary patch
+delta 42
+zcmV+_0M-AAH?}vhIRUdU0eS<G&<wMx1W*H$FaZs-{s&<Kvrr1$0s^n3vn~x=4n(C6
+Aod5s;
+
+delta 35
+rcmdmH-f6zUl5w*WV<GeA{VV~@n<Y3>nKt)uon>NLx^Z(fZ!{kO-K7ip
+
+diff --git a/app/src/lib/store.ts b/app/src/lib/store.ts
+index c0d5699263babaea65ed98500d6ff75d67a50299..cc428b18d68b4851a34b85a281f46c3b4eab73b6 100644
+GIT binary patch
+delta 1287
+zcmZuxT~8BH5KZ6>euTplZ9`g!Abva{@?fHd2!v=8t<c46C@g6gh#{l}7J{Y3l6L7<
+zTT)^LF(oeDMT#jeCjJ8d0groU|ATY4<)dh`Y46^dJNL{vXPP{3`pueju{rAV!MV0N
+z*X8Z@cHaS4e~+79!B(>vKgOLTpn3$T<XBk&OzBod$GisgLl0PHjFl>0uugJ#n#Ft!
+zLgJV&D9nlDf>(}El^j@xfte)RPXO+$vyGy+MVy+E!ZIwtd{~t43X#50NSYUd9WX7)
+z!o!d>J}Cr8DI|1&7<np<i6LR64;En}EKNbXw_e|P+x((E>ho~)HyVKRSh}$Tj=7<U
+zI`rDv7T_OL6?R&H!G3~Exz`HV*)%&aF;5I+Oj_|&%$w9&RKbEu`GA{M>dh4tB9pQ-
+zLw8khRfFCh>&S#(Cqz&Mi(7!lIqRefw>xQ@7a;O%^$<EOJ=akK;V{O7F$m6v-^ijg
+z4PBkMk+XCKx_a3U#Z7eA*vHIa)K&|;P`h<pvdU-ewC4Cc9(yUtVKL=1?#I{%LaxSH
+zJWUuq#8@m{zwI*1G76Nk4$LswvQvXCYXsTpEpu4EhUsZW)G{@}rL}%mqpZB{+_S7%
+zdW^HiHYrX=mo!J~8ne4Pemt;usC-#rdnJN&h37ul`7{=m9D0eiZ4+vIyJ|fF`}UQk
+zsBpgEwu~we;RF)wl|yQF6mYqO8%36gv0cj9PZBOJ#FOq`BFf{VKE(-ewQ;LmI?d&F
+zllyME&E<XoVL_e^Ps5^d=K15Ro9pIiG{ADPO&#M!d#PlvY;j?jQE?L^+-&jmg%4<s
+zuxzp~RYI6xsbT{G-n#ur#>dZw2A&UdZUKu*lq=ic<9K(Yhy~izikPY5rzAx%!>6fc
+z_3QrR7--mR)vU?xIF&B6w{nh{jx%{>T*+Hy?%E3gSCPyb=Bg}8P7284_~eifiI5Qk
+z{8ZqzG(Rl_>syb50h)<5%qRE(QULeflUaf3nw`~bRb$^BVQ6K?E9_LEZx|VT)Hgi9
+z(UDQOZLZtlnrOHF70sba4!?s1TBWvM4z^zXL%33{en`3f_fi4>tF}cDLJ`5qga1g~
+K0>-I-bmT8DexmIF
+
+delta 82
+zcmV-Y0ImPU>jIGC0<dWVvmyjnC$rBj&@Yoj9T1a6Uq&TvVRmU}VRUbDE_HKdazSTh
+oZgehbZewh9WMy+GCrxi+X>4UDla^l~lek|ulks0%vvXilRZ8$6-2eap
+
+diff --git a/app/src/lib/tts.ts b/app/src/lib/tts.ts
+index f1ccfde58a465615de145226ed95693ba9d7f395..562105aba5763aa244152cac452565ee973fca59 100644
+GIT binary patch
+literal 6553
+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
+PMDb}fL0R9-8Bp;*p50ab
+
+delta 76
+zcmbPfd{}zJ2d2%X+%asEwS;#}elP5{*;_<_aq=EfRo3LhlH`oZaw6iB|A<QRf_WMm
+enhLgd3e}VA#S9oVCufVROkOK)xLH=Bh7kY|I~e%@
+
 diff --git a/app/src/lib/version.ts b/app/src/lib/version.ts
-index d704ef9..f310b57 100644
---- a/app/src/lib/version.ts
-+++ b/app/src/lib/version.ts
-@@ -2,3 +2,3 @@
- // 배포 시 반드시 APP_VERSION과 dist/version.json의 version을 함께 올릴 것 (RELEASE_LOG 규칙)
--export const APP_VERSION = '1.4.44'
-+export const APP_VERSION = '1.4.45'
- 
+index f310b57e79f65e824763045b0aa07d665cf99d56..1064d1c420e0a723eb259f0e265d3fb2a91176d2 100644
+GIT binary patch
+delta 12
+TcmaFF^@wZ2T}HEw_gYv0CP@X9
+
+delta 12
+TcmaFF^@wZ2T}IQ5_gYv0CPW33
+
+diff --git a/app/src/screens/AppInfo.tsx b/app/src/screens/AppInfo.tsx
+index 80a72fd94363434dc2c8b679f75bfde058477495..01e2348f76e1df797c4c5b92cf0ad2b28094d0b0 100644
+GIT binary patch
+delta 3334
+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
+
+delta 25
+hcmX?SH&bZ?JL6_qrnk(S_p;CCo?Ol)F!_pH6##t&34#Cs
+
+diff --git a/app/src/screens/ReviewMine.tsx b/app/src/screens/ReviewMine.tsx
+index 3dfcab3e4d40bac63844ab845ea9f76609204e2f..b77d8ae4e73605972d972d88484ad90cd5b0ff2c 100644
+GIT binary patch
+delta 1558
+zcmZux&u`mw6jzbpfY8Kk2RJ;z#m=gvm8xF0^?*2bC%7S4Lt<^wszhqcP&JKYt&5_@
+zXdaDQud_2(OPjPal1b7w)y#z(SHxd1iHpC_(ynmYd$!xA1)uzV{`$SokN4icy$SDd
+z!vAZc29V3aYisTPbao~?GYiuE?6gd0h)heo=s~othXV~A3&JBEZB4AV05x0mHPP&3
+z0o!Zgp@&-r#Xxl1c+?69?j)dF$M!B@vlHn({wI3c68l5C2*P)ww$6XQ4=`0-E*Cz}
+zmll`jmEs*`X%ec6n!L^{`K59kQ7cRNJIZHEm3vBg@aM!oS1zMwya}ijZ|K)SJl4?P
+zXBzuMK&vCxEf5DU(b0g4W77sEw&K%`aO4AVi%gpkyOA{lDfE9Pat8K?jJ|k|kW*g|
+z{Y?r}8ksm0D&?vQUoFN2zAP2)jgjEv*KiZQt14fpc~z0727i3`&3m=X|7w1wCWws=
+zZVu7%K$tpYG6_4jA!UNUYUmn(4J(roy8(z^K$<5OSgE+ck9cB0wED~M$3&8OhKEF|
+zHat6v6&JhY-Jl-!e?vPEJ9OBw@s$U7GQ{m+r1{Kw>h#-yT=Ym>GI`6RjO={U8>CsR
+zuKx^8jf9Dx1+`MlFIR7s%E|)c7e|^nsP#A{b~P@2$s6B7>k*sM*Qp6@=92bNWDcn=
+z;Es>m`%$}*;$*~Z<&Qs|UeDy>>X%zdS}YaWFo5g#E2Sb_>OD!$s&|#LB*}1d?z|7#
+zLP_P23fEv-9>CQf-u++_&ix*=KmPklE%zT!Aw0J6<SER=1C@*fI@F9NK{qUJti%-I
+z1bo01j|PS%9HXdlcVd^+GS`!y<GDG1&}yKo;a1Jy6bpsCTDS`j9xkvdxDsGsvq2ZE
+zBz^Ij!2(VZ9NcQq$O5jC=r+R>-HzxJ!aWbyn!+&10eD?+U8tIlv%|17;n7dEt`VC<
+z+@j4!;##*JjvC09;*AkcrCz5IqriwbiLO3LB8_6^t{F2oY1#0eAp4Vix^O#yoqC)y
+zlY4lE<3V+NF}x$m8_(rWYiaO%S{|Rwo!w=<-aOyf116Y=&bx@-#Eui!jTaWR9ZM|^
+zUU37mD(wc%p(I8+d4$_O&lqYQbWI*i;f>G<cnH&ra<+D%<c)9V#@ahwI4npwd_t>-
+zrfwvT>QW+)Jf;t|I^c`o6atN9vk{)?H*%Da1QV;f@q(t!CLRau4(~LQ6K2sF(ZmYv
+iIJWZ9I#c8Y*mz0nj4MP=i?)l{<Jc+g?BMpbkL0&P%s=J;
+
+delta 42
+zcmV+_0M-AjwE_C50kG5ovxNfp4zoBCTn3W{KoGNI8fOKQARr5~;UC%#v$ZkzD0Qh2
+A-v9sr
+
 diff --git a/version.json b/version.json
-index ea66a45..2b5466f 100644
---- a/version.json
-+++ b/version.json
-@@ -1 +1 @@
--{"version": "1.4.44", "date": "2026-08-18", "notes": "⛏️ 복습 규칙이 정직해졌어! 「헷갈려」를 눌러도 오늘 몫이 늘지 않아. 그리고 지령 카드는 이제 소리부터 들려줘 🔊", "vocab_ready": true, "worlds_ready": true}
-+{"version": "1.4.45", "date": "2026-08-18", "notes": "⛏️ 복습 규칙이 정직해졌어! 「헷갈려」를 눌러도 오늘 몫이 늘지 않아. 그리고 지령·에코 카드도 이제 소리부터 들려줘 🔊", "vocab_ready": true, "worlds_ready": true}
+index 2b5466ffacde929cb845516f611157b71d3ee0be..40843f35b3a1fa119e184b49098c99809184e015 100644
+GIT binary patch
+delta 207
+zcmWlSK}y3=6h)z1$OfM2#7=^R;Gp|)&`AY_P8>AI7ebOY1QQLI)|85tnn9ZU)GytO
+z1D*Z%f-b=qxU+NbJwfljXWW?6i>vGL<-{C;IkarcK97w4?C*I|0WBrv8DK57DuLXL
+zM5apz@a+XF7f7t=u{Z%L=ge`Pp%(-0j?7nW>cG#P&jJ0R@U_r&&PNS-4YWy$n=Lor
+zY3YEL5#5%|6ds&YHee+NXPt(GLf_S&0nmfQIA+FMiJ<_D_nn0j0pCyIuL`3t>mMa$
+Bc>e$Z
+
+delta 200
+zcmW-av1-Cl7=^)C@CE*+lS`mrm%dL27Yhnq984jIgex&5(MTg+Au6bY;7yZ2yZ9)T
+zF8NQWkKonqa5&$0{F<oMd&c`~r`vjK8!u!$nN73#?A0Ipzn|`Z?h+qUI4PA`jADkl
+zBFGS%k1AAH3QW`koh?yKv+^)xnVhW=ufB<gf){&sZ9<f=6A^EBH&#b%EJElYv`sC|
+xdA%=>l61?mIAxfQ@e>dV)nGrq3+4(kCJcn0@|RWF2Vy_bUq~XlECR>-Gq2U+cWwXx
