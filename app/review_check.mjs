@@ -11,13 +11,19 @@ import { execSync } from 'node:child_process'
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs'
 
 mkdirSync('.verify', { recursive: true })
-writeFileSync('.verify/rv_entry.ts', `import * as RV from '../src/lib/review'\nimport * as L from '../src/lib/leitner'\n// @ts-ignore\nglobalThis.RV = RV; globalThis.L = L\n`)
+writeFileSync('.verify/rv_entry.ts', `import * as RV from '../src/lib/review'\nimport * as L from '../src/lib/leitner'\nimport * as DL from '../src/lib/dailyLedger'\n// @ts-ignore\nglobalThis.RV = RV; globalThis.L = L; globalThis.DL = DL\n`)
 execSync('/root/.bun/bin/bun build .verify/rv_entry.ts --outfile .verify/rv_bundle.js --target node', { stdio: 'inherit' })
 const mem = {}
 globalThis.localStorage = { getItem: k => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v) }, removeItem: k => { delete mem[k] } }
 await import('./.verify/rv_bundle.js')
-const RV = globalThis.RV, L = globalThis.L
+const RV = globalThis.RV, L = globalThis.L, DL = globalThis.DL
 const today = L.todayStr()
+
+/* ★v1.4.46★ 회계가 localStorage에서 **서버 권위 + 메모리 사본**(dailyLedger)으로 옮겨졌다.
+   그래서 `mem`(가짜 localStorage)만 비워서는 카운터가 안 지워진다 — 실제로 이 검사가 그것을 잡아
+   ③-b 이후가 전부 실패했다. 하네스 결함이지 앱 결함이 아니다(L63-4).
+   저장소가 죽어도 메모리로 세는 것은 **의도된 동작**이므로(감사 지적 ①의 봉합), 검사 쪽을 맞춘다. */
+const clearAll = () => { for (const k of Object.keys(mem)) delete mem[k]; DL._resetLedger() }
 
 let fail = 0
 const ok = (c, n, e = '') => { if (c) console.log(`  ✓ ${n}`); else { console.log(`  ✗ ${n} ${e}`); fail++ } }
@@ -43,7 +49,7 @@ console.log('── ② 오늘 캘 카드 = 단일 함수 ──')
   RV.addReviewDone('c1')
   ok(RV.minableCards(rows, today).length === 1, '오늘 이미 맞힌 카드는 다시 안 나온다 (당일 재채굴·XP 파밍 차단)')
   ok(RV.minedToday() === 1, '오늘 캔 카드 수를 센다')
-  for (const k of Object.keys(mem)) delete mem[k]
+  clearAll()
 }
 
 console.log('── ③ ★하루 상한 (2026-08-16 신설)★ ──')
@@ -58,7 +64,7 @@ console.log('── ③ ★하루 상한 (2026-08-16 신설)★ ──')
   for (let k = 0; k < 60; k++) RV.addGradedToday()
   ok(RV.gradedToday() === 60, '오늘 채점 횟수를 센다 (정·오답 모두)')
   ok(RV.todaysMine(many, today).length === 0, '★상한을 다 쓰면 오늘은 더 못 캔다 (한 판 상한이 아니라 하루 상한)')
-  for (const k of Object.keys(mem)) delete mem[k]
+  clearAll()
 }
 
 console.log('── ③-b ★C6 역인센티브 봉인 (2026-08-17 실사용 사고)★ ──')
@@ -82,7 +88,7 @@ console.log('── ③-b ★C6 역인센티브 봉인 (2026-08-17 실사용 사
   const after = RV.todaysMine(pool, today)
   ok(after.length === 30, '★「헷갈려」 30번을 눌러도 오늘 몫이 늘지 않는다 (30장 남음)', `→ ${after.length}장`)
 
-  for (const k of Object.keys(mem)) delete mem[k]
+  clearAll()
 }
 
 console.log('── ③-c ★상한 소진 뒤에도 오늘 틀린 카드는 만난다 (독립 감사 2026-08-17 회귀 봉인)★ ──')
@@ -109,7 +115,7 @@ console.log('── ③-c ★상한 소진 뒤에도 오늘 틀린 카드는 만
     '★별도 몫까지 다 쓰면 오늘은 정말 끝 — 「헷갈려」로 되돌아와도 다시 늘지 않는다')
   ok(RV.gradedToday() === 60 + RV.DAILY_RESPAWN_EXTRA,
     `하루 채점 총량 상한 ${60 + RV.DAILY_RESPAWN_EXTRA}회`, `→ ${RV.gradedToday()}`)
-  for (const k of Object.keys(mem)) delete mem[k]
+  clearAll()
 }
 
 console.log('── ④ 라이트너 주기 ──')

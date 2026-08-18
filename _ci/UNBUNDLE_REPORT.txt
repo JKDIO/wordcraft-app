@@ -1,0 +1,28 @@
+# unbundle report 2026-08-18T16:01:23Z
+trigger_commit=52e21db33a818defcd19b3460706a087f9a7e6d3
+
+## applied (blob SHA verified)
+ D _ci/bundle.b64.00
+ D _ci/bundle.b64.01
+ D _ci/bundle.b64.02
+ D _ci/bundle.b64.03
+ D _ci/bundle.b64.04
+ D _ci/bundle.b64.05
+ D _ci/bundle.b64.06
+ D _ci/bundle.b64.07
+ D _ci/bundle.files
+ D _ci/bundle.sha
+ M app/admin_check.mjs
+ M app/review_check.mjs
+ M app/summon_harness_make.mjs
+ M app/verify.sh
+?? .gitignore
+?? _ci/UNBUNDLE_REPORT.txt
+?? app/device_check.mjs
+?? app/inject_test.mjs
+?? app/isolated_render.mjs
+?? app/measure20.mjs
+?? app/shuffle_check.mjs
+?? app/summon_check.mjs
+?? app/summon_smoke.mjs
+?? app/w710_check.mjs

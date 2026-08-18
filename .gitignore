@@ -1,0 +1,32 @@
+# WordCraft — 저장소에 들어가면 안 되는 것 (v1.4.46 신설)
+#
+# ★왜 이제야★ v1.4.40 웹 업로드에서 빠진 뒤 여섯 릴리스 동안 없었다(L56).
+#   없으면 검사·스모크가 만드는 작업물(.verify/, dist/, 브라우저 바이너리)이 `git add -A`에
+#   딸려 들어가 CI 커밋을 오염시킨다. 실제로 CI의 마지막 단계가 `git add -A`다.
+#
+# ★일부러 무시하지 않는 것★
+#   · `app/node_modules/react|react-dom|scheduler` — 이미 추적 중이고, 오프라인 빌드를 위해 커밋돼 있다.
+#     .gitignore는 **이미 추적 중인 파일에는 영향이 없다** — 새로 생기는 것(playwright 등)만 막는다.
+#   · `main.js` / `app.css` / `content.json` / `vocab.json` — 이것이 배포물 그 자체다. 반드시 추적한다.
+#   · `_ci/` — CI 방아쇠와 보고서. 저장소가 인터페이스다.
+
+# 검사·스모크 작업물
+app/.verify/
+app/dist/
+.verify/
+dist/
+
+# 의존성 (신규분만 — 기존 추적분은 그대로)
+node_modules/
+
+# OS·에디터 부산물
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# 로컬 환경 비밀 — 저장소에 절대 들어가면 안 된다
+.env
+.env.*
+*.pem
+*.key

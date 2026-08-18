@@ -272,7 +272,10 @@ console.log('── ⑩ 출석: 세션 시간이 아니라 문항 기록으로 �
 
 console.log('── ⑪ 복습 무결성: 하루 상한 · 읽는 시간 · 버튼 섞기 (v1.4.40) ──')
 {
-  writeFileSync('.verify/rev_entry.ts', `import * as RV from '../src/lib/review'\nimport { todayStr } from '../src/lib/leitner'\n// @ts-ignore\nglobalThis.RV = { ...RV, todayStr }\n`)
+  /* ★v1.4.46★ 하루 회계가 localStorage → 서버 권위 + 메모리 사본(dailyLedger)으로 옮겨졌다.
+     그래서 가짜 localStorage를 갈아끼우는 것만으로는 카운터가 안 지워진다 —
+     실제로 이 검사가 그 사실을 잡아 ⑪ 이후 블록이 전부 실패했다. 하네스를 맞춘다(L63-4). */
+  writeFileSync('.verify/rev_entry.ts', `import * as RV from '../src/lib/review'\nimport { todayStr } from '../src/lib/leitner'\nimport { _resetLedger } from '../src/lib/dailyLedger'\n// @ts-ignore\nglobalThis.RV = { ...RV, todayStr, _resetLedger }\n`)
   execSync('/root/.bun/bin/bun build .verify/rev_entry.ts --outfile .verify/rev_bundle.js --target node', { stdio: 'inherit' })
   const store = {}
   globalThis.localStorage = {
@@ -523,6 +526,7 @@ console.log('── ⑯ 독립 감사(2026-08-16)가 잡은 결함의 회귀 감
   const store3 = {}
   globalThis.localStorage = { getItem: k => (k in store3 ? store3[k] : null), setItem: (k, v) => { store3[k] = String(v) }, removeItem: k => { delete store3[k] } }
   const RV = globalThis.RV
+  RV._resetLedger()   // ★v1.4.46★ 저장소를 갈아끼웠으면 회계 메모리도 함께 초기화한다
   const today = RV.todayStr()
   const normal = Array.from({ length: 80 }, (_, i) => ({ id: 100 + i, card_id: `n${i}`, due_date: today, box: 3, last_result: true }))
   const respawn = Array.from({ length: 10 }, (_, i) => ({ id: 900 + i, card_id: `w${i}`, due_date: today, box: 1, last_result: false }))

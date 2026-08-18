@@ -13,6 +13,16 @@
 #   → xp_parity · badge_check · reward_check · review_check · query_check 를 다시 작성해 커밋했다.
 #   → 아직 복원하지 못한 것은 **끝에서 크게 알린다.** 조용히 건너뛰지 않는다.
 #
+# ★★2026-08-18 (v1.4.46) — 남아 있던 다섯 개를 마저 복원했다★★
+#   measure20 · golem_check · summon_check · summon_smoke · w710_check.
+#   전부 `_dev_github/wordcraft_tests_v1.4.30.tgz` 스냅샷에서 되살렸고, **돌아가게 고쳤다**:
+#     · measure20/golem_check — 컨테이너에만 있던 `_measure_entry_out.js` 의존을 없애고 스스로 번들을 만든다.
+#     · w710_check — 저장소에 없는 `content_w710/` 대신 **실제 배포되는 public/content.json** 을 읽는다.
+#                    v1.4.42의 월드 재정렬(7~10 → 6~9)도 반영했다.
+#     · measure20/golem_check — 결함이 있어도 exit 0이던 '보고서'를 **관문**으로 바꿨다.
+#   그리고 v1.4.46 신설분 2개를 더했다: shuffle_check(C1) · device_check(C5·L61·L8).
+#   → 이 파일의 마지막 줄이 여섯 릴리스 만에 다시 사실이 됐다.
+#
 # 사용: bash verify.sh   (실패하면 0이 아닌 코드로 끝난다)
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -46,7 +56,25 @@ echo "── ⑦ 관제실 지표 진실성 (v1.4.35 신설 · v1.4.40 확장) �
 # 결함을 일부러 되살려 실제로 잡히는 것까지 확인했다(L27 ④). 절대 지우지 말 것.
 node admin_check.mjs | tail -6
 
-echo "── ⑧ 배포물 버전 3자 대조 (L25) ──"
+echo "── ⑧ ★객관식 선택지 셔플 (v1.4.46 · C1)★ ──"
+node shuffle_check.mjs | tail -12
+
+echo "── ⑨ ★기기 게이트 · 서버 일일 회계 · 실기기 자가진단 (v1.4.46 · C5·L61·L8)★ ──"
+node device_check.mjs | tail -10
+
+echo "── ⑩ 어휘 엔진 전수 계측 (입력 방식·정답 위치·무결성 — L24·L26) ──"
+node measure20.mjs | tail -4
+
+echo "── ⑪ 단어 골렘 · 속사 라운드 무결성 ──"
+node golem_check.mjs | tail -4
+
+echo "── ⑫ 문장 소환 scene↔문장 일치 (v1.4.24) ──"
+node summon_check.mjs | tail -4
+
+echo "── ⑬ 확장 월드(6~9) 콘텐츠 전수 ──"
+node w710_check.mjs | tail -4
+
+echo "── ⑭ 배포물 버전 3자 대조 (L25) ──"
 if [ -f dist/main.js ]; then
   B=$(grep -o '1\.4\.[0-9]\{1,2\}' dist/main.js | sort -u | tr '\n' ' ')
   # v1.4.41 정정: dist/version.json은 옛 빌드가 남긴 찌꺼기다(build.sh가 만들지 않는다).
@@ -60,13 +88,13 @@ else
 fi
 
 echo
-echo "⚠️  아직 복원하지 못한 검사 (2026-08-16 기준) — 이 영역은 '미검증'이다"
-echo "     measure20.mjs      문항 입력 방식·정답 위치·무결성 (L24·L26)"
-echo "     golem_check.mjs    단어 골렘·속사 무결성"
-echo "     summon_check.mjs   문장 소환 scene↔문장 일치 (v1.4.24)"
-echo "     summon_smoke.mjs   소환 화면 스모크 (dist + 로컬 서버 필요)"
-echo "     w710_check.mjs     확장 월드(6~9) 콘텐츠 전수"
-echo "   → 전부 content.json/vocab.json을 보는 콘텐츠 검사다. 코드 변경만 하는 릴리스에는 영향이 없지만,"
-echo "     콘텐츠를 건드리는 릴리스라면 이 다섯을 먼저 복원할 것."
+echo "ℹ️  이 스크립트가 돌리지 않는 것 (정직 표기 — 조용히 건너뛰지 않는다)"
+echo "     summon_smoke.mjs   소환 화면 브라우저 스모크. dist 빌드 + 로컬 서버 2개 + Playwright가 필요해"
+echo "                        일괄 실행에 넣지 않는다. 소환 화면을 건드린 릴리스에서는 반드시 따로 돌릴 것:"
+echo "                          node summon_harness_make.mjs"
+echo "                          bun build .verify/summon_entry.tsx --outdir .verify/out --production"
+echo "                          python3 -m http.server 8098 --directory .verify/out &"
+echo "                          python3 -m http.server 8099 --directory dist &"
+echo "                          node summon_smoke.mjs"
 echo
-echo "✅ 복원된 검사 전 항목 통과"
+echo "✅ 검사 전 항목 통과 (12종 + 타입검사 + 버전 3자 대조)"
