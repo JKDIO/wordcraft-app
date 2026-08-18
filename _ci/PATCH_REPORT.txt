@@ -1,27 +1,14 @@
-# src-patch report 2026-08-18T14:51:31Z
-trigger_commit=134f59e8a59de6f27411078331660d9843d33dd4
+# src-patch report 2026-08-18T15:16:47Z
+trigger_commit=01b61fcd208f88ba8e4b0ed599e8a42a9e0df425
 
 ## 적용한 파일 (blob SHA 대조 통과)
-# v1.4.46 3차 전송 — 1차: base85 156행 공백 1칸 / 2차: 마지막 개행 삭제
-a462a370c3f53f7f3a06dd04e9b0e41d671b415b  app/src/App.tsx
-b38027dc4c4cca1aba3e692ea01d702b8609ec48  app/src/engine/QuestionCard.tsx
-e1100653ed05c14ac890b9e633364f660308e600  app/src/lib/dailyLedger.ts
-3041c6a35503747a9705f1f3b89bfb5c62532bc0  app/src/lib/device.ts
-77c965c4b3c0952d0a3fa57f259a0a4e7b9ad38d  app/src/lib/review.ts
-89f1ab1015bd83e5f6653d6a2871fda706a7dd41  app/src/lib/selfCheck.ts
-5a95231d63350f72ae9f8d431ea590be662666d0  app/src/lib/shuffle.ts
-cc428b18d68b4851a34b85a281f46c3b4eab73b6  app/src/lib/store.ts
-562105aba5763aa244152cac452565ee973fca59  app/src/lib/tts.ts
-1064d1c420e0a723eb259f0e265d3fb2a91176d2  app/src/lib/version.ts
-01e2348f76e1df797c4c5b92cf0ad2b28094d0b0  app/src/screens/AppInfo.tsx
-b77d8ae4e73605972d972d88484ad90cd5b0ff2c  app/src/screens/ReviewMine.tsx
-eb589e60be2cf278ddf023272d70a6290a00be7a  app/public/css.d/42-v1446.css
-40843f35b3a1fa119e184b49098c99809184e015  version.json
+# v1.4.46-b GPT 감사 봉합 (dailyLedger 단건)
+b6f44648e831e687669f75082e6b95c7a49e6243  app/src/lib/dailyLedger.ts
 
--rw-r--r-- 1 runner runner 135180 Aug 18 14:51 app.css
--rw-r--r-- 1 runner runner 508875 Aug 18 14:51 main.js
+-rw-r--r-- 1 runner runner 135180 Aug 18 15:16 app.css
+-rw-r--r-- 1 runner runner 509661 Aug 18 15:16 main.js
 
-366b35ef91310f947070664ad3730c72bb0818d7cd9093be1eada496c08b21bf  main.js
+03a45ec1e65327e8180aa54d343e67002d9f207c7f78f039a6910fbfbf9047bb  main.js
 9e58e1893f536dcdd4d79683c4aedc1050d27fc6a6bde78eaedee150d8fc7f63  app.css
 
-main.js gzip bytes: 164370
+main.js gzip bytes: 164591
