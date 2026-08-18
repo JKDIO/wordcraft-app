@@ -1,3 +1,2 @@
-# v1.4.46-b (GPT 감사 봉합) — 1/2 라운드: .gitignore + device_check.mjs
-a7b1ecbd219ac0f743772ae9cbc4aea7597ab49f  .gitignore
-64338a1106cfbedaac5de527032644eb0eb0bdf3  app/device_check.mjs
+# v1.4.46-b GPT 감사 봉합 (dailyLedger 단건)
+b6f44648e831e687669f75082e6b95c7a49e6243  app/src/lib/dailyLedger.ts
