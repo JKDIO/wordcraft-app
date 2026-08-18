@@ -1,209 +1,66 @@
 diff --git a/app/admin_check.mjs b/app/admin_check.mjs
-index 5ce5c82..f269ced 100644
+index f269ced..31b3dff 100644
 --- a/app/admin_check.mjs
 +++ b/app/admin_check.mjs
-@@ -294,2 +294,4 @@ console.log('── ⑪ 복습 무결성: 하루 상한 · 읽는 시간 · 버
-   ok(RV.minedToday() === 60, '오늘 캔 카드 수를 센다')
-+  // ★v1.4.43★ 상한의 분모는 '오늘 채점 이벤트 수'(정·오답 모두). reviewDone(정답만)은 재채굴 차단 전용.
-+  for (let k = 0; k < 60; k++) RV.addGradedToday()
-   ok(RV.todaysMine(cards, today).length === 0, '★상한을 다 쓰면 오늘은 더 못 캔다 (하루 상한이지 한 판 상한이 아니다)')
-@@ -356,3 +358,4 @@ console.log('── ⑭ ★소비자 검사★: 라이브러리만 고치고 화
-   // "41/41 통과" 상태로 살아 있었다. 이제 소스를 직접 읽어 금지 패턴을 막는다.
--  const src = f => readFileSync(f, 'utf8')
-+  // 주석은 제거하고 본다 — 이 릴리스에서 '옛 결함 코드를 주석에 인용'한 것을 탐지기가 잡았다(내 실수).
-+  const src = f => readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
-   const admin = src('src/screens/AdminPage.tsx')
-@@ -415,2 +418,69 @@ console.log('── ⑭ ★소비자 검사★: 라이브러리만 고치고 화
-     `→ ${minus.join(', ')}`)
+@@ -468,2 +468,8 @@ console.log('── ⑭-b ★v1.4.43 신규 봉인 (C2 · C4 · N1 · N2)★ ─
+   ok(/flash-listen/.test(rm), '★복습 카드 앞면에 다시 듣기 버튼이 있다 (N2)')
++  // ★v1.4.45 (N2 봉합의 봉합 · 2026-08-18 격리 실기 검증)★ 렌더러만 고치면 소용없다 —
++  //   `W:CMD:*`/`W:ECHO:*` 카드는 모듈 콘텐츠가 아니라 listening 에서 나오므로,
++  //   backsMap 을 모듈에서만 채우면 **정작 그 17장에만 음성이 안 붙는다.** 공급 쪽을 잠근다.
++  const appx = src('src/App.tsx')
++  ok(/loadListening\(\)/.test(appx) && /W:CMD:\$\{/.test(appx) && /W:ECHO:\$\{/.test(appx),
++    '★backsMap이 지령·에코 카드(W:CMD/W:ECHO)의 음성을 실제로 공급한다 (N2 — 렌더러가 아니라 데이터)')
+   // ★v1.4.43-b (AUDIT 지적)★ 실제 하루 최대는 cap + RESPAWN_EXTRA 다. 화면이 "60장까지만"이라고
+diff --git a/app/src/App.tsx b/app/src/App.tsx
+index fb00963..b8edd3b 100644
+--- a/app/src/App.tsx
++++ b/app/src/App.tsx
+@@ -25,3 +25,3 @@ import { XP } from './lib/xp'
+ import { db, consumeAuthRedirect, getAuthUser, myDeviceLearner, ensureAnonSession, bindLegacyDevice, authKind, type Learner } from './lib/supabase'
+-import { DIAG_ORDER, moduleOrder, loadModule } from './lib/content'
++import { DIAG_ORDER, moduleOrder, loadModule, loadListening } from './lib/content'
+ import { computeEarnedBadges } from './lib/badges'
+@@ -281,2 +281,27 @@ export default function App() {
+ 
++  /* ★v1.4.45 (N2 봉합의 봉합) — 2026-08-18 격리 실기 검증에서 잡혔다★
++     지령·에코 오답 카드(`W:CMD:*` / `W:ECHO:*`)는 **모듈 콘텐츠가 아니라 `listening`에서 나온다**
++     (`onModuleEvent`가 `W:${moduleId}:${question_id}` 로 시드한다).
++     그런데 위 effect는 `moduleOrder()`의 모듈 review_cards만 훑으므로, 그 카드들은 backsMap에
++     **항목이 아예 없다** → `meta?.tts`가 undefined → v1.4.43이 넣은 앞면 자동재생·🔊 버튼이
++     **정작 그 카드에만 안 걸렸다.** 앞면이 「본부에서 긴급 지령! 잘 들어봐」 같은 범용 문구인
++     바로 그 17장이다 — 소리가 없으면 문제 자체가 존재하지 않는다.
++     화면(렌더러)은 옳았고 **데이터 공급이 빠져 있었다**(L51 계열). 여기서 채운다. */
++  useEffect(() => {
++    loadListening().then(c => {
++      setBacksMap(prev => {
++        const nx = { ...prev }
++        for (const it of c.commands || []) {
++          nx[`W:CMD:${it.id}`] = { back: it.choices?.[it.answer_idx] ?? '', tts: it.tts || it.play || null }
++        }
++        for (const st of c.echo_sets || []) {
++          for (const it of st.items || []) {
++            nx[`W:ECHO:${it.id}`] = { back: it.choices?.[it.answer_idx] ?? '', tts: it.tts || it.play || null }
++          }
++        }
++        return nx
++      })
++    }).catch(() => { /* 리스닝 콘텐츠 실패 — 복습은 계속된다 */ })
++  }, [])
 +
-+  // ★v1.4.43 (C3)★ 위 정규식은 **JSX형 `-{...}`만** 봤다. 그래서 v1.4.42의 RewardBoard.tsx:178
-+  //   `` `-${st.remaining.toLocaleString()}` `` (템플릿 리터럴형)은 통과했고,
-+  //   보상 사다리에 「-5,431」이 그대로 나갔다. L51의 정규식 판(版) — 소비자 목록은 자동화했는데
-+  //   **탐지 패턴을 손으로 적어** 문법 하나 다른 세 번째 형태에서 뚫렸다. 두 형태를 모두 본다.
-+  const minusTpl = []
-+  for (const f of learnerScreens) {
-+    src(f).split('\n').forEach((line, i) => {
-+      if (/^\s*\/\//.test(line)) return
-+      if (/`-\$\{/.test(line)) minusTpl.push(`${f}:${i + 1}`)
-+    })
-+  }
-+  ok(minusTpl.length === 0, '★아이 화면에 "`-${숫자}`" 템플릿 리터럴 음수가 없다 (C3 — v1.4.42 유출 형태)',
-+    `→ ${minusTpl.join(', ')}`)
-+}
-+
-+console.log('── ⑭-b ★v1.4.43 신규 봉인 (C2 · C4 · N1 · N2)★ ──')
-+{
-+  // 주석은 제거하고 본다 — 이 릴리스에서 '옛 결함 코드를 주석에 인용'한 것을 탐지기가 잡았다(내 실수).
-+  const src = f => readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
-+  const admin = src('src/screens/AdminPage.tsx')
-+  // C2 — 월드 번호를 손으로 적지 않는다. EXT_WORLDS(단일 원천)에서 파생해야 한다.
-+  ok(!/world:\s*10\b/.test(admin), '★관제실에 존재하지 않는 월드 10이 하드코딩돼 있지 않다 (C2)')
-+  ok(/EXT_WORLDS\.map\(/.test(admin), '★심화 과정 패널이 EXT_WORLDS에서 파생된다 (상수 복사 금지 · C2)')
-+
-+  // C4 — 조회 실패를 빈 목록으로 삼키면 "오늘 할 일 없음"이라고 거짓말한다.
-+  const rm = src('src/screens/ReviewMine.tsx')
-+  ok(!/\.catch\(\s*\(\)\s*=>\s*setAll\(\[\]\)\s*\)/.test(rm),
-+    '★복습 조회 실패를 빈 배열로 삼키지 않는다 (C4)')
-+  ok(/setLoadError\(true\)/.test(rm) && /다시 시도/.test(rm),
-+    '★복습 조회 실패 시 오류 상태와 재시도 수단이 있다 (C4)')
-+  const pf = src('src/screens/Profile.tsx')
-+  ok(/badgeStale/.test(pf) && /wordcraft_badges_cache_v1/.test(pf),
-+    '★뱃지 조회 실패를 캐시 + 안내로 처리한다 (0/71 거짓 표시 금지 · C4)')
-+
-+  // N1 — 같은 날 같은 문항 반복 정답이 XP를 만들지 않는다.
-+  const la = src('src/screens/ListenArcade.tsx')
-+  // ★L51 재적용 (2026-08-18 결함 주입에서 내가 걸렸다)★ `markArcadeXp(` 존재 검사는
-+  //   **함수 정의**에도 걸린다 — 호출부를 통째로 지워도 통과했다. 소비자(호출) 쪽을 본다.
-+  ok(/wordcraft_arcade_xp_v1/.test(la), '★소리 훈련소가 오늘 XP 지급 이력을 저장한다 (N1)')
-+  ok(/r\.correct && xpNow > 0\) markArcadeXp\(/.test(la),
-+    '★정답 시 XP 지급 이력을 실제로 **기록한다** (호출부 검사 — 같은 날 재적립 차단 · N1)')
-+  ok(/xp: gained/.test(la) && /const gained = r\.correct \? xpNow : 0/.test(la),
-+    '★기록되는 XP가 xpNow(0일 수 있음)를 그대로 쓴다 (N1 — 고정 10 금지)')
-+  ok(/-r\$\{round\}/.test(la), '★라운드 시드에 라운드 번호가 들어간다 (판마다 새 문항 · N1)')
-+  ok(/xpForCorrect/.test(la) && /xpForCorrect/.test(src('src/engine/QuestionCard.tsx')),
-+    '★XP가 0일 때 화면이 "+10 XP"라고 말하지 않는다 (N1)')
-+
-+  // N2 — 앞면에서 소리를 들을 수 있어야 인출 연습이 성립한다.
-+  ok(/flash-listen/.test(rm), '★복습 카드 앞면에 다시 듣기 버튼이 있다 (N2)')
-+  // ★v1.4.43-b (AUDIT 지적)★ 실제 하루 최대는 cap + RESPAWN_EXTRA 다. 화면이 "60장까지만"이라고
-+  //   말하면 그것이 곧 거짓말이 된다 — 문구가 추가 몫을 함께 말하는지 잠근다.
-+  ok(!/{DAILY_MINE_CAP}장<\/b>까지만/.test(rm),
-+    '★"60장까지만"이라고 단정하지 않는다 (실제 상한은 cap+리스폰 추가분)')
-+  ok(/DAILY_RESPAWN_EXTRA/.test(rm),
-+    '★입구 문구가 리스폰 추가 몫을 함께 말한다 (화면과 코드의 상한이 같다)')
-+  ok(/phase !== 'mining' \|\| flipped/.test(rm), '★카드 등장 시 앞면 음성을 자동 재생한다 (N2)')
-+
-+  // ★독립 감사 2026-08-17★ C6 이후 addGradedToday()가 상한의 분모다 —
-+  //   더블탭으로 한 번의 채점이 두 번 세지면 아이가 30장만 보고 60장을 쓴 것이 된다.
-+  //   (answer_events 중복 기록 = 무삭제 테이블 오염이기도 하다.)
-+  ok(/gradingRef\.current === i\) return/.test(rm) && /gradingRef\.current = i/.test(rm),
-+    '★채점 버튼 더블탭 가드가 있다 (예산 과다 소진 · answer_events 중복 방지)')
-+  ok(/gradingRef\.current = -1/.test(rm), '★다음 카드로 넘어갈 때 채점 가드가 풀린다')
-+  ok(/myTick !== reqRef\.current/.test(rm), '★재시도 연타 시 옛 응답이 새 결과를 덮지 않는다 (C4)')
-+  ok(/badgeCacheKey\(/.test(pf) && /learnerId/.test(pf),
-+    '★뱃지 캐시가 학습자별로 스코프된다 (형제 전환 시 캐시 오염 방지)')
- }
-@@ -453,7 +523,17 @@ console.log('── ⑯ 독립 감사(2026-08-16)가 잡은 결함의 회귀 감
-   const fresh = Array.from({ length: 5 }, (_, i) => ({ id: 800 + i, card_id: `f${i}`, due_date: today, box: 1, last_result: null }))
--  for (let i = 0; i < 60; i++) RV.addReviewDone(`n${i}`)
-+  // ★v1.4.43 (C6)★ 계약이 바뀌었다. 예전엔 "리스폰은 상한을 넘는다"였고, 그 결과
-+  //   2026-08-17 실사용에서 「헷갈려」 23회가 오늘 몫을 60 → 106회로 늘렸다(정직 처벌).
-+  //   이제 리스폰은 상한 **안**에서 **맨 앞자리**를 차지한다 — 약속은 지키고 총량은 안 늘린다.
-   const mine = RV.todaysMine([...normal, ...respawn, ...fresh], today)
--  ok(mine.length === 10 && mine.every(c => c.card_id.startsWith('w')),
--    '★상한 소진 후에도 오늘 틀린 카드 10장은 전부 나온다 (당일 리스폰 약속)', `→ ${mine.length}장`)
--  ok(!mine.some(c => c.card_id.startsWith('f')), '새로 시드된 박스1 카드는 상한을 우회하지 않는다')
-+  ok(mine.length === 60, '★리스폰이 섞여도 오늘 몫은 60장을 넘지 않는다', `→ ${mine.length}장`)
-+  ok(mine.slice(0, 10).every(c => c.card_id.startsWith('w')),
-+    '★오늘 틀린 카드 10장이 오늘 몫의 맨 앞에 온다 (당일 리스폰 약속)')
-+  for (let i = 0; i < 30; i++) RV.addGradedToday()
-+  const after = RV.todaysMine([...normal, ...respawn, ...fresh], today)
-+  ok(after.length === 30, '★채점 30회 뒤 남은 몫은 30장 — 오답을 눌러도 늘지 않는다', `→ ${after.length}장`)
-+  // ★독립 감사 2026-08-17 회귀 봉인★ 상한을 다 써도 '오늘 새로 틀린 카드'는 별도 몫으로 나온다.
-+  for (let i = 0; i < 30; i++) RV.addGradedToday()   // 총 60회 = 상한 소진
-+  ok(RV.todaysMine(normal, today).length === 0, '상한 소진 후 일반 카드는 안 나온다')
-+  ok(RV.todaysMine([...normal, ...respawn], today).length === Math.min(10, RV.DAILY_RESPAWN_EXTRA),
-+    '★상한 소진 후에도 오늘 틀린 카드는 별도 몫으로 나온다 ("내일 리젠" 거짓말 방지)')
-   delete globalThis.localStorage
-diff --git a/app/review_check.mjs b/app/review_check.mjs
-index 98d41b5..3ac25b0 100644
---- a/app/review_check.mjs
-+++ b/app/review_check.mjs
-@@ -56,11 +56,57 @@ console.log('── ③ ★하루 상한 (2026-08-16 신설)★ ──')
-   ok(m.every((c, i, a) => i === 0 || (a[i - 1].box ?? 1) <= (c.box ?? 1)), '박스가 낮은 것부터 캔다')
--  for (const c of m) RV.addReviewDone(c.card_id)
-+  // ★v1.4.43★ 상한의 분모는 '채점 이벤트 수'다 — 정답이든 오답이든 1회는 1회.
-+  for (let k = 0; k < 60; k++) RV.addGradedToday()
-+  ok(RV.gradedToday() === 60, '오늘 채점 횟수를 센다 (정·오답 모두)')
-   ok(RV.todaysMine(many, today).length === 0, '★상한을 다 쓰면 오늘은 더 못 캔다 (한 판 상한이 아니라 하루 상한)')
--  // 리스폰은 상한을 넘는다 — "틀린 문제는 그날 복습으로"라는 약속
--  const respawn = Array.from({ length: 7 }, (_, i) => card(500 + i, { box: 1, last_result: false }))
-+  for (const k of Object.keys(mem)) delete mem[k]
-+}
-+
-+console.log('── ③-b ★C6 역인센티브 봉인 (2026-08-17 실사용 사고)★ ──')
-+{
-+  // 실사고: 오답 리스폰이 상한 밖이라 「헷갈려」 23회가 오늘 몫을 60 → 106회로 늘렸다.
-+  //   "정직하게 모른다고 할수록 할 일이 늘어난다" = 헌법 §3-3 위반. 이 검사가 그 재발을 막는다.
-+  const many = Array.from({ length: 116 }, (_, i) => card(i, { box: 2 + (i % 3) }))
-+  const respawn = Array.from({ length: 30 }, (_, i) => card(500 + i, { box: 1, last_result: false }))
-   const fresh = Array.from({ length: 4 }, (_, i) => card(700 + i, { box: 1, last_result: null }))
--  const after = RV.todaysMine([...many, ...respawn, ...fresh], today)
--  ok(after.length === 7 && after.every(c => c.last_result === false),
--    '★상한 소진 후에도 오늘 틀린 카드는 전부 나온다 (당일 리스폰 약속)', `→ ${after.length}장`)
--  ok(!after.some(c => c.last_result === null), '새로 시드된 박스1 카드는 상한을 우회하지 않는다')
-+  const pool = [...many, ...respawn, ...fresh]
-+
-+  const first = RV.todaysMine(pool, today)
-+  ok(first.length === 60, '★리스폰이 섞여 있어도 오늘 몫은 정확히 60장', `→ ${first.length}장`)
-+  ok(first.slice(0, 30).every(c => c.last_result === false),
-+    '★틀린 카드가 오늘 몫의 맨 앞자리를 차지한다 (약속은 지키되 총량은 안 늘린다)')
-+  ok(!first.some(c => c.last_result === null && (c.box ?? 1) === 1) || first.length === 60,
-+    '새로 시드된 박스1 카드가 상한을 우회하지 않는다')
-+
-+  // 오답만 30번 채점 → 남은 몫은 30장이어야 한다 (늘어나면 역인센티브 재발)
-+  for (let k = 0; k < 30; k++) RV.addGradedToday()
-+  const after = RV.todaysMine(pool, today)
-+  ok(after.length === 30, '★「헷갈려」 30번을 눌러도 오늘 몫이 늘지 않는다 (30장 남음)', `→ ${after.length}장`)
-+
-+  for (const k of Object.keys(mem)) delete mem[k]
-+}
-+
-+console.log('── ③-c ★상한 소진 뒤에도 오늘 틀린 카드는 만난다 (독립 감사 2026-08-17 회귀 봉인)★ ──')
-+{
-+  // 감사가 잡은 회귀: budget=0이면 slice(0,0)이 리스폰까지 통째로 잘라, 오후 모험에서 틀린 카드가
-+  //   오늘 안 나오고 화면이 "내일 리젠돼"라고 거짓말했다. 그 시나리오를 그대로 재현해 못 박는다.
-+  const normal = Array.from({ length: 80 }, (_, i) => card(i, { box: 3 }))
-+  for (let k = 0; k < 60; k++) RV.addGradedToday()            // 아침에 상한 소진 (전부 정답)
-+  ok(RV.todaysMine(normal, today).length === 0, '상한을 다 쓰면 일반 카드는 더 안 나온다')
-+
-+  // 오후 모험에서 5문제 틀림 → 박스1 · last_result=false · due=오늘
-+  const newWrong = Array.from({ length: 5 }, (_, i) => card(900 + i, { box: 1, last_result: false }))
-+  const after = RV.todaysMine([...normal, ...newWrong], today)
-+  ok(after.length === 5 && after.every(c => c.last_result === false),
-+    '★상한 소진 뒤에도 오늘 새로 틀린 카드는 전부 나온다 (당일 리스폰 약속)', `→ ${after.length}장`)
-+  ok(!after.some(c => (c.box ?? 1) !== 1), '별도 몫에는 리스폰만 들어간다 (일반 카드 우회 금지)')
-+
-+  // 별도 몫도 하루 총량으로 못 박힌다 — 무한 루프 금지
-+  const many = Array.from({ length: 40 }, (_, i) => card(950 + i, { box: 1, last_result: false }))
-+  ok(RV.todaysMine([...normal, ...many], today).length === RV.DAILY_RESPAWN_EXTRA,
-+    `★별도 몫은 ${RV.DAILY_RESPAWN_EXTRA}장이 상한 (리스폰 무한 루프 금지)`)
-+  for (let k = 0; k < RV.DAILY_RESPAWN_EXTRA; k++) RV.addGradedToday()
-+  ok(RV.todaysMine([...normal, ...many], today).length === 0,
-+    '★별도 몫까지 다 쓰면 오늘은 정말 끝 — 「헷갈려」로 되돌아와도 다시 늘지 않는다')
-+  ok(RV.gradedToday() === 60 + RV.DAILY_RESPAWN_EXTRA,
-+    `하루 채점 총량 상한 ${60 + RV.DAILY_RESPAWN_EXTRA}회`, `→ ${RV.gradedToday()}`)
-   for (const k of Object.keys(mem)) delete mem[k]
+   // ── 이벤트 핸들러 ──
 diff --git a/app/src/lib/version.ts b/app/src/lib/version.ts
-index 182633a..d704ef9 100644
+index d704ef9..f310b57 100644
 --- a/app/src/lib/version.ts
 +++ b/app/src/lib/version.ts
 @@ -2,3 +2,3 @@
  // 배포 시 반드시 APP_VERSION과 dist/version.json의 version을 함께 올릴 것 (RELEASE_LOG 규칙)
--export const APP_VERSION = '1.4.43'
-+export const APP_VERSION = '1.4.44'
+-export const APP_VERSION = '1.4.44'
++export const APP_VERSION = '1.4.45'
  
-diff --git a/app/src/screens/ReviewMine.tsx b/app/src/screens/ReviewMine.tsx
-index 88b2e67..3dfcab3 100644
---- a/app/src/screens/ReviewMine.tsx
-+++ b/app/src/screens/ReviewMine.tsx
-@@ -6,3 +6,3 @@ import {
-   dueCardsQuery, boxTotalsQuery, tallyBoxes, layerOf, minableCards, todaysMine, addReviewDone,
--  addGradedToday, gradeSwapped, DAILY_MINE_CAP, MIN_REVEAL_MS,
-+  addGradedToday, gradeSwapped, DAILY_MINE_CAP, DAILY_RESPAWN_EXTRA, MIN_REVEAL_MS,
- } from '../lib/review'
-@@ -171,4 +171,5 @@ export function ReviewMine(props: {
-           <p className="mine-waiting">
--            ⛰️ 광맥에 <b>{waiting}장</b>이 더 묻혀 있어. 하루에 <b>{DAILY_MINE_CAP}장</b>까지만 캐는 게 규칙이야 —
--            한 번에 다 캐면 기억에 안 남거든. 나머지는 <b>내일 그대로</b> 기다리고 있어 😎
-+            ⛰️ 광맥에 <b>{waiting}장</b>이 더 묻혀 있어. 하루에 <b>{DAILY_MINE_CAP}장</b>까지 캐는 게 규칙이야 —
-+            한 번에 다 캐면 기억에 안 남거든. 틀린 카드는 오늘 꼭 다시 만나야 하니까 <b>최대 {DAILY_RESPAWN_EXTRA}장</b>까지 더 나올 수 있어 ⛏️
-+            나머지는 <b>내일 그대로</b> 기다리고 있어 😎
-           </p>
 diff --git a/version.json b/version.json
-index d890fc1..ea66a45 100644
+index ea66a45..2b5466f 100644
 --- a/version.json
 +++ b/version.json
 @@ -1 +1 @@
--{"version": "1.4.43", "date": "2026-08-17", "notes": "⛏️ 복습 규칙이 정직해졌어! 「헷갈려」를 눌러도 오늘 몫이 늘지 않아. 그리고 지령 카드는 이제 소리부터 들려줘 🔊", "vocab_ready": true, "worlds_ready": true}
-+{"version": "1.4.44", "date": "2026-08-18", "notes": "⛏️ 복습 규칙이 정직해졌어! 「헷갈려」를 눌러도 오늘 몫이 늘지 않아. 그리고 지령 카드는 이제 소리부터 들려줘 🔊", "vocab_ready": true, "worlds_ready": true}
+-{"version": "1.4.44", "date": "2026-08-18", "notes": "⛏️ 복습 규칙이 정직해졌어! 「헷갈려」를 눌러도 오늘 몫이 늘지 않아. 그리고 지령 카드는 이제 소리부터 들려줘 🔊", "vocab_ready": true, "worlds_ready": true}
++{"version": "1.4.45", "date": "2026-08-18", "notes": "⛏️ 복습 규칙이 정직해졌어! 「헷갈려」를 눌러도 오늘 몫이 늘지 않아. 그리고 지령·에코 카드도 이제 소리부터 들려줘 🔊", "vocab_ready": true, "worlds_ready": true}
