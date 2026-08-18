@@ -292,6 +292,8 @@ console.log('── ⑪ 복습 무결성: 하루 상한 · 읽는 시간 · 버�
   // 이미 캔 만큼 차감되지 않으면 상한이 아무 일도 하지 않는다 (입구로 돌아오면 다시 60장이 뜬다)
   for (const c of mine.slice(0, 60)) RV.addReviewDone(c.card_id)
   ok(RV.minedToday() === 60, '오늘 캔 카드 수를 센다')
+  // ★v1.4.43★ 상한의 분모는 '오늘 채점 이벤트 수'(정·오답 모두). reviewDone(정답만)은 재채굴 차단 전용.
+  for (let k = 0; k < 60; k++) RV.addGradedToday()
   ok(RV.todaysMine(cards, today).length === 0, '★상한을 다 쓰면 오늘은 더 못 캔다 (하루 상한이지 한 판 상한이 아니다)')
   // 버튼 좌우 섞기 — 첫 구현은 % 2(음수), 두 번째는 & 1(정확히 교대)로 둘 다 틀렸다.
   let ones = 0, alt = 0, n = 0
@@ -354,7 +356,8 @@ console.log('── ⑭ ★소비자 검사★: 라이브러리만 고치고 화
   // 2026-08-16 독립 교차 검증의 핵심 발견: 41항목 전부가 adminMetrics.ts와 supabase.ts만 봤고
   // AdminPage.tsx(1,733줄)를 import하는 항목이 **0개**였다. 그래서 화면 안의 규칙 위반 9건이
   // "41/41 통과" 상태로 살아 있었다. 이제 소스를 직접 읽어 금지 패턴을 막는다.
-  const src = f => readFileSync(f, 'utf8')
+  // 주석은 제거하고 본다 — 이 릴리스에서 '옛 결함 코드를 주석에 인용'한 것을 탐지기가 잡았다(내 실수).
+  const src = f => readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
   const admin = src('src/screens/AdminPage.tsx')
   const storeSrc = src('src/lib/store.ts')
   const supa = src('src/lib/supabase.ts')
@@ -413,6 +416,73 @@ console.log('── ⑭ ★소비자 검사★: 라이브러리만 고치고 화
   }
   ok(minus.length === 0, '★아이 화면에 "-{숫자}" 표기가 없다 (U-3 회귀 감시 · 학습자 화면 전수)',
     `→ ${minus.join(', ')}`)
+
+  // ★v1.4.43 (C3)★ 위 정규식은 **JSX형 `-{...}`만** 봤다. 그래서 v1.4.42의 RewardBoard.tsx:178
+  //   `` `-${st.remaining.toLocaleString()}` `` (템플릿 리터럴형)은 통과했고,
+  //   보상 사다리에 「-5,431」이 그대로 나갔다. L51의 정규식 판(版) — 소비자 목록은 자동화했는데
+  //   **탐지 패턴을 손으로 적어** 문법 하나 다른 세 번째 형태에서 뚫렸다. 두 형태를 모두 본다.
+  const minusTpl = []
+  for (const f of learnerScreens) {
+    src(f).split('\n').forEach((line, i) => {
+      if (/^\s*\/\//.test(line)) return
+      if (/`-\$\{/.test(line)) minusTpl.push(`${f}:${i + 1}`)
+    })
+  }
+  ok(minusTpl.length === 0, '★아이 화면에 "`-${숫자}`" 템플릿 리터럴 음수가 없다 (C3 — v1.4.42 유출 형태)',
+    `→ ${minusTpl.join(', ')}`)
+}
+
+console.log('── ⑭-b ★v1.4.43 신규 봉인 (C2 · C4 · N1 · N2)★ ──')
+{
+  // 주석은 제거하고 본다 — 이 릴리스에서 '옛 결함 코드를 주석에 인용'한 것을 탐지기가 잡았다(내 실수).
+  const src = f => readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+  const admin = src('src/screens/AdminPage.tsx')
+  // C2 — 월드 번호를 손으로 적지 않는다. EXT_WORLDS(단일 원천)에서 파생해야 한다.
+  ok(!/world:\s*10\b/.test(admin), '★관제실에 존재하지 않는 월드 10이 하드코딩돼 있지 않다 (C2)')
+  ok(/EXT_WORLDS\.map\(/.test(admin), '★심화 과정 패널이 EXT_WORLDS에서 파생된다 (상수 복사 금지 · C2)')
+
+  // C4 — 조회 실패를 빈 목록으로 삼키면 "오늘 할 일 없음"이라고 거짓말한다.
+  const rm = src('src/screens/ReviewMine.tsx')
+  ok(!/\.catch\(\s*\(\)\s*=>\s*setAll\(\[\]\)\s*\)/.test(rm),
+    '★복습 조회 실패를 빈 배열로 삼키지 않는다 (C4)')
+  ok(/setLoadError\(true\)/.test(rm) && /다시 시도/.test(rm),
+    '★복습 조회 실패 시 오류 상태와 재시도 수단이 있다 (C4)')
+  const pf = src('src/screens/Profile.tsx')
+  ok(/badgeStale/.test(pf) && /wordcraft_badges_cache_v1/.test(pf),
+    '★뱃지 조회 실패를 캐시 + 안내로 처리한다 (0/71 거짓 표시 금지 · C4)')
+
+  // N1 — 같은 날 같은 문항 반복 정답이 XP를 만들지 않는다.
+  const la = src('src/screens/ListenArcade.tsx')
+  // ★L51 재적용 (2026-08-18 결함 주입에서 내가 걸렸다)★ `markArcadeXp(` 존재 검사는
+  //   **함수 정의**에도 걸린다 — 호출부를 통째로 지워도 통과했다. 소비자(호출) 쪽을 본다.
+  ok(/wordcraft_arcade_xp_v1/.test(la), '★소리 훈련소가 오늘 XP 지급 이력을 저장한다 (N1)')
+  ok(/r\.correct && xpNow > 0\) markArcadeXp\(/.test(la),
+    '★정답 시 XP 지급 이력을 실제로 **기록한다** (호출부 검사 — 같은 날 재적립 차단 · N1)')
+  ok(/xp: gained/.test(la) && /const gained = r\.correct \? xpNow : 0/.test(la),
+    '★기록되는 XP가 xpNow(0일 수 있음)를 그대로 쓴다 (N1 — 고정 10 금지)')
+  ok(/-r\$\{round\}/.test(la), '★라운드 시드에 라운드 번호가 들어간다 (판마다 새 문항 · N1)')
+  ok(/xpForCorrect/.test(la) && /xpForCorrect/.test(src('src/engine/QuestionCard.tsx')),
+    '★XP가 0일 때 화면이 "+10 XP"라고 말하지 않는다 (N1)')
+
+  // N2 — 앞면에서 소리를 들을 수 있어야 인출 연습이 성립한다.
+  ok(/flash-listen/.test(rm), '★복습 카드 앞면에 다시 듣기 버튼이 있다 (N2)')
+  // ★v1.4.43-b (AUDIT 지적)★ 실제 하루 최대는 cap + RESPAWN_EXTRA 다. 화면이 "60장까지만"이라고
+  //   말하면 그것이 곧 거짓말이 된다 — 문구가 추가 몫을 함께 말하는지 잠근다.
+  ok(!/{DAILY_MINE_CAP}장<\/b>까지만/.test(rm),
+    '★"60장까지만"이라고 단정하지 않는다 (실제 상한은 cap+리스폰 추가분)')
+  ok(/DAILY_RESPAWN_EXTRA/.test(rm),
+    '★입구 문구가 리스폰 추가 몫을 함께 말한다 (화면과 코드의 상한이 같다)')
+  ok(/phase !== 'mining' \|\| flipped/.test(rm), '★카드 등장 시 앞면 음성을 자동 재생한다 (N2)')
+
+  // ★독립 감사 2026-08-17★ C6 이후 addGradedToday()가 상한의 분모다 —
+  //   더블탭으로 한 번의 채점이 두 번 세지면 아이가 30장만 보고 60장을 쓴 것이 된다.
+  //   (answer_events 중복 기록 = 무삭제 테이블 오염이기도 하다.)
+  ok(/gradingRef\.current === i\) return/.test(rm) && /gradingRef\.current = i/.test(rm),
+    '★채점 버튼 더블탭 가드가 있다 (예산 과다 소진 · answer_events 중복 방지)')
+  ok(/gradingRef\.current = -1/.test(rm), '★다음 카드로 넘어갈 때 채점 가드가 풀린다')
+  ok(/myTick !== reqRef\.current/.test(rm), '★재시도 연타 시 옛 응답이 새 결과를 덮지 않는다 (C4)')
+  ok(/badgeCacheKey\(/.test(pf) && /learnerId/.test(pf),
+    '★뱃지 캐시가 학습자별로 스코프된다 (형제 전환 시 캐시 오염 방지)')
 }
 
 console.log('── ⑮ 성능: 날짜별 집계가 O(날짜 × 문항)이 아니다 (v1.4.40) ──')
@@ -451,11 +521,21 @@ console.log('── ⑯ 독립 감사(2026-08-16)가 잡은 결함의 회귀 감
   const normal = Array.from({ length: 80 }, (_, i) => ({ id: 100 + i, card_id: `n${i}`, due_date: today, box: 3, last_result: true }))
   const respawn = Array.from({ length: 10 }, (_, i) => ({ id: 900 + i, card_id: `w${i}`, due_date: today, box: 1, last_result: false }))
   const fresh = Array.from({ length: 5 }, (_, i) => ({ id: 800 + i, card_id: `f${i}`, due_date: today, box: 1, last_result: null }))
-  for (let i = 0; i < 60; i++) RV.addReviewDone(`n${i}`)
+  // ★v1.4.43 (C6)★ 계약이 바뀌었다. 예전엔 "리스폰은 상한을 넘는다"였고, 그 결과
+  //   2026-08-17 실사용에서 「헷갈려」 23회가 오늘 몫을 60 → 106회로 늘렸다(정직 처벌).
+  //   이제 리스폰은 상한 **안**에서 **맨 앞자리**를 차지한다 — 약속은 지키고 총량은 안 늘린다.
   const mine = RV.todaysMine([...normal, ...respawn, ...fresh], today)
-  ok(mine.length === 10 && mine.every(c => c.card_id.startsWith('w')),
-    '★상한 소진 후에도 오늘 틀린 카드 10장은 전부 나온다 (당일 리스폰 약속)', `→ ${mine.length}장`)
-  ok(!mine.some(c => c.card_id.startsWith('f')), '새로 시드된 박스1 카드는 상한을 우회하지 않는다')
+  ok(mine.length === 60, '★리스폰이 섞여도 오늘 몫은 60장을 넘지 않는다', `→ ${mine.length}장`)
+  ok(mine.slice(0, 10).every(c => c.card_id.startsWith('w')),
+    '★오늘 틀린 카드 10장이 오늘 몫의 맨 앞에 온다 (당일 리스폰 약속)')
+  for (let i = 0; i < 30; i++) RV.addGradedToday()
+  const after = RV.todaysMine([...normal, ...respawn, ...fresh], today)
+  ok(after.length === 30, '★채점 30회 뒤 남은 몫은 30장 — 오답을 눌러도 늘지 않는다', `→ ${after.length}장`)
+  // ★독립 감사 2026-08-17 회귀 봉인★ 상한을 다 써도 '오늘 새로 틀린 카드'는 별도 몫으로 나온다.
+  for (let i = 0; i < 30; i++) RV.addGradedToday()   // 총 60회 = 상한 소진
+  ok(RV.todaysMine(normal, today).length === 0, '상한 소진 후 일반 카드는 안 나온다')
+  ok(RV.todaysMine([...normal, ...respawn], today).length === Math.min(10, RV.DAILY_RESPAWN_EXTRA),
+    '★상한 소진 후에도 오늘 틀린 카드는 별도 몫으로 나온다 ("내일 리젠" 거짓말 방지)')
   delete globalThis.localStorage
 }
 {

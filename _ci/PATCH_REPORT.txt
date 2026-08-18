@@ -1,22 +1,17 @@
-# src-patch report 2026-08-18T11:41:51Z
-trigger_commit=c88da83af76688a4dce20a51f393a4964b920206
+# src-patch report 2026-08-18T12:25:21Z
+trigger_commit=2fbaa9ade4b6462f7c0cacd51c1fd301aaaf8d2e
 
 ## 적용한 파일 (blob SHA 대조 통과)
-7339f9b66378e1703b68f543820bcacf6144d1c3 app/public/css.d/41-v1443-integrity.css
-982a60d3d56b4557414575c1bd3997f1a8b43b5f app/src/engine/QuestionCard.tsx
-fc423d864a6a7e8e661a8ffb014713511e80e3bf app/src/lib/review.ts
-182633a5eb27342fead8a3bbd9cee0cfbcb33041 app/src/lib/version.ts
-ab2bae303b5648e393dc3feef481fa57888848da app/src/screens/AdminPage.tsx
-38613fcd79eef0082c27d15b2b226339fad23df8 app/src/screens/ListenArcade.tsx
-609d2fab0ecd19791cbffe54c8585e73aa3e705b app/src/screens/Profile.tsx
-88b2e676b6228c26c234dc49e418142f9d2dc93a app/src/screens/ReviewMine.tsx
-69d69fc52576acf440f466ba64ed504f2420d251 app/src/screens/RewardBoard.tsx
-d890fc1ebcea94ab6eb632147a735c25a198b9ee version.json
+f269ced1241a84d559851ae2393b4c12512c4ee5 app/admin_check.mjs
+3ac25b005f8b02216cb09d58918897726e33cbcd app/review_check.mjs
+d704ef92ec4b6ea6b6f42740d2768b28007d8805 app/src/lib/version.ts
+3dfcab3e4d40bac63844ab845ea9f76609204e2f app/src/screens/ReviewMine.tsx
+ea66a45ef89c978fa9392ceb9280781b48b6277b version.json
 
--rw-r--r-- 1 runner runner 132277 Aug 18 11:41 app.css
--rw-r--r-- 1 runner runner 499796 Aug 18 11:41 main.js
+-rw-r--r-- 1 runner runner 132277 Aug 18 12:25 app.css
+-rw-r--r-- 1 runner runner 499926 Aug 18 12:25 main.js
 
-e5291f9fe186b6d649771ff3c66f0ad90e1226a5d7ad72f778d6116c935f4b3a  main.js
+a6913e39e2d733bf92e4f1dfe8657f0a06d899607fa9002f8aedea462e800e28  main.js
 51afdb172f5bdda7e43ad1a20bf5394b123229b146e2e1857586bd830000c49b  app.css
 
-main.js gzip bytes: 160704
+main.js gzip bytes: 160755

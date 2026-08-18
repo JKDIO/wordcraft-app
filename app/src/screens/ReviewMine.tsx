@@ -4,7 +4,7 @@ import { nextDue, todayStr } from '../lib/leitner'
 // v1.4.29: 카드 조회·'오늘 캔 카드' 규칙은 lib/review.ts 단일 원천 (여기서 쿼리를 직접 짜지 않는다)
 import {
   dueCardsQuery, boxTotalsQuery, tallyBoxes, layerOf, minableCards, todaysMine, addReviewDone,
-  addGradedToday, gradeSwapped, DAILY_MINE_CAP, MIN_REVEAL_MS,
+  addGradedToday, gradeSwapped, DAILY_MINE_CAP, DAILY_RESPAWN_EXTRA, MIN_REVEAL_MS,
 } from '../lib/review'
 import { speakText, stopAudio } from '../lib/audio' // v1.4.14: 단일 오디오 채널 경유(직접 speak 금지 — L19)
 import type { LocalState } from '../lib/store'
@@ -169,8 +169,9 @@ export function ReviewMine(props: {
         </div>
         {waiting > 0 && dueCards.length > 0 && (
           <p className="mine-waiting">
-            ⛰️ 광맥에 <b>{waiting}장</b>이 더 묻혀 있어. 하루에 <b>{DAILY_MINE_CAP}장</b>까지만 캐는 게 규칙이야 —
-            한 번에 다 캐면 기억에 안 남거든. 나머지는 <b>내일 그대로</b> 기다리고 있어 😎
+            ⛰️ 광맥에 <b>{waiting}장</b>이 더 묻혀 있어. 하루에 <b>{DAILY_MINE_CAP}장</b>까지 캐는 게 규칙이야 —
+            한 번에 다 캐면 기억에 안 남거든. 틀린 카드는 오늘 꼭 다시 만나야 하니까 <b>최대 {DAILY_RESPAWN_EXTRA}장</b>까지 더 나올 수 있어 ⛏️
+            나머지는 <b>내일 그대로</b> 기다리고 있어 😎
           </p>
         )}
         {LAYERS.map((L, idx) => {

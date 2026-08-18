@@ -54,15 +54,61 @@ console.log('── ③ ★하루 상한 (2026-08-16 신설)★ ──')
   ok(RV.todaysMine(many, today).length === 60, '★116장이 due여도 오늘 몫은 60장')
   const m = RV.todaysMine(many, today)
   ok(m.every((c, i, a) => i === 0 || (a[i - 1].box ?? 1) <= (c.box ?? 1)), '박스가 낮은 것부터 캔다')
-  for (const c of m) RV.addReviewDone(c.card_id)
+  // ★v1.4.43★ 상한의 분모는 '채점 이벤트 수'다 — 정답이든 오답이든 1회는 1회.
+  for (let k = 0; k < 60; k++) RV.addGradedToday()
+  ok(RV.gradedToday() === 60, '오늘 채점 횟수를 센다 (정·오답 모두)')
   ok(RV.todaysMine(many, today).length === 0, '★상한을 다 쓰면 오늘은 더 못 캔다 (한 판 상한이 아니라 하루 상한)')
-  // 리스폰은 상한을 넘는다 — "틀린 문제는 그날 복습으로"라는 약속
-  const respawn = Array.from({ length: 7 }, (_, i) => card(500 + i, { box: 1, last_result: false }))
+  for (const k of Object.keys(mem)) delete mem[k]
+}
+
+console.log('── ③-b ★C6 역인센티브 봉인 (2026-08-17 실사용 사고)★ ──')
+{
+  // 실사고: 오답 리스폰이 상한 밖이라 「헷갈려」 23회가 오늘 몫을 60 → 106회로 늘렸다.
+  //   "정직하게 모른다고 할수록 할 일이 늘어난다" = 헌법 §3-3 위반. 이 검사가 그 재발을 막는다.
+  const many = Array.from({ length: 116 }, (_, i) => card(i, { box: 2 + (i % 3) }))
+  const respawn = Array.from({ length: 30 }, (_, i) => card(500 + i, { box: 1, last_result: false }))
   const fresh = Array.from({ length: 4 }, (_, i) => card(700 + i, { box: 1, last_result: null }))
-  const after = RV.todaysMine([...many, ...respawn, ...fresh], today)
-  ok(after.length === 7 && after.every(c => c.last_result === false),
-    '★상한 소진 후에도 오늘 틀린 카드는 전부 나온다 (당일 리스폰 약속)', `→ ${after.length}장`)
-  ok(!after.some(c => c.last_result === null), '새로 시드된 박스1 카드는 상한을 우회하지 않는다')
+  const pool = [...many, ...respawn, ...fresh]
+
+  const first = RV.todaysMine(pool, today)
+  ok(first.length === 60, '★리스폰이 섞여 있어도 오늘 몫은 정확히 60장', `→ ${first.length}장`)
+  ok(first.slice(0, 30).every(c => c.last_result === false),
+    '★틀린 카드가 오늘 몫의 맨 앞자리를 차지한다 (약속은 지키되 총량은 안 늘린다)')
+  ok(!first.some(c => c.last_result === null && (c.box ?? 1) === 1) || first.length === 60,
+    '새로 시드된 박스1 카드가 상한을 우회하지 않는다')
+
+  // 오답만 30번 채점 → 남은 몫은 30장이어야 한다 (늘어나면 역인센티브 재발)
+  for (let k = 0; k < 30; k++) RV.addGradedToday()
+  const after = RV.todaysMine(pool, today)
+  ok(after.length === 30, '★「헷갈려」 30번을 눌러도 오늘 몫이 늘지 않는다 (30장 남음)', `→ ${after.length}장`)
+
+  for (const k of Object.keys(mem)) delete mem[k]
+}
+
+console.log('── ③-c ★상한 소진 뒤에도 오늘 틀린 카드는 만난다 (독립 감사 2026-08-17 회귀 봉인)★ ──')
+{
+  // 감사가 잡은 회귀: budget=0이면 slice(0,0)이 리스폰까지 통째로 잘라, 오후 모험에서 틀린 카드가
+  //   오늘 안 나오고 화면이 "내일 리젠돼"라고 거짓말했다. 그 시나리오를 그대로 재현해 못 박는다.
+  const normal = Array.from({ length: 80 }, (_, i) => card(i, { box: 3 }))
+  for (let k = 0; k < 60; k++) RV.addGradedToday()            // 아침에 상한 소진 (전부 정답)
+  ok(RV.todaysMine(normal, today).length === 0, '상한을 다 쓰면 일반 카드는 더 안 나온다')
+
+  // 오후 모험에서 5문제 틀림 → 박스1 · last_result=false · due=오늘
+  const newWrong = Array.from({ length: 5 }, (_, i) => card(900 + i, { box: 1, last_result: false }))
+  const after = RV.todaysMine([...normal, ...newWrong], today)
+  ok(after.length === 5 && after.every(c => c.last_result === false),
+    '★상한 소진 뒤에도 오늘 새로 틀린 카드는 전부 나온다 (당일 리스폰 약속)', `→ ${after.length}장`)
+  ok(!after.some(c => (c.box ?? 1) !== 1), '별도 몫에는 리스폰만 들어간다 (일반 카드 우회 금지)')
+
+  // 별도 몫도 하루 총량으로 못 박힌다 — 무한 루프 금지
+  const many = Array.from({ length: 40 }, (_, i) => card(950 + i, { box: 1, last_result: false }))
+  ok(RV.todaysMine([...normal, ...many], today).length === RV.DAILY_RESPAWN_EXTRA,
+    `★별도 몫은 ${RV.DAILY_RESPAWN_EXTRA}장이 상한 (리스폰 무한 루프 금지)`)
+  for (let k = 0; k < RV.DAILY_RESPAWN_EXTRA; k++) RV.addGradedToday()
+  ok(RV.todaysMine([...normal, ...many], today).length === 0,
+    '★별도 몫까지 다 쓰면 오늘은 정말 끝 — 「헷갈려」로 되돌아와도 다시 늘지 않는다')
+  ok(RV.gradedToday() === 60 + RV.DAILY_RESPAWN_EXTRA,
+    `하루 채점 총량 상한 ${60 + RV.DAILY_RESPAWN_EXTRA}회`, `→ ${RV.gradedToday()}`)
   for (const k of Object.keys(mem)) delete mem[k]
 }
 
