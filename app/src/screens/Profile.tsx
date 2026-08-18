@@ -12,13 +12,28 @@ import { BadgeLoadout } from './BadgeLoadout'   // v1.4.28 ⚔️ 룬 장비창
 
 const DOW = ['월', '화', '수', '목', '금', '토', '일']
 
+/** ★v1.4.43 (C4)★ 뱃지 도감 오프라인 캐시 — 마지막으로 성공한 목록(읽기 전용 사본). */
+/** ★학습자별로 스코프한다★ — 이 앱은 형제(다가구)를 지원한다. 전역 키 하나로 두면
+ *  기기에서 아이가 바뀐 뒤 조회가 실패했을 때 **다른 아이의 뱃지**를 보여 줄 수 있다. */
+const badgeCacheKey = (lid: string | null) => `wordcraft_badges_cache_v1:${lid || 'anon'}`
+function readBadgeCache(lid: string | null): string[] {
+  try { const v = JSON.parse(localStorage.getItem(badgeCacheKey(lid)) || '[]'); return Array.isArray(v) ? v as string[] : [] } catch { return [] }
+}
+function writeBadgeCache(lid: string | null, ids: string[]) {
+  try { localStorage.setItem(badgeCacheKey(lid), JSON.stringify(ids)) } catch { /* */ }
+}
+
 export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
   const s = props.state
   // v1.4.23: 승인 전에는 확장 월드(6~9)가 '클리어 n/28' 분모에 들어가지 않는다
   const ORDER_V = moduleOrder(props.worldsReady)
   const lp = levelProgress(s.xp)
   const onSeg = Math.min(10, Math.round((lp.cur / lp.need) * 10))
-  const [badges, setBadges] = useState<string[]>([])
+  // ★v1.4.43 (C4)★ 뱃지 조회 실패를 조용히 삼키면 도감이 「0/71 · 맨손의 도전자」가 된다.
+  //   실제로는 28개를 갖고 있고, 같은 화면 위에는 로컬 XP가 정상 표시된다 — 한 화면 안에서 모순이 난다.
+  //   RewardBoard가 이미 쓰는 패턴(마지막 성공값 캐시)을 그대로 가져온다.
+  const [badges, setBadges] = useState<string[]>(() => readBadgeCache(props.state.learnerId))
+  const [badgeStale, setBadgeStale] = useState(false)
   const [reveal, setReveal] = useState<string | null>(null)
   // v1.4.27 — 뱃지 59개. 카테고리를 접었다 폈다 한다.
   // ★v1.4.30 (Dio님 지시) — 기본값은 **전부 접힘**.★
@@ -31,8 +46,11 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
     if (!s.learnerId) return
     // ★v1.4.40★ selectAll — 뱃지는 71종이라 지금은 안전하지만, 규칙을 하나로 통일해 예외를 없앤다.
     db.selectAll('badges', `learner_id=eq.${s.learnerId}&select=badge_id&order=earned_at.desc`)
-      .then(r => setBadges((r.rows as { badge_id: string }[]).map(x => x.badge_id)))
-      .catch(() => {})
+      .then(r => {
+        const ids = (r.rows as { badge_id: string }[]).map(x => x.badge_id)
+        setBadges(ids); setBadgeStale(false); writeBadgeCache(s.learnerId, ids)
+      })
+      .catch(() => { setBadgeStale(true) })   // ★v1.4.43★ 캐시를 유지한 채 '못 불러옴'을 표시한다
   }, [s.learnerId])
 
   const completed = ORDER_V.filter(id => {
@@ -139,6 +157,12 @@ export function Profile(props: { state: LocalState; worldsReady?: boolean }) {
 
       {/* 뱃지 도감 (시안 08 + v1.2.0): 미획득 뱃지는 탭하면 획득 조건·진행도 공개 → 목표 삼기 */}
       <h3 className="section-title wc-dex-head">🏆 뱃지 도감 <span className="wc-dex-count">{badges.length}/{Object.keys(BADGE_DEFS).length}</span></h3>
+      {/* ★v1.4.43 (C4)★ 못 불러온 것과 '없는 것'을 구분해서 말한다. */}
+      {badgeStale && (
+        <p className="wc-dex-stale">
+          📡 방금 서버에서 못 불러왔어 — {badges.length > 0 ? '마지막으로 저장해 둔 도감을 보여주는 중이야.' : '연결되면 도감이 채워질 거야.'} 뱃지가 사라진 건 아니야!
+        </p>
+      )}
       {/* v1.4.28 ⚔️ 룬 장비창 — 도감(59칸 목록)보다 먼저, '지금 내가 얼마나 강해졌는가'를 한 그림으로 */}
       <BadgeLoadout earned={badges} onPickGroup={g => {
         // 슬롯을 누르면 그 카테고리만 펼치고 그 자리로 데려간다

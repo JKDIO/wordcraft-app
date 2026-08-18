@@ -4,7 +4,7 @@ import { nextDue, todayStr } from '../lib/leitner'
 // v1.4.29: 카드 조회·'오늘 캔 카드' 규칙은 lib/review.ts 단일 원천 (여기서 쿼리를 직접 짜지 않는다)
 import {
   dueCardsQuery, boxTotalsQuery, tallyBoxes, layerOf, minableCards, todaysMine, addReviewDone,
-  gradeSwapped, DAILY_MINE_CAP, MIN_REVEAL_MS,
+  addGradedToday, gradeSwapped, DAILY_MINE_CAP, MIN_REVEAL_MS,
 } from '../lib/review'
 import { speakText, stopAudio } from '../lib/audio' // v1.4.14: 단일 오디오 채널 경유(직접 speak 금지 — L19)
 import type { LocalState } from '../lib/store'
@@ -46,6 +46,9 @@ export function ReviewMine(props: {
   const [all, setAll] = useState<Card[] | null>(null)
   // 층별 총 보유량 [_,1~5층] — 화면의 "N장" 표시 전용
   const [boxTotals, setBoxTotals] = useState<number[]>([0, 0, 0, 0, 0, 0])
+  // ★v1.4.43 (C4)★ 조회 실패 상태 — '카드 없음'과 절대 같은 화면을 쓰지 않는다.
+  const [loadError, setLoadError] = useState(false)
+  const [reloadTick, setReloadTick] = useState(0)
   const [phase, setPhase] = useState<'entrance' | 'mining'>('entrance')
   const [i, setI] = useState(0)
   const [flipped, setFlipped] = useState(false)
@@ -56,6 +59,8 @@ export function ReviewMine(props: {
   const [floatXp, setFloatXp] = useState<string | null>(null)
   const shownAt = useRef(0)
   const finishedRef = useRef(false)
+  const gradingRef = useRef(-1)   // ★v1.4.43★ 이번 카드(index)를 이미 채점했는가 — 더블탭 방어
+  const reqRef = useRef(0)        // ★v1.4.43★ 최신 조회 요청 번호 (재시도 경합 방어)
   // ★v1.4.40★ 뒷면을 볼 시간도 없는 채점을 막는 게이트 (review.ts MIN_REVEAL_MS)
   const [canGrade, setCanGrade] = useState(false)
   // ★v1.4.40★ '알아!'와 '헷갈려'의 좌우를 카드마다 섞는다 — 위치를 외워 연타하는 것을 막는다.
@@ -68,20 +73,28 @@ export function ReviewMine(props: {
   //   "뱃지 40 / 광산 0"이 됐다(2026-08-14 사고). 층별 보유량은 따로 가볍게 센다.
   useEffect(() => {
     if (phase !== 'entrance') return
+    reqRef.current = reloadTick
     const lid = props.state.learnerId
     if (!lid) { setAll([]); setBoxTotals([0, 0, 0, 0, 0, 0]); return }
     // ★v1.4.38★ `db.select`가 아니라 `db.selectAll`. 서버(Supabase Data API)는 `Max rows`가 1,000이라
     //   쿼리에 limit=2000/20000을 적어도 **1,000행에서 조용히 자른다.**
     //   예한이 카드는 이미 687장이다 — 1,000장을 넘는 순간 v1.4.29의 절단 사고가 그대로 재현된다
     //   ("뱃지엔 40인데 광산은 0"). 그때는 창(window)이 문제였고, 이번엔 서버 상한이다. 원인만 다르고 증상은 같다.
+    // ★v1.4.43 (C4)★ 조회 실패를 빈 목록으로 삼키지 않는다.
+    //   예전엔 `.catch(() => setAll([]))` 였고, 그 결과 오프라인에서 화면이
+    //   「오늘 캘 카드가 없어. 내일 다시 와봐 🌙」라고 말했다 — 실제로는 오늘 만기 96장·기한 지남 62장이었다.
+    //   BadgeLoadout.tsx가 이미 적어 둔 원칙 그대로: **조용한 폴백은 조용한 유실과 같다.**
+    setLoadError(false)
+    // ★v1.4.43★ '다시 시도'를 연타하면 늦게 온 옛 응답이 새 결과를 덮을 수 있다 — 최신 요청만 반영한다.
+    const myTick = reloadTick
     db.selectAll('review_cards', dueCardsQuery(lid))
-      .then(r => setAll(r.rows as unknown as Card[]))
-      .catch(() => setAll([]))
+      .then(r => { if (myTick !== reqRef.current) return; setAll(r.rows as unknown as Card[]); setLoadError(false) })
+      .catch(() => { if (myTick !== reqRef.current) return; setAll(null); setLoadError(true) })
     // 층별 총 보유량 — 표시 전용이라 실패해도 채굴은 막지 않는다(0으로 남을 뿐).
     db.selectAll('review_cards', boxTotalsQuery(lid))
       .then(r => setBoxTotals(tallyBoxes(r.rows as unknown as { box: number }[])))
       .catch(() => { /* 표시 전용 */ })
-  }, [phase, props.state.learnerId])
+  }, [phase, props.state.learnerId, reloadTick])
 
   // v1.4.14: 복습 광산을 나갈 때 플래시카드 음성이 남아 다음 화면 소리와 겹치지 않도록 정지
   useEffect(() => () => stopAudio(), [])
@@ -100,6 +113,18 @@ export function ReviewMine(props: {
     return acc
   }, [boxTotals, dueCards])
 
+  // ★v1.4.43 (N2)★ 카드가 화면에 뜨는 순간 앞면 음성을 한 번 자동 재생한다(뒤집기 전).
+  //   W:CMD/W:ECHO 카드는 앞면 한국어가 범용 문구라, 소리 없이는 문제 자체가 존재하지 않는다.
+  useEffect(() => {
+    if (phase !== 'mining' || flipped) return
+    const card = dueCards[i]
+    const tts = card ? props.backsMap[card.card_id]?.tts : null
+    if (tts) speakText(tts)
+    // flipped 제외: 가드(위)가 이미 뒤집힌 상태를 걸러낸다. 뒤집을 때 다시 트는 호출은
+    //   v1.4.43에서 제거했다 — 앞면 자동재생을 아이가 듣는 도중에 끊고 처음부터 되감기 때문.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, i])
+
   // 뒤집은 뒤 MIN_REVEAL_MS 가 지나야 채점 버튼이 열린다. 카드가 바뀌면 다시 닫힌다.
   useEffect(() => {
     if (!flipped) { setCanGrade(false); return }
@@ -112,6 +137,21 @@ export function ReviewMine(props: {
   const todayCorrect = props.state.reviewDay?.date === today ? props.state.reviewDay.correct : 0
   const toCombo = XP.reviewComboEvery - (todayCorrect % XP.reviewComboEvery)
 
+  // ★v1.4.43 (C4)★ 조회 실패 화면 — 원인을 말하고 다시 시도할 수단을 준다.
+  if (loadError) {
+    return (
+      <div className="reviewmine">
+        <div className="mine-head"><h2>복습 광산 ⛏️</h2></div>
+        <div className="center-box mine-loaderr">
+          <p>📡 광산이랑 연결이 안 됐어. <b>오늘 캘 카드가 없는 게 아니라, 아직 못 불러온 거야.</b></p>
+          <p className="tap-hint">와이파이나 데이터가 켜져 있는지 보고 다시 눌러줘!</p>
+          <button className="btn primary wide" onClick={() => { setLoadError(false); setAll(null); setReloadTick(t => t + 1) }}>
+            다시 시도 🔄
+          </button>
+        </div>
+      </div>
+    )
+  }
   if (all === null) return <div className="center-box"><p className="loading-msg">⛏️ 광산 탐색 중…</p></div>
 
   // ── 광산 입구 (5층 현황) ──
@@ -199,6 +239,10 @@ export function ReviewMine(props: {
   const back = meta?.back || c.card_back || '(뒷면 정보 없음 — 모듈에서 다시 배워보자!)'
 
   function grade(correct: boolean) {
+    // ★v1.4.43★ 더블탭 방어. C6 이후 addGradedToday()가 상한의 분모라, 한 번 누른 것이 두 번 세지면
+    //   아이가 30장만 봤는데 60장을 쓴 것이 된다. answer_events 중복 기록도 함께 막는다(무삭제 테이블).
+    if (gradingRef.current === i) return
+    gradingRef.current = i
     const { box, due_date } = nextDue(c.box, correct)
     enqueue({
       kind: 'update', table: 'review_cards', query: `id=eq.${c.id}`,
@@ -210,6 +254,9 @@ export function ReviewMine(props: {
       question_text: c.card_front, given_answer: correct ? '알아! 😎' : '헷갈려 🤔', correct_answer: back,
       is_correct: correct, response_ms: shownAt.current ? Date.now() - shownAt.current : undefined,
     })
+    // ★v1.4.43 (C6)★ 상한의 분모는 정·오답 **양쪽**을 센다. 여기가 빠지면 오답이 상한을 소모하지 않아
+    //   「헷갈려」를 누를수록 오늘 몫이 늘어나던 그 구조가 그대로 돌아온다.
+    addGradedToday()
     if (correct) {
       addReviewDone(c.card_id)  // v1.4.4: 오늘 맞힌 카드 = 재채굴 차단
       const bumped = bumpReviewCorrect(props.state, XP.reviewComboEvery)
@@ -235,6 +282,7 @@ export function ReviewMine(props: {
     setTimeout(() => setEvoToast(null), 1700)
     setFlipped(false)
     setI(i + 1)
+    gradingRef.current = -1      // 다음 카드는 다시 채점 가능
     shownAt.current = Date.now() // 다음 카드 응답시간 기준점
   }
 
@@ -245,9 +293,26 @@ export function ReviewMine(props: {
         <EvoChip box={c.box} respawn={c.card_id.startsWith('W:')} />
       </p>
       <p className="combo-meter">🔥 콤보까지 {toCombo}장 <em>(오늘 {todayCorrect}장 채굴)</em></p>
-      <button className={`flashcard ${flipped ? 'flipped' : ''}`} onClick={() => { setFlipped(true); if (meta?.tts) speakText(meta.tts!) }}>
+      <button className={`flashcard ${flipped ? 'flipped' : ''}`} onClick={() => setFlipped(true)}>
         {!flipped ? (
-          <><p className="flash-front">{c.card_front}</p><p className="tap-hint">카드를 탭해서 뒤집기 👆</p></>
+          <>
+            <p className="flash-front">{c.card_front}</p>
+            {/* ★v1.4.43 (N2)★ 소리를 뒤집기 **전에** 들려준다.
+                예전엔 speakText가 뒤집기 핸들러 안에만 있어서, 지령·에코 카드처럼
+                앞면이 「본부에서 긴급 지령! 잘 들어봐」 같은 범용 문구인 카드는
+                무엇을 떠올려야 할지 알 수 없었다(같은 앞면 4장의 답이 각각 달랐다).
+                인출 연습은 문제를 만난 뒤에야 성립한다. */}
+            {meta?.tts && (
+              <span
+                role="button" tabIndex={0} className="flash-listen"
+                onClick={(e: { stopPropagation: () => void }) => { e.stopPropagation(); speakText(meta.tts!) }}
+                onKeyDown={(e: { key: string; stopPropagation: () => void }) => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); speakText(meta.tts!) }
+                }}
+              >🔊 다시 듣기</span>
+            )}
+            <p className="tap-hint">카드를 탭해서 뒤집기 👆</p>
+          </>
         ) : (
           <p className="flash-back">{back}</p>
         )}

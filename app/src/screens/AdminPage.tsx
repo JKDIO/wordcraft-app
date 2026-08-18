@@ -110,12 +110,22 @@ export const PROGRESS_LIMIT = 5000
  *  기존 기록(activity_type 'forge'/'forge_discover', module_id 'FORGE')은 그대로 보존한다(L17). */
 /** v1.4.23 — 확장 월드(6~9)는 **제작이 끝났고 배포도 됐다.** 다만 Dio님 승인 전까지 아이 화면에 뜨지 않는다.
  *  여는 방법: 서버 `version.json`의 `worlds_ready`를 true로 (앱 재배포 불필요). */
-const FUTURE_WORLDS: { world: number; emoji: string; name: string; desc: string }[] = [
-  { world: 7, emoji: '📖', name: '독해 던전', desc: '청킹 읽기 · 후치수식 · 대명사 추적 · 담화 표지 · 요지 · 순서 배열 (6단원)' },
-  { world: 8, emoji: '🔨', name: '어휘 대장간', desc: '접두사 · 접미사 · 라틴/그리스 어근 · 구동사 파티클 (6단원)' },
-  { world: 9, emoji: '💬', name: '회화 아레나', desc: '덩어리 표현 · 강세 리듬 · 연음 · 4/3/2 타임어택 · 역할극 (6단원)' },
-  { world: 10, emoji: '✍️', name: '서술 마스터리', desc: '문장 결합 · 문단 구조 · 모방 개조 · 조건 영작 (6단원)' },
-]
+/** ★v1.4.43 (C2)★ 번호·이름은 `EXT_WORLDS`(단일 원천)에서 파생한다 — 여기 하드코딩 금지.
+ *  v1.4.42 재정렬(7~10 → 6~9) 때 이 상수만 옛 번호로 남아, 같은 화면 안에서
+ *  「월드 7 독해 던전」(이 패널)과 「월드 7 어휘 대장간」(월드 지도)이 공존했고
+ *  「월드 10」은 존재하지 않는 번호를 조회해 진도가 영원히 '미시작'이었다.
+ *  desc(단원 요약)만 모듈 접두사 키로 유지한다 — 콘텐츠에 없는 관제실 전용 문구라서다. */
+const FUTURE_WORLD_DESC: Record<string, string> = {
+  P: '청킹 읽기 · 후치수식 · 대명사 추적 · 담화 표지 · 요지 · 순서 배열 (6단원)',
+  W: '접두사 · 접미사 · 라틴/그리스 어근 · 구동사 파티클 (6단원)',
+  S: '덩어리 표현 · 강세 리듬 · 연음 · 4/3/2 타임어택 · 역할극 (6단원)',
+  G: '문장 결합 · 문단 구조 · 모방 개조 · 조건 영작 (6단원)',
+}
+const FUTURE_WORLDS: { world: number; emoji: string; name: string; desc: string }[] =
+  EXT_WORLDS.map(w => ({
+    world: w.world, emoji: w.emoji, name: w.name_ko,
+    desc: FUTURE_WORLD_DESC[(w.modules[0] || '')[0]] || `${w.modules.length}단원`,
+  }))
 
 /** 앱 실제 XP 규칙(StepRunner·ReviewMine emit)과 동일 산식 (CONTRACT §2)
  *  복습 10 XP는 v1.2.0부터 — 그 전엔 복습 answer_events 자체가 없었으므로 소급 불일치 없음 */

@@ -40,6 +40,11 @@ export const DUE_CARD_COLS = 'id,card_id,card_front,card_back,box,due_date,revie
    ═══════════════════════════════════════════════════════════════════════ */
 /** 하루에 캘 수 있는 카드 상한 (Dio님 결정 2026-08-16). 60장 ≈ 정직한 속도로 7~8분. */
 export const DAILY_MINE_CAP = 60
+/** ★v1.4.43★ 상한을 다 쓴 뒤에도 **모험에서 새로 틀린 카드**는 오늘 만나야 한다 — 그 별도 몫.
+ *  독립 감사가 잡은 회귀: 상한을 채운 오후에 모험에서 5문제를 틀리면, 그 5장이 오늘 안 나오고
+ *  화면은 "내일 리젠돼"라고 말했다. 「틀린 건 그날 다시 만난다」는 약속이 또 조용히 깨진 것이다.
+ *  그렇다고 무제한으로 두면 v1.4.40-b의 역인센티브가 돌아오므로 **하루 총량을 못 박는다.** */
+export const DAILY_RESPAWN_EXTRA = 15
 /** 카드를 뒤집은 뒤 채점 버튼이 열리기까지의 최소 시간(ms). 뒷면을 볼 시간도 없는 채점을 막는다. */
 export const MIN_REVEAL_MS = 900
 
@@ -88,6 +93,26 @@ export function addReviewDone(cardId: string): void {
   } catch { /* 저장 실패해도 학습은 계속된다 */ }
 }
 
+// ── 오늘 채점한 횟수 (★v1.4.43 — C6★) ────────────────────────
+// reviewDone(위)은 '오늘 맞힌 카드'만 세서 재채굴을 막는다. 상한의 분모로 그것을 쓰면
+// **오답은 상한을 소모하지 않아** 「헷갈려」를 누를수록 오늘 몫이 늘어난다 —
+// 2026-08-17 실사용에서 「헷갈려」 23회가 오늘 몫을 60→106회로 늘렸다(정직 처벌, 헌법 §3-3 위반).
+// 그래서 상한의 분모는 정오답 구분 없는 **채점 이벤트 수**로 따로 센다.
+export const REVIEW_GRADED_KEY = 'wordcraft_review_graded_v1'
+
+export function gradedToday(): number {
+  try {
+    const d = JSON.parse(localStorage.getItem(REVIEW_GRADED_KEY) || 'null') as { date: string; n: number } | null
+    return d && d.date === todayStr() ? Math.max(0, Number(d.n) || 0) : 0
+  } catch { return 0 }
+}
+
+export function addGradedToday(): void {
+  try {
+    localStorage.setItem(REVIEW_GRADED_KEY, JSON.stringify({ date: todayStr(), n: gradedToday() + 1 }))
+  } catch { /* 저장 실패해도 학습은 계속된다 */ }
+}
+
 /** 실제로 지금 캘 수 있는 카드 = 서버가 준 due 목록 − 오늘 이미 맞힌 카드.
  *  ★뱃지 숫자와 광산 숫자는 반드시 이 함수 하나를 통과한 결과여야 한다.★ */
 export function minableCards<T extends { card_id: string; due_date?: string }>(
@@ -112,21 +137,29 @@ export function todaysMine<T extends { card_id: string; due_date?: string; box?:
   // ★상한은 "한 번에 몇 장"이 아니라 "오늘 하루에 몇 장"이다★
   //   이미 캔 만큼을 빼지 않으면, 60장을 끝내고 입구로 돌아왔을 때 남은 카드가 다시 오늘 몫이 되어
   //   상한이 아무 일도 하지 않는다.
-  const budget = Math.max(0, cap - getReviewDone().size)
+  /* ★v1.4.43 (C6) — 상한의 분모는 '오늘 채점 이벤트 수'다★
+     v1.4.40-b는 오답 리스폰을 상한 **밖**에 두고 budget도 소모시키지 않았다.
+     2026-08-17 실사용(세션 262): 상한 60인데 서로 다른 카드 83장·총 106회가 나갔고,
+     초과분 23 = 「헷갈려」를 누른 횟수 23과 정확히 같았다. **정직하게 모른다고 할수록 오늘 할 일이 늘었다.**
+     헌법 §3-3("오답 = 리스폰, 절대 처벌 아님") 정면 위반이라 설계를 바꾼다.
+     이제 리스폰도 상한 **안**에 들어오되 **맨 앞자리**를 차지한다 —
+     「틀린 건 오늘 꼭 다시 만나」는 지켜지고, 총량은 60을 넘지 않는다. */
+  const graded = gradedToday()
+  const budget = Math.max(0, cap - graded)
+  const isRespawn = (c: T) => (c.box ?? 1) === 1 && c.last_result === false
   const sorted = minableCards(rows, today).slice().sort((a, b) =>
-    (a.box ?? 1) - (b.box ?? 1)
+    (isRespawn(a) ? 0 : 1) - (isRespawn(b) ? 0 : 1)
+    || (a.box ?? 1) - (b.box ?? 1)
     || String(a.due_date ?? '').localeCompare(String(b.due_date ?? ''))
     || (a.id ?? 0) - (b.id ?? 0))
-  /* ★v1.4.40-b — 리스폰 카드는 상한을 넘는다★
-     독립 감사 지적: 상한이 소진되면 **방금 모험에서 틀린 카드조차 오늘 만날 수 없었다.**
-     "틀린 모든 문제는 그날 복습으로 리스폰한다"는 이 앱의 약속이 상한 도입으로 조용히 깨졌다.
-     구분 기준: 박스1 + `last_result === false` = 실제로 틀려서 내려온 카드(새로 시드된 카드는 last_result가 null).
-     상한의 목적은 '연타로 XP 파밍'을 막는 것이지 '틀린 문제를 숨기는 것'이 아니다. */
-  const isRespawn = (c: T) => (c.box ?? 1) === 1 && c.last_result === false
-  const respawn = sorted.filter(isRespawn)
-  const rest = sorted.filter(c => !isRespawn(c)).slice(0, budget)
-  const seen = new Set(respawn.map(c => c.card_id))
-  return [...respawn, ...rest.filter(c => !seen.has(c.card_id))]
+  if (budget > 0) return sorted.slice(0, budget)
+  /* ★상한 소진 뒤의 유일한 예외 — 오늘 틀린 카드★ (독립 감사 2026-08-17이 잡은 회귀 봉합)
+     `slice(0, 0)`은 리스폰이든 뭐든 전부 잘라낸다. 그러면 오후 모험에서 틀린 카드를
+     오늘 다시 만날 수 없고, 화면은 "내일 리젠돼"라는 **거짓말**을 한다.
+     그래서 상한 밖 별도 몫을 두되, 그 몫도 하루 총량(cap + EXTRA)으로 못 박는다 —
+     이미 쓴 초과분을 빼기 때문에 「헷갈려」를 눌러 되돌아와도 몫이 다시 늘지 않는다. */
+  const extraLeft = Math.max(0, DAILY_RESPAWN_EXTRA - (graded - cap))
+  return extraLeft > 0 ? sorted.filter(isRespawn).slice(0, extraLeft) : []
 }
 
 /** 오늘 이미 캔(맞힌) 카드 수 — 상한 소진량. 화면 문구·검사에서 함께 쓴다. */

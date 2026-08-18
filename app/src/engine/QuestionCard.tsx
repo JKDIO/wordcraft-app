@@ -24,10 +24,15 @@ const GRADE_DELAY_MS = 250
 export function QuestionCard(props: {
   item: ChoiceItem
   listen?: boolean
+  /** ★v1.4.43 (N1)★ 이번 정답으로 실제 붙는 XP. 생략하면 기존대로 10.
+   *  소리 훈련소에서 같은 날 같은 문항을 다시 맞히면 0이 들어온다 —
+   *  그때 화면이 "+10 XP"라고 말하면 그것 자체가 거짓말이 된다. */
+  xpForCorrect?: number
   onAnswer: (r: AnswerResult) => void
   onNext: () => void
 }) {
   const { item, listen } = props
+  const xpGain = props.xpForCorrect ?? 10
   const [picked, setPicked] = useState<number | null>(null)
   const [graded, setGraded] = useState(false)
   const [retried, setRetried] = useState(false)
@@ -137,7 +142,9 @@ export function QuestionCard(props: {
           <div className={`feedback ${correct ? 'ok' : 'no'}`}>
             <p className="feedback-meme">
               {correct
-                ? `✔ ${meme.ok}${meme.ok.includes('+10 XP') ? '' : ' +10 XP'}`
+                ? (xpGain > 0
+                  ? `✔ ${meme.ok}${meme.ok.includes('+10 XP') ? '' : ` +${xpGain} XP`}`
+                  : `✔ ${meme.ok.replace('+10 XP 획득!', '정확해!')} · 오늘 이미 캔 지령이라 XP는 없어 🔁`)
                 : `⛏️ ${meme.no}`}
             </p>
             <p className="feedback-explain">{item.explain_ko}</p>

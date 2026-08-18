@@ -2069,3 +2069,22 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
   color: #9fb0c3;
   text-align: center;
 }
+/* v1.4.43 — C4 복습 조회 실패 화면 · C4 뱃지 캐시 안내 · N2 앞면 듣기 버튼 · N1 반복 라운드 안내 */
+.mine-loaderr { gap: 10px; }
+.mine-loaderr p { margin: 0 0 4px; line-height: 1.5; }
+.wc-dex-stale {
+  margin: -2px 0 10px; padding: 8px 10px; border-radius: 10px;
+  background: rgba(74, 158, 255, .10); border: 1px solid rgba(74, 158, 255, .28);
+  font-size: 13px; line-height: 1.5; color: #cfe4ff;
+}
+.flash-listen {
+  display: inline-block; margin-top: 12px; padding: 10px 16px; min-height: 44px; line-height: 24px;
+  border-radius: 999px; background: rgba(74, 158, 255, .16); border: 1px solid rgba(74, 158, 255, .40);
+  color: #cfe4ff; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.flash-listen:active { background: rgba(74, 158, 255, .28); }
+.arcade-note {
+  margin: 6px 0 2px; padding: 9px 11px; border-radius: 10px;
+  background: rgba(255, 208, 80, .10); border: 1px solid rgba(255, 208, 80, .30);
+  font-size: 13.5px; line-height: 1.55; color: #ffe6a8;
+}

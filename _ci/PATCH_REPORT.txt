@@ -1,18 +1,22 @@
-# src-patch report 2026-08-16T07:36:25Z
-trigger_commit=3f8540b108d8dda98446f70ff70754dfc0abfa0a
+# src-patch report 2026-08-18T11:41:51Z
+trigger_commit=c88da83af76688a4dce20a51f393a4964b920206
 
 ## 적용한 파일 (blob SHA 대조 통과)
-# v1.4.42 (4a/5)
-e4329110720736dcebc741d15b8c726c8b213719  app/src/engine/SummonExercise.tsx
-942e060c7d91a6c598dcd5b9fbdfd9f6b3dabf61  app/src/lib/adminMetrics.ts
-d11d731555f35ad92e5e91bd65adccf895d6c517  app/src/screens/Profile.tsx
-48beec34a41283fab5dd4362b814cae705ff60df  app/src/screens/WorldMap.tsx
-92b9b1b6abd968fe1eca6185901c5879fa5d1801  app/verify.sh
+7339f9b66378e1703b68f543820bcacf6144d1c3 app/public/css.d/41-v1443-integrity.css
+982a60d3d56b4557414575c1bd3997f1a8b43b5f app/src/engine/QuestionCard.tsx
+fc423d864a6a7e8e661a8ffb014713511e80e3bf app/src/lib/review.ts
+182633a5eb27342fead8a3bbd9cee0cfbcb33041 app/src/lib/version.ts
+ab2bae303b5648e393dc3feef481fa57888848da app/src/screens/AdminPage.tsx
+38613fcd79eef0082c27d15b2b226339fad23df8 app/src/screens/ListenArcade.tsx
+609d2fab0ecd19791cbffe54c8585e73aa3e705b app/src/screens/Profile.tsx
+88b2e676b6228c26c234dc49e418142f9d2dc93a app/src/screens/ReviewMine.tsx
+69d69fc52576acf440f466ba64ed504f2420d251 app/src/screens/RewardBoard.tsx
+d890fc1ebcea94ab6eb632147a735c25a198b9ee version.json
 
--rw-r--r-- 1 runner runner 131274 Aug 16 07:36 app.css
--rw-r--r-- 1 runner runner 497007 Aug 16 07:36 main.js
+-rw-r--r-- 1 runner runner 132277 Aug 18 11:41 app.css
+-rw-r--r-- 1 runner runner 499796 Aug 18 11:41 main.js
 
-3c9e62d177c848a2b58d6d38ebca5cac982c8cf2d08e3786926a77ca6f709aab  main.js
-2c9957aa714e54eb8c2dc6287eee656b562a3b742820a2a27595abc85743ee77  app.css
+e5291f9fe186b6d649771ff3c66f0ad90e1226a5d7ad72f778d6116c935f4b3a  main.js
+51afdb172f5bdda7e43ad1a20bf5394b123229b146e2e1857586bd830000c49b  app.css
 
-main.js gzip bytes: 159627
+main.js gzip bytes: 160704

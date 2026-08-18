@@ -1,6 +1,6 @@
 // 앱 버전 + 원격 업데이트 체크 — 서버 /version.json과 비교
 // 배포 시 반드시 APP_VERSION과 dist/version.json의 version을 함께 올릴 것 (RELEASE_LOG 규칙)
-export const APP_VERSION = '1.4.42'
+export const APP_VERSION = '1.4.43'
 
 export interface VersionInfo {
   version: string; date?: string; notes?: string

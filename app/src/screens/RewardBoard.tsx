@@ -175,7 +175,9 @@ export function RewardBoard(props: {
                       background: st.granted ? '#1b4a30' : st.reached ? '#5a3f06' : isNext ? '#123049' : '#1a2434',
                       color: st.granted ? '#8ff0b8' : st.reached ? '#ffd050' : isNext ? '#8fc6ff' : '#8fa2b8',
                     }}>
-                      {st.granted ? '🏆 받았다!' : st.reached ? '🎉 달성' : isNext ? `-${st.remaining.toLocaleString()}` : `-${st.remaining.toLocaleString()}`}
+                      {/* ★v1.4.43 (C3)★ 아이 화면 마이너스 금지(U-3). 삼항 양쪽이 같은 음수 표기였다 —
+                          같은 화면 히어로("5,431 XP 남았다!")·푸터("XP는 줄어들지 않아")와 어긋나던 세 번째 표현. */}
+                      {st.granted ? '🏆 받았다!' : st.reached ? '🎉 달성' : `${st.remaining.toLocaleString()} 남음`}
                     </span>
                   </div>
                   {!st.reached && (
