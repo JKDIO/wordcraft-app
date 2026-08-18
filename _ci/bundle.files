@@ -1,0 +1,14 @@
+# v1.4.46 tooling bundle - git hash-object per path
+059a3fec7d1892d1ff4f284741e5b67a9c5864a0  app/summon_harness_make.mjs
+cc42bff4d56fca9d9a5505b8b22fbaa73fd25e78  app/measure20.mjs
+623888d93a21b094b8cd8406aec247bb288a643f  app/summon_check.mjs
+586a2ffca90a6ab3fc566e69711cf0796596077c  app/summon_smoke.mjs
+7b06cbe3f0a5f93ed18cbc4224b529c45bf37a56  app/w710_check.mjs
+a7abc7e12e2be50fd021c6f676dfb6d467470326  app/shuffle_check.mjs
+64338a1106cfbedaac5de527032644eb0eb0bdf3  app/device_check.mjs
+f11d42b07c32b1676465a9497e88dc65b4b9b889  app/inject_test.mjs
+e3a2026c9ba3e1e1bc2cebcf980d99e8ad1edec4  app/isolated_render.mjs
+26ba0168633cfc2301d19ff53a32d406ee40855f  app/verify.sh
+0161604ff78e1f122fcda369f32db0058908596b  app/admin_check.mjs
+a5eea5a251bfe1da81a79b8a3263a5f1961c1536  app/review_check.mjs
+a7b1ecbd219ac0f743772ae9cbc4aea7597ab49f  .gitignore
