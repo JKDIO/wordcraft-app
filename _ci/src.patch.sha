@@ -1,2 +1,10 @@
-# v1.4.42 (5/5) 재시도
-0c5d37e141625ba59af1d4762050676250335624  app/badge_check.mjs
+7339f9b66378e1703b68f543820bcacf6144d1c3 app/public/css.d/41-v1443-integrity.css
+982a60d3d56b4557414575c1bd3997f1a8b43b5f app/src/engine/QuestionCard.tsx
+fc423d864a6a7e8e661a8ffb014713511e80e3bf app/src/lib/review.ts
+182633a5eb27342fead8a3bbd9cee0cfbcb33041 app/src/lib/version.ts
+ab2bae303b5648e393dc3feef481fa57888848da app/src/screens/AdminPage.tsx
+38613fcd79eef0082c27d15b2b226339fad23df8 app/src/screens/ListenArcade.tsx
+609d2fab0ecd19791cbffe54c8585e73aa3e705b app/src/screens/Profile.tsx
+88b2e676b6228c26c234dc49e418142f9d2dc93a app/src/screens/ReviewMine.tsx
+69d69fc52576acf440f466ba64ed504f2420d251 app/src/screens/RewardBoard.tsx
+d890fc1ebcea94ab6eb632147a735c25a198b9ee version.json
