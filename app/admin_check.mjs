@@ -466,6 +466,12 @@ console.log('── ⑭-b ★v1.4.43 신규 봉인 (C2 · C4 · N1 · N2)★ ─
 
   // N2 — 앞면에서 소리를 들을 수 있어야 인출 연습이 성립한다.
   ok(/flash-listen/.test(rm), '★복습 카드 앞면에 다시 듣기 버튼이 있다 (N2)')
+  // ★v1.4.45 (N2 봉합의 봉합 · 2026-08-18 격리 실기 검증)★ 렌더러만 고치면 소용없다 —
+  //   `W:CMD:*`/`W:ECHO:*` 카드는 모듈 콘텐츠가 아니라 listening 에서 나오므로,
+  //   backsMap 을 모듈에서만 채우면 **정작 그 17장에만 음성이 안 붙는다.** 공급 쪽을 잠근다.
+  const appx = src('src/App.tsx')
+  ok(/loadListening\(\)/.test(appx) && /W:CMD:\$\{/.test(appx) && /W:ECHO:\$\{/.test(appx),
+    '★backsMap이 지령·에코 카드(W:CMD/W:ECHO)의 음성을 실제로 공급한다 (N2 — 렌더러가 아니라 데이터)')
   // ★v1.4.43-b (AUDIT 지적)★ 실제 하루 최대는 cap + RESPAWN_EXTRA 다. 화면이 "60장까지만"이라고
   //   말하면 그것이 곧 거짓말이 된다 — 문구가 추가 몫을 함께 말하는지 잠근다.
   ok(!/{DAILY_MINE_CAP}장<\/b>까지만/.test(rm),

@@ -23,7 +23,7 @@ import {
 } from './lib/store'
 import { XP } from './lib/xp'
 import { db, consumeAuthRedirect, getAuthUser, myDeviceLearner, ensureAnonSession, bindLegacyDevice, authKind, type Learner } from './lib/supabase'
-import { DIAG_ORDER, moduleOrder, loadModule } from './lib/content'
+import { DIAG_ORDER, moduleOrder, loadModule, loadListening } from './lib/content'
 import { computeEarnedBadges } from './lib/badges'
 import { reviewCardsFor, type VocabQuestion } from './lib/vocab'
 import { todayStr, kstTomorrowStr } from './lib/leitner'
@@ -278,6 +278,31 @@ export default function App() {
       }).catch(() => {})
     })
   }, [worldsReady])
+
+  /* ★v1.4.45 (N2 봉합의 봉합) — 2026-08-18 격리 실기 검증에서 잡혔다★
+     지령·에코 오답 카드(`W:CMD:*` / `W:ECHO:*`)는 **모듈 콘텐츠가 아니라 `listening`에서 나온다**
+     (`onModuleEvent`가 `W:${moduleId}:${question_id}` 로 시드한다).
+     그런데 위 effect는 `moduleOrder()`의 모듈 review_cards만 훑으므로, 그 카드들은 backsMap에
+     **항목이 아예 없다** → `meta?.tts`가 undefined → v1.4.43이 넣은 앞면 자동재생·🔊 버튼이
+     **정작 그 카드에만 안 걸렸다.** 앞면이 「본부에서 긴급 지령! 잘 들어봐」 같은 범용 문구인
+     바로 그 17장이다 — 소리가 없으면 문제 자체가 존재하지 않는다.
+     화면(렌더러)은 옳았고 **데이터 공급이 빠져 있었다**(L51 계열). 여기서 채운다. */
+  useEffect(() => {
+    loadListening().then(c => {
+      setBacksMap(prev => {
+        const nx = { ...prev }
+        for (const it of c.commands || []) {
+          nx[`W:CMD:${it.id}`] = { back: it.choices?.[it.answer_idx] ?? '', tts: it.tts || it.play || null }
+        }
+        for (const st of c.echo_sets || []) {
+          for (const it of st.items || []) {
+            nx[`W:ECHO:${it.id}`] = { back: it.choices?.[it.answer_idx] ?? '', tts: it.tts || it.play || null }
+          }
+        }
+        return nx
+      })
+    }).catch(() => { /* 리스닝 콘텐츠 실패 — 복습은 계속된다 */ })
+  }, [])
 
   // ── 이벤트 핸들러 ──
   function onModuleEvent(moduleId: string) {

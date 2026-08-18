@@ -1,17 +1,16 @@
-# src-patch report 2026-08-18T12:25:21Z
-trigger_commit=2fbaa9ade4b6462f7c0cacd51c1fd301aaaf8d2e
+# src-patch report 2026-08-18T12:55:00Z
+trigger_commit=2aff80e177035270b4f7be715f652371d780d84c
 
 ## 적용한 파일 (blob SHA 대조 통과)
-f269ced1241a84d559851ae2393b4c12512c4ee5 app/admin_check.mjs
-3ac25b005f8b02216cb09d58918897726e33cbcd app/review_check.mjs
-d704ef92ec4b6ea6b6f42740d2768b28007d8805 app/src/lib/version.ts
-3dfcab3e4d40bac63844ab845ea9f76609204e2f app/src/screens/ReviewMine.tsx
-ea66a45ef89c978fa9392ceb9280781b48b6277b version.json
+31b3dffb7dde3a5b7bde32c173d8741eaaede672 app/admin_check.mjs
+b8edd3bcd77fba6aa83dbb8a492dc843a20f3221 app/src/App.tsx
+f310b57e79f65e824763045b0aa07d665cf99d56 app/src/lib/version.ts
+2b5466ffacde929cb845516f611157b71d3ee0be version.json
 
--rw-r--r-- 1 runner runner 132277 Aug 18 12:25 app.css
--rw-r--r-- 1 runner runner 499926 Aug 18 12:25 main.js
+-rw-r--r-- 1 runner runner 132277 Aug 18 12:55 app.css
+-rw-r--r-- 1 runner runner 500245 Aug 18 12:55 main.js
 
-a6913e39e2d733bf92e4f1dfe8657f0a06d899607fa9002f8aedea462e800e28  main.js
+ef69aacc51acb23d943dd73d4feb2b3dd683af6adf1746021d991648810bfdfb  main.js
 51afdb172f5bdda7e43ad1a20bf5394b123229b146e2e1857586bd830000c49b  app.css
 
-main.js gzip bytes: 160755
+main.js gzip bytes: 160871
