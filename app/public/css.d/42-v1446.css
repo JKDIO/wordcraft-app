@@ -1,0 +1,48 @@
+/* v1.4.46 — C5 구경 모드 띄 · L61 저장 실패 안내 · A24 폰트 부스팅 방어 · 정보탭 자가진단 */
+
+/* ★안드로이드 WebView 폰트 부스팅 방어 (L8 미검증 3종 중 하나)★
+   WebView는 긴 텍스트 블록의 글자를 임의로 키운다(text autosizing). 그러면 아이 폰에서만
+   레이아웃이 밀리고, 격리 렌더(Chromium)에서는 절대 재현되지 않는다 — 그래서 여덟 릴리스 동안
+   "미검증"으로 남아 있었다. 표준 방어를 명시적으로 건다. 100%는 '지정한 크기를 그대로 쓰라'는 뜻이라
+   현재 레이아웃을 바꾸지 않는다(부스팅이 없던 기기에서는 무변화). 실제 발생 여부는
+   `selfCheck.measureFontBoost()`가 매일 재서 관문에 남긴다. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ── C5 구경 모드 띄 ────────────────────────────────
+   조용히 막지 않는다(L47): 막혔다는 사실 · 이유 · 푸는 방법을 한 화면에. */
+.wc-observer-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  padding: 10px 14px; margin: 0;
+  background: linear-gradient(180deg, rgba(255, 208, 80, .16), rgba(255, 208, 80, .09));
+  border-bottom: 1px solid rgba(255, 208, 80, .38);
+  color: #ffe6a8; font-size: 13.5px; line-height: 1.5;
+}
+.wc-observer-bar > b { font-size: 14px; white-space: nowrap; }
+.wc-observer-bar > span { flex: 1 1 220px; min-width: 0; }
+.wc-observer-bar b { color: #fff3cf; }
+.wc-observer-btn {
+  flex: none; min-height: 40px; padding: 9px 14px; border-radius: 999px;
+  background: rgba(255, 208, 80, .22); border: 1px solid rgba(255, 208, 80, .55);
+  color: #fff3cf; font-size: 13.5px; font-weight: 700; cursor: pointer;
+}
+.wc-observer-btn:active { background: rgba(255, 208, 80, .36); }
+
+/* ── L61 저장 실패 안내 (복습 광산 입구) ── */
+.mine-storagewarn {
+  margin: 6px 0 10px; padding: 9px 11px; border-radius: 10px;
+  background: rgba(124, 196, 255, .10); border: 1px solid rgba(124, 196, 255, .30);
+  font-size: 13px; line-height: 1.55; color: #cfe4ff;
+}
+
+/* ── 정보 탭 자가진단 카드 ── */
+.wc-selfcheck { margin: 12px 0 4px; padding: 12px 13px; border-radius: 12px;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .10); }
+.wc-selfcheck h4 { margin: 0 0 8px; font-size: 14px; color: var(--gold, #F4B740); }
+.wc-selfcheck dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0; font-size: 13px; }
+.wc-selfcheck dt { color: #9fb0c4; white-space: nowrap; }
+.wc-selfcheck dd { margin: 0; color: #e8eef6; word-break: break-all; }
+.wc-selfcheck .warn { color: #ffd050; }
+.wc-selfcheck .note { margin: 9px 0 0; font-size: 12.5px; line-height: 1.55; color: #9fb0c4; }
