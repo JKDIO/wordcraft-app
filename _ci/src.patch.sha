@@ -1,15 +1,3 @@
-# v1.4.46 3차 전송 — 1차: base85 156행 공백 1칸 / 2차: 마지막 개행 삭제
-a462a370c3f53f7f3a06dd04e9b0e41d671b415b  app/src/App.tsx
-b38027dc4c4cca1aba3e692ea01d702b8609ec48  app/src/engine/QuestionCard.tsx
-e1100653ed05c14ac890b9e633364f660308e600  app/src/lib/dailyLedger.ts
-3041c6a35503747a9705f1f3b89bfb5c62532bc0  app/src/lib/device.ts
-77c965c4b3c0952d0a3fa57f259a0a4e7b9ad38d  app/src/lib/review.ts
-89f1ab1015bd83e5f6653d6a2871fda706a7dd41  app/src/lib/selfCheck.ts
-5a95231d63350f72ae9f8d431ea590be662666d0  app/src/lib/shuffle.ts
-cc428b18d68b4851a34b85a281f46c3b4eab73b6  app/src/lib/store.ts
-562105aba5763aa244152cac452565ee973fca59  app/src/lib/tts.ts
-1064d1c420e0a723eb259f0e265d3fb2a91176d2  app/src/lib/version.ts
-01e2348f76e1df797c4c5b92cf0ad2b28094d0b0  app/src/screens/AppInfo.tsx
-b77d8ae4e73605972d972d88484ad90cd5b0ff2c  app/src/screens/ReviewMine.tsx
-eb589e60be2cf278ddf023272d70a6290a00be7a  app/public/css.d/42-v1446.css
-40843f35b3a1fa119e184b49098c99809184e015  version.json
+# v1.4.46-b (GPT 감사 봉합) — 1/2 라운드: .gitignore + device_check.mjs
+a7b1ecbd219ac0f743772ae9cbc4aea7597ab49f  .gitignore
+64338a1106cfbedaac5de527032644eb0eb0bdf3  app/device_check.mjs
