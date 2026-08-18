@@ -5,6 +5,8 @@ import { nextDue, todayStr } from '../lib/leitner'
 import {
   dueCardsQuery, boxTotalsQuery, tallyBoxes, layerOf, minableCards, todaysMine, addReviewDone,
   addGradedToday, gradeSwapped, DAILY_MINE_CAP, DAILY_RESPAWN_EXTRA, MIN_REVEAL_MS,
+  // ★v1.4.46 (L61)★ 하루 회계의 권위는 서버다. 입구에서 맞추고, 저장 실패는 화면에 밝힌다.
+  syncDailyLedger, setLedgerLearner, storageBroken,
 } from '../lib/review'
 import { speakText, stopAudio } from '../lib/audio' // v1.4.14: 단일 오디오 채널 경유(직접 speak 금지 — L19)
 import type { LocalState } from '../lib/store'
@@ -66,6 +68,8 @@ export function ReviewMine(props: {
   // ★v1.4.40★ '알아!'와 '헷갈려'의 좌우를 카드마다 섞는다 — 위치를 외워 연타하는 것을 막는다.
   //   실행마다 다른 씨앗 + 카드 index로 정해, 같은 카드를 보는 동안에는 절대 안 흔들린다.
   const shuffleSeed = useRef(Math.floor(Math.random() * 1e9))
+  // ★v1.4.46★ 서버 회계가 도착하면 오늘 몫을 다시 계산하기 위한 신호 (값 자체는 dailyLedger가 갖는다)
+  const [ledgerTick, setLedgerTick] = useState(0)
 
   // v1.4.4: 입구('entrance') 진입마다 재조회(learnerId 지연 도착에도) — 채굴 후 낡은 목록 재채굴 봉합
   // ★v1.4.29 (P0)★: 이제 **서버가 due를 걸러서** 준다. 예전엔 카드 전체를 limit=500으로 받아
@@ -85,6 +89,11 @@ export function ReviewMine(props: {
     //   「오늘 캘 카드가 없어. 내일 다시 와봐 🌙」라고 말했다 — 실제로는 오늘 만기 96장·기한 지남 62장이었다.
     //   BadgeLoadout.tsx가 이미 적어 둔 원칙 그대로: **조용한 폴백은 조용한 유실과 같다.**
     setLoadError(false)
+    /* ★v1.4.46 (L61)★ 입구에 들어올 때 **서버의 오늘 채점 수**를 먼저 맞춘다.
+       두 탭·기기 교체·기기 날짜 변경으로 로컬 카운터가 0으로 보여도, 여기서 권위값을 받아
+       `todaysMine`의 분모가 진짜 오늘 몫을 반영하게 한다. 실패해도 조용히 로컬로 계속한다. */
+    setLedgerLearner(lid)
+    void syncDailyLedger().then(() => setLedgerTick(t => t + 1))
     // ★v1.4.43★ '다시 시도'를 연타하면 늦게 온 옛 응답이 새 결과를 덮을 수 있다 — 최신 요청만 반영한다.
     const myTick = reloadTick
     db.selectAll('review_cards', dueCardsQuery(lid))
@@ -103,7 +112,7 @@ export function ReviewMine(props: {
   // 서버가 due를 걸러 줬으므로 여기선 '오늘 이미 맞힌 카드'만 뺀다 — 뱃지와 같은 함수를 쓴다.
   //   ★v1.4.40★ dueCards = **오늘의 몫**(상한 60장). 하단 네비 뱃지도 같은 `todaysMine`을 쓴다.
   //   waiting = 오늘 몫에 못 들어간 나머지. 사라지는 게 아니라 내일 다시 온다.
-  const dueCards = useMemo(() => todaysMine(all || [], today), [all])
+  const dueCards = useMemo(() => todaysMine(all || [], today), [all, ledgerTick])
   const allMinable = useMemo(() => minableCards(all || [], today), [all])
   const waiting = Math.max(0, allMinable.length - dueCards.length)
   // 층별(박스별) 총 보유량 + 오늘 몫에 들어간 수
@@ -172,6 +181,15 @@ export function ReviewMine(props: {
             ⛰️ 광맥에 <b>{waiting}장</b>이 더 묻혀 있어. 하루에 <b>{DAILY_MINE_CAP}장</b>까지 캐는 게 규칙이야 —
             한 번에 다 캐면 기억에 안 남거든. 틀린 카드는 오늘 꼭 다시 만나야 하니까 <b>최대 {DAILY_RESPAWN_EXTRA}장</b>까지 더 나올 수 있어 ⛏️
             나머지는 <b>내일 그대로</b> 기다리고 있어 😎
+          </p>
+        )}
+        {/* ★v1.4.46 (L61 규칙 4)★ 저장이 안 되는 기기라는 사실을 조용히 넘기지 않는다.
+            예전에는 `catch {}`로 삼켜서 카운터가 영원히 0이었고 상한이 매번 리셋됐다 —
+            화면은 아무 말도 안 했다. 지금은 서버가 대신 세지만, 그 사정을 아이에게도 알려 준다. */}
+        {storageBroken() && (
+          <p className="mine-storagewarn">
+            📦 이 기기에 기록을 저장하지 못하고 있어(브라우저 설정 때문일 수 있어).
+            <b> 오늘 몫 계산은 광산 본부(서버)가 대신 해 주고 있으니까</b> 그냥 하면 돼 — 다만 인터넷이 끊기면 숫자가 흔들릴 수 있어.
           </p>
         )}
         {LAYERS.map((L, idx) => {

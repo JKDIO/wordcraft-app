@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChoiceItem } from '../lib/content'
 import { playClip, stopAudio } from '../lib/audio'
+// ★v1.4.46 (C1)★ 선택지 섞기. 규칙은 lib/shuffle.ts 한 곳에만 있다(여기서 다시 짜지 않는다).
+import { choicePermutation, nextPresentationSeed } from '../lib/shuffle'
 
 // 시안 10 승인 밈 풀 원문 그대로 (D-1) — 문구 추가는 Critic 밈 감수 통과 후
 const CORRECT_MEMES = ['ㄹㅇ 실력자', 'GG', '미쳤다 진짜 ㄷㄷ', '이걸 맞히네?', '만렙 각', '나이스 채굴! ⛏️', '+10 XP 획득!']
@@ -50,6 +52,18 @@ export function QuestionCard(props: {
   const emittedRef = useRef(false)
   const timerRef = useRef<number | undefined>(undefined)
 
+  /* ★★v1.4.46 (C1) — 선택지를 그릴 때 섞는다★★
+     `order[화면자리] = 원본자리`. 문항이 바뀔 때만 다시 뽑으므로 한 문항을 푸는 동안(다시 도전 🔁 포함)
+     자리는 고정된다. 같은 문항을 다음에 또 만나면 등장 횟수가 올라 **다른 자리**가 나온다.
+     ※ `useState` 초기화 함수를 쓰면 안 된다 — 이 컴포넌트는 문항이 바뀌어도 언마운트되지 않는다
+       (아래 `useEffect(..., [item.id])`가 상태를 리셋하는 구조). 그러면 첫 문항의 순열이 끝까지 남는다. */
+  const order = useMemo(
+    () => choicePermutation(item.choices.length, nextPresentationSeed(item.id)),
+    [item.id, item.choices.length],
+  )
+  /** 화면에서의 정답 자리 (섞인 뒤) */
+  const shownAnswer = order.indexOf(item.answer_idx)
+
   // v1.3.0: audio_url 우선 재생(진짜 음성), 실패/부재 시 tts 폴백 — 기존 speak 호출을 playClip으로 일원화
   const hasSound = !!(item.audio_url || item.tts)
   function play(rate?: number) {
@@ -70,7 +84,8 @@ export function QuestionCard(props: {
   // v1.4.14: 문항 카드를 벗어날 때 소리도 함께 끈다(다음 화면 소리와 겹침 방지)
   useEffect(() => () => { clearTimeout(timerRef.current); stopAudio() }, [])
 
-  const correct = graded && picked === item.answer_idx
+  // picked/graded는 **화면 자리** 기준이다. 정답 판정도 화면 자리로 한다.
+  const correct = graded && picked === shownAnswer
 
   function pick(i: number) {
     if (picked !== null) return
@@ -80,7 +95,11 @@ export function QuestionCard(props: {
       if (!emittedRef.current) {
         // 기록은 첫 시도 1회만 — 재도전은 학습용 리셋이라 데이터 중복 없음
         emittedRef.current = true
-        props.onAnswer({ correct: i === item.answer_idx, givenIdx: i, ms: Date.now() - startRef.current })
+        /* ★v1.4.46 (C1)★ 밖으로 내보내는 `givenIdx`는 **원본 인덱스**다.
+           소비자 4곳(StepRunner·DiagnosticRun·ListenArcade·GhostBattle)이 전부
+           `item.choices[r.givenIdx]`로 문자열을 만든다 — 화면 자리를 그대로 주면
+           `answer_events.given_answer`에 **엉뚱한 보기 문자열**이 박힌다. */
+        props.onAnswer({ correct: i === shownAnswer, givenIdx: order[i], ms: Date.now() - startRef.current })
       }
     }, GRADE_DELAY_MS)
   }
@@ -120,16 +139,17 @@ export function QuestionCard(props: {
         </button>
       )}
       <div className="choices">
-        {item.choices.map((c, i) => {
+        {order.map((src, i) => {
+          const c = item.choices[src]
           let cls = 'choice-btn'
           let mark: string | null = null
           if (!graded && picked === i) { cls += ' selected'; mark = '◆' }
-          else if (graded && i === item.answer_idx) {
-            if (picked === item.answer_idx) { cls += ' correct'; mark = '✔' }
+          else if (graded && i === shownAnswer) {
+            if (picked === shownAnswer) { cls += ' correct'; mark = '✔' }
             else { cls += ' answer-reveal'; mark = '정답' } // B-6: 오답 시 정답은 dashed + "정답"
           } else if (graded && i === picked) { cls += ' wrong'; mark = '✕' }
           return (
-            <button key={i} className={cls} onClick={() => pick(i)} disabled={picked !== null}>
+            <button key={`${item.id}:${src}`} className={cls} onClick={() => pick(i)} disabled={picked !== null}>
               <span className="key">{String.fromCharCode(65 + i)}</span>
               {c}
               {mark && <span className="mark">{mark}</span>}

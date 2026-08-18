@@ -2101,7 +2101,7 @@ html {
   text-size-adjust: 100%;
 }
 
-/* ── C5 구경 모드 띠 ────────────────────────────────
+/* ── C5 구경 모드 띠 ─────────────────────────────────────────────
    조용히 막지 않는다(L47): 막혔다는 사실 · 이유 · 푸는 방법을 한 화면에. */
 .wc-observer-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;

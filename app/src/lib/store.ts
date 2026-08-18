@@ -11,6 +11,8 @@ import {
   excludedSessionIds, learnerEvents, ATTENDANCE_RULE,
   type MetricEvent, type MetricSession,
 } from './adminMetrics'
+// ★v1.4.46 (C5)★ 학습자 앱 서버 쓰기의 기기 관문. 규칙은 lib/device.ts 한 곳에만 있다.
+import { writesAllowed, noteBlockedWrite, isMobileUA } from './device'
 
 export interface ProgressEntry {
   module_id: string
@@ -197,6 +199,12 @@ export async function flushQueue() {
 }
 
 export function enqueue(item: QueueItem) {
+  /* ★★v1.4.46 (C5) — 학습자 앱의 서버 쓰기 관문★★
+     아빠 PC에서 학습자 화면을 열면 아이 계정에 썼다(desktop 세션 75건 · 그중 최근 30건이 문항 0개,
+     한 건은 duration 10시간 17분). 기기 역할이 '구경'이면 **큐에 넣지도 않는다** —
+     큐에 넣고 안 보내면 나중에 역할이 바뀔 때 한꺼번에 나가서 더 나쁘다.
+     조용히 버리지 않는다: 흔적을 세어 화면(구경 모드 띠)과 정보 탭이 사실대로 말한다(L47). */
+  if (!writesAllowed()) { noteBlockedWrite(); return }
   const q = loadQueue()
   /* ★v1.4.40★ `learners` 갱신은 **절대값**(xp·level·streak)을 싣는다 = 마지막 하나만 보내면 된다.
      그런데 문항마다 한 건씩 쌓여 큐 용량의 1/3을 완전한 중복으로 태우고 있었다.
@@ -406,10 +414,17 @@ function bindActivityListeners(): void {
 export async function startSession(s: LocalState): Promise<LocalState> {
   const start = Date.now()
   let sessionId: number | null = null
-  try {
-    const rows = await db.insert('sessions', { learner_id: s.learnerId, device: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop' })
-    sessionId = (rows[0] as { id?: number })?.id ?? null
-  } catch { /* 오프라인 — 세션 없이 진행, answer_events는 session_id null */ }
+  /* ★v1.4.46 (C5)★ 구경 모드(데스크탑 기본)에서는 세션 자체를 만들지 않는다.
+     이 INSERT 한 줄이 C5의 실제 오염원이었다 — 화면을 열기만 해도 아이 지표에 세션이 생겼다.
+     세션이 없으면 `tickSession`이 `_ownedSessionId` 없음으로 즉시 반환하므로 하트비트 UPDATE도 나가지 않는다. */
+  if (writesAllowed()) {
+    try {
+      const rows = await db.insert('sessions', { learner_id: s.learnerId, device: isMobileUA() ? 'mobile' : 'desktop' })
+      sessionId = (rows[0] as { id?: number })?.id ?? null
+    } catch { /* 오프라인 — 세션 없이 진행, answer_events는 session_id null */ }
+  } else {
+    noteBlockedWrite()
+  }
   _activeMs = 0
   _lastTick = start
   _ownedSessionId = sessionId

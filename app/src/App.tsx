@@ -28,7 +28,11 @@ import { computeEarnedBadges } from './lib/badges'
 import { reviewCardsFor, type VocabQuestion } from './lib/vocab'
 import { todayStr, kstTomorrowStr } from './lib/leitner'
 // v1.4.29: 하단 네비 뱃지와 복습 광산이 **같은 규칙**을 쓰도록 (숫자 불일치 사고 재발 방지)
-import { dueCardsQuery, todaysMine } from './lib/review'
+import { dueCardsQuery, todaysMine, setLedgerLearner, syncDailyLedger } from './lib/review'
+// ★v1.4.46 (C5)★ 기기 역할 — 이 기기에서 한 것을 아이 기록으로 쓸 것인가.
+import { deviceRole, setDeviceRole, blockedWrites, isMobileUA } from './lib/device'
+// ★v1.4.46★ A24 WebView 실기기 자가진단 — 사람에게 눈으로 확인시키는 대신 앱이 스스로 재서 보고한다.
+import { runSelfCheck } from './lib/selfCheck'
 import { APP_VERSION, isNewer, type VersionInfo } from './lib/version'
 import type { StepEvent } from './engine/StepRunner'
 
@@ -56,6 +60,9 @@ export default function App() {
   // v2 다가구: 인증 상태별 라우팅. guardian=보호자(구글)·device=아이기기(익명)·legacy=세션無(예한 하위호환)
   const [authRole, setAuthRole] = useState<AuthRole>('loading')
   const [dueCount, setDueCount] = useState(0)
+  /* ★v1.4.46 (C5)★ 이 기기의 역할. 데스크탑은 기본이 '구경'이라 아이 기록에 쓰지 않는다.
+     상태로 들고 있는 이유는 단 하나 — 아래 띠에서 「여기서 공부할래」를 누르면 **즉시** 화면이 바뀌어야 하기 때문. */
+  const [devRole, setDevRole] = useState<'learner' | 'observer'>(() => deviceRole())
   /** ★v1.4.40★ 지금 '학습자 화면'에 있는가. 하트비트가 매 틱마다 이 값을 본다(마운트 시 1회가 아니라).
    *  ref인 이유: deps가 `[]`인 init effect 안의 setInterval이 최신 값을 읽어야 하기 때문. */
   const onLearnerRouteRef = useRef(true)
@@ -239,6 +246,13 @@ export default function App() {
       if (mounted) setState(s)
       syncBadges(s) // 시작 시 소급 지급 (풀 스캔 등 유실 뱃지 복구)
       refreshDueCount(s.learnerId)
+      // ★v1.4.46 (L61)★ 하루 회계의 권위를 서버로. 앱을 열 때 한 번 맞춘다(두 탭·기기 교체·날짜 변경 대비).
+      setLedgerLearner(s.learnerId)
+      void syncDailyLedger()
+      /* ★v1.4.46★ A24 WebView 자가진단 — 하루 1회, 학습 기기에서만.
+         "예한이 폰에서 소리가 나는지 봐 주세요"를 사람에게 부탁하는 대신 **앱이 스스로 재서 남긴다.**
+         (그래도 스피커에서 실제로 소리가 났는지는 기계가 알 수 없다 — selfCheck.ts 주석 참조) */
+      void runSelfCheck(s.learnerId)
     })()
     // 사용시간: 모바일 WebView는 pagehide가 거의 안 떠서 하트비트(30초) + 백그라운드 전환 시 확정 기록
     // 하트비트가 출석(하루 15분)을 새로 인정하면 스트릭·출석만 화면 상태에 병합 (다른 필드는 클로버링 방지)
@@ -454,6 +468,9 @@ export default function App() {
   const isAdmin = route.startsWith('/admin')
   // 학습자 하단 네비 숨김: 관제실·가족 대시보드·연결 화면(보호자 흐름) — 학습앱 크롬 미노출
   const noLearnerChrome = isAdmin || route.startsWith('/family') || route.startsWith('/super') || route.startsWith('/connect') || authRole === 'guardian'
+  /* ★v1.4.46 (C5)★ 구경 모드 띠 — 조용히 막지 않는다(L47).
+     막혔다는 사실 · 왜 막혔는지 · 어떻게 푸는지를 **한 화면에** 적는다. 누르면 그 자리에서 학습 기기가 된다. */
+  const showObserverBar = !noLearnerChrome && authRole !== 'loading' && devRole === 'observer'
 
   return (
     <>
@@ -464,6 +481,19 @@ export default function App() {
 .bottomnav.nav5 .nav-badge { right: 14%; }`}</style>
       {splash && <Splash variant={splashVariant} onDone={() => setSplash(false)} />}
       <div className="app">
+        {showObserverBar && (
+          <div className="wc-observer-bar">
+            <b>👀 구경 모드</b>
+            <span>
+              이 기기는 <b>{isMobileUA() ? '학습 기기로 등록되지 않았어요' : '컴퓨터'}</b>라서, 여기서 푼 문제·시간·XP는{' '}
+              <b>아이 기록에 저장하지 않습니다.</b>{blockedWrites() > 0 && <> (지금까지 <b>{blockedWrites()}건</b> 저장 안 함)</>}
+            </span>
+            <button
+              className="wc-observer-btn"
+              onClick={() => { setDeviceRole('learner'); setDevRole('learner') }}
+            >이 기기에서 공부할래요 →</button>
+          </div>
+        )}
         <main className="app-main">{screen}</main>
         {!inSession && !noLearnerChrome && (
           <nav className="bottomnav nav5" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>

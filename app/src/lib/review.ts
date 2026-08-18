@@ -12,6 +12,10 @@
  *   규칙이 복사되면 `review_check.mjs`가 실패한다(L27 — 검사는 기억이 아니라 스크립트로).
  */
 import { todayStr } from './leitner'
+// ★v1.4.46★ 하루 채점 회계는 서버 권위(dailyLedger)로 옮겼다. 아래 §오늘 채점 횟수 참조.
+import {
+  gradedToday, addGradedToday, storageBroken, syncDailyLedger, setLedgerLearner, pendingDelta, GRADED_KEY,
+} from './dailyLedger'
 
 /** 하루에 due가 될 수 있는 카드 수의 안전 상한.
  *  카드 총량(685장, 계속 증가)과 무관하게 **due는 수십 장 규모**라 여유가 크다.
@@ -98,20 +102,16 @@ export function addReviewDone(cardId: string): void {
 // **오답은 상한을 소모하지 않아** 「헷갈려」를 누를수록 오늘 몫이 늘어난다 —
 // 2026-08-17 실사용에서 「헷갈려」 23회가 오늘 몫을 60→106회로 늘렸다(정직 처벌, 헌법 §3-3 위반).
 // 그래서 상한의 분모는 정오답 구분 없는 **채점 이벤트 수**로 따로 센다.
-export const REVIEW_GRADED_KEY = 'wordcraft_review_graded_v1'
+export const REVIEW_GRADED_KEY: string = GRADED_KEY
 
-export function gradedToday(): number {
-  try {
-    const d = JSON.parse(localStorage.getItem(REVIEW_GRADED_KEY) || 'null') as { date: string; n: number } | null
-    return d && d.date === todayStr() ? Math.max(0, Number(d.n) || 0) : 0
-  } catch { return 0 }
-}
-
-export function addGradedToday(): void {
-  try {
-    localStorage.setItem(REVIEW_GRADED_KEY, JSON.stringify({ date: todayStr(), n: gradedToday() + 1 }))
-  } catch { /* 저장 실패해도 학습은 계속된다 */ }
-}
+/* ★★v1.4.46 (L61 근본 해결) — 이 카운터는 이제 서버가 권위를 갖는다★★
+   v1.4.43~45에서는 여기 localStorage 읽기·쓰기가 직접 있었다. 그런데 이 값이 **하루 상한의 분모**가
+   되면서 위험 등급이 올라갔고, GPT 교차 감사가 7건을 지적했다(저장 실패 무음 → 상한 영구 리셋 /
+   두 탭이면 상한 두 배 / 읽기-증가-저장 비원자 / 기기·날짜 변경으로 리셋).
+   전부 "클라이언트가 규칙의 집행자가 된" 데서 온다.
+   → 회계를 `lib/dailyLedger.ts`(서버 원자적 카운터 + 로컬 낙관 사본)로 옮겼다.
+     여기서는 **이름만 다시 내보낸다** — 소비자(ReviewMine·todaysMine·검사)가 부르는 자리는 그대로다. */
+export { gradedToday, addGradedToday, storageBroken, syncDailyLedger, setLedgerLearner, pendingDelta }
 
 /** 실제로 지금 캘 수 있는 카드 = 서버가 준 due 목록 − 오늘 이미 맞힌 카드.
  *  ★뱃지 숫자와 광산 숫자는 반드시 이 함수 하나를 통과한 결과여야 한다.★ */
