@@ -1,0 +1,89 @@
+# wc-unbundle - ASCII-safe source transport (v1.4.46)
+#
+# WHY THIS EXISTS
+#   Source files in this repo carry long Korean comments. When a model has to
+#   re-type them to push through the GitHub API, characters get silently altered
+#   (measured 2026-08-18: 4 corrupted glyphs in one 5.5KB file, comments only).
+#   Base64 has no such failure mode, and any corruption breaks the sha256 gate.
+#
+# WHAT IT DOES  (transport only - it never builds or deploys)
+#   1. cat _ci/bundle.b64.* (lexical order) -> base64 -d -> _ci bundle.tar.xz
+#   2. sha256 must equal the first token of _ci/bundle.sha        (gate 1)
+#   3. tar xJf into the repo root
+#   4. every path in _ci/bundle.files must match git hash-object   (gate 2)
+#   5. delete the bundle parts, commit the sources
+#   The commit touches app/** so wc-build runs afterwards - that remains the
+#   one and only build/publish path.
+#
+# RESULT IS BINARY: byte-exact sources committed, or nothing committed at all.
+name: yehan-app - WC Unbundle
+
+on:
+  push:
+    paths: ['_ci/bundle.sha']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wc-unbundle
+  cancel-in-progress: false
+
+jobs:
+  unbundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decode and verify bundle
+        run: |
+          set -euo pipefail
+          test -f _ci/bundle.sha   || { echo '::error::_ci/bundle.sha missing'; exit 1; }
+          test -f _ci/bundle.files || { echo '::error::_ci/bundle.files missing'; exit 1; }
+          compgen -G '_ci/bundle.b64.*' > /dev/null || { echo '::error::no _ci/bundle.b64.* parts'; exit 1; }
+          echo 'parts:'; ls -l _ci/bundle.b64.*
+          cat _ci/bundle.b64.* | tr -d '\n\r' | base64 -d > /tmp/bundle.tar.xz \
+            || { echo '::error::base64 decode failed - transport corrupted, nothing applied'; exit 1; }
+          WANT=$(awk 'NR==1{print $1}' _ci/bundle.sha)
+          GOT=$(sha256sum /tmp/bundle.tar.xz | awk '{print $1}')
+          echo "sha256 want=$WANT got=$GOT"
+          [ "$WANT" = "$GOT" ] || { echo '::error::bundle sha256 mismatch - nothing applied'; exit 1; }
+          xz -t /tmp/bundle.tar.xz || { echo '::error::xz integrity check failed'; exit 1; }
+          tar tJf /tmp/bundle.tar.xz
+          tar xJf /tmp/bundle.tar.xz -C .
+          echo 'bundle extracted'
+
+      - name: Verify blob SHA (bit-exact gate)
+        run: |
+          set -euo pipefail
+          fail=0; n=0
+          while read -r sha path; do
+            case "$sha" in ''|'#'*) continue ;; esac
+            n=$((n+1))
+            if [ ! -f "$path" ]; then echo "::error::missing file: $path"; fail=1; continue; fi
+            got=$(git hash-object "$path")
+            if [ "$got" = "$sha" ]; then echo "  OK   $path"; else
+              echo "::error::hash mismatch $path (want $sha got $got)"; fail=1; fi
+          done < _ci/bundle.files
+          echo "files compared: $n"
+          [ "$n" -gt 0 ] || { echo '::error::empty manifest'; exit 1; }
+          [ "$fail" -eq 0 ] || { echo '::error::bit-exact gate failed - nothing committed'; exit 1; }
+
+      - name: Commit sources
+        run: |
+          set -euo pipefail
+          rm -f _ci/bundle.b64.* _ci/bundle.sha _ci/bundle.files
+          {
+            echo "# unbundle report $(date -u +%FT%TZ)"
+            echo "trigger_commit=$GITHUB_SHA"
+            echo
+            echo '## applied (blob SHA verified)'
+            git status --porcelain
+          } > _ci/UNBUNDLE_REPORT.txt
+          cat _ci/UNBUNDLE_REPORT.txt
+          git config user.name  'wc-ci'
+          git config user.email 'ci@wordcraft.local'
+          git add -A
+          git commit -m 'ci: apply verified source bundle' || { echo 'no change'; exit 0; }
+          git push
