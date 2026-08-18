@@ -2088,20 +2088,20 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
   background: rgba(255, 208, 80, .10); border: 1px solid rgba(255, 208, 80, .30);
   font-size: 13.5px; line-height: 1.55; color: #ffe6a8;
 }
-/* v1.4.46 — C5 구경 모드 띄 · L61 저장 실패 안내 · A24 폰트 부스팅 방어 · 정보탭 자가진단 */
+/* v1.4.46 — C5 구경 모드 띠 · L61 저장 실패 안내 · A24 폰트 부스팅 방어 · 정보탭 자가진단 */
 
 /* ★안드로이드 WebView 폰트 부스팅 방어 (L8 미검증 3종 중 하나)★
    WebView는 긴 텍스트 블록의 글자를 임의로 키운다(text autosizing). 그러면 아이 폰에서만
    레이아웃이 밀리고, 격리 렌더(Chromium)에서는 절대 재현되지 않는다 — 그래서 여덟 릴리스 동안
    "미검증"으로 남아 있었다. 표준 방어를 명시적으로 건다. 100%는 '지정한 크기를 그대로 쓰라'는 뜻이라
    현재 레이아웃을 바꾸지 않는다(부스팅이 없던 기기에서는 무변화). 실제 발생 여부는
-   `selfCheck.measureFontBoost()`가 매일 재서 관문에 남긴다. */
+   `selfCheck.measureFontBoost()`가 매일 재서 `device_checks`에 남긴다. */
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
-/* ── C5 구경 모드 띄 ────────────────────────────────
+/* ── C5 구경 모드 띠 ────────────────────────────────
    조용히 막지 않는다(L47): 막혔다는 사실 · 이유 · 푸는 방법을 한 화면에. */
 .wc-observer-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
