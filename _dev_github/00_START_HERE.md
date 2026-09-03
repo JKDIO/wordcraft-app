@@ -38,6 +38,12 @@
 > ⚠️ **소환 스모크 하니스 재생성법**(tgz에 없다): `.verify/summon_items.json` = content.json의 모든 `type:'summon'` 스텝 items를 펼친 배열(66개) · `.verify/summon_entry.tsx` = `SummonExercise`를 `items={[ITEMS[n]]}`로 렌더하고 `globalThis.__go(n)`을 노출하는 하니스 + `.verify/out/index.html`(app.css 링크).
 > ⚠️ 소스 SSOT = 노트북 `_dev_github/src_v1.4.30/`(+ tgz). 콘텐츠 SSOT = `wordcraft_content_v1.4.26.json`(v1.4.27~28은 코드만 변경)(+ 월드7~10 원본 `wordcraft_content_w710_src_v1.4.24.tgz`). 어휘 SSOT = `wordcraft_vocab_v1.4.20.json`. 계약 = `연동계약_CONTRACT_v1.7.md`.
 
+> ## 🚩 2026-09-03 — 이 문서보다 먼저 볼 것
+> **스탬프는 `00_START_HERE_스탬프_최신.md`(2026-09-03 갱신), 이번 릴리스는 `RELEASE_v1.4.47.md`.**
+> 라이브는 **v1.4.46**, 준비된 것은 **v1.4.47**(빌드·검증 완료 · **배포 미실행**).
+> 저장소는 **https://github.com/JKDIO/wordcraft-app** 다. 아래 "지금 최우선" 9~12번은 대부분 해소됐다 — 취소선을 볼 것.
+> ⚠️ 노트북에서 검사·빌드를 돌리려면 `tsc` 를 **5.x** 로 고정해야 한다(7.x 는 거짓 오류 17건 — D47-12).
+
 ## ⚡ 지금 최우선 (2026-08-14~)
 0. **★예한이 폰에서 뱃지 도감 확인 (v1.4.30)★** — 내 정보를 열었을 때 ① 11줄이 전부 접혀 있는가 ② 금색 '열기 ▼' 알약이 **손가락으로 정확히 눌리는가**(A24 실기기) ③ 접힌 목록이 아이에게 "볼 게 없다"로 읽히지는 않는가. **이게 최종 판정이다.**
 1. **★★예한이 폰에서 복습 광산 40장 확인 (v1.4.29 P0)★★** — 앱을 다시 열어 하단 뱃지 숫자와 광산의 "오늘 캘 카드"가 **같은 숫자**인지, 채굴이 실제로 시작되는지. 잘려 있던 40장(38장은 오답 리스폰)이 그대로 남아 있다. **이게 최종 판정이다.**
@@ -50,6 +56,10 @@
 6. **가족 기능** — 진영이네 부모 실제 로그인 왕복(아직 guardians=0).
 7. **데이터 정리(Dio님 승인 필요)** — 준비 완료, 미실행. `앱개발/데이터정리_승인대기_20260813.md`.
 8. **이월 과제** — `public/app.css`↔배포본 크기 불일치 · PWA 서비스워커 · v1.4.15 재생성 클립 11개 청취 확인 · 정답 위치 4번째 칸 하한 근접(어휘 23.54% / 월드7~10 22.48%) · 과거 XP 소급 보정(하지 않기로 함).
+9. ~~**★신규(2026-08-29) — 쓰기(자유 작문) 채점기★**~~ **→ 2026-09-03 v1.4.47 로 구현·검증 완료(배포 대기)**. 옛 내용: **★쓰기 채점기, 코딩 단계에서 반드시 구현★** UI/UX 목업 단계에서 설계·검증까지 완료. **Dio님 지시: "Claude Code 이관 때 적용해줘"** — 이 항목을 빠뜨리면 안 됨. 실행 시스템 프롬프트 전문·5개 샘플 채점 검증 결과·파일럿 운영안(2주 감사 모드→정상 모드 전환)은 `콘텐츠_20260829_읽기쓰기_1차착수_ABC.md` §C에 있음. 구현 시 반드시: ① 채점 호출은 Claude Sonnet이 아니라 Codex/OpenRouter T1~T2 레인으로(정량 상한 준수) ② XP·판정 로그는 관제실에서 조회 가능하게(감사 모드 요구사항) ③ `answer_events`에 결과 기록 시 기존 스키마 additive 원칙(L17) 준수.
+10. ~~**★신규(2026-08-29) — 기사 갤러리 장비 오버레이 파이프라인★**~~ **→ 2026-09-03 24장 본 생산 완료**(`RELEASE_v1.4.47.md` §4). 규격은 오버레이 문서 **v2.0 §12**가 정본(v1.3 유실, 896×1200 채택). 옛 내용: `저작규격_기사갤러리_오버레이파이프라인_v1.md`(v1.4) 참고. 3차 테스트에서 `fal-ai/nano-banana-pro/edit`(fal의 `run_model` 도구 경유, `edit_image` 래퍼는 실패함 — 입력 형식이 `{"prompt":..., "image_urls":[...]}`)로 뿔·로고·화풍 3개 P0 기준 전부 통과. 본 생산(24~29장, 6슬롯×4등급) 착수 시 이 모델을 기본으로 채택할 것.
+11. **★신규(2026-08-29) — 실제 라이브 자산 `hero/helm3.png`(뿔 투구) 결함 수정·배포 완료★** `저작규격_기사스프라이트_HERO_SPEC.md`(v1.1)와 `결함대장_DEFECT_LEDGER_v1.md`(D0829-1) 참고. 앞으로 헬멧·투구류 자산 제작 시 negative prompt에 `horns, horned helmet, devil horns, demon horns`를 반드시 포함할 것(신앙 기준, Dio님 절대 요구사항).
+12. ~~**★신규(2026-08-29) — 읽기·쓰기 콘텐츠 공백★**~~ **→ 2026-09-03 이야기 서고(월드 10) 12모듈로 해소**(지문 18·4지선다 72·자유작문 12, `writing_ready` 스위치로 닫아 둠). 옛 내용: `콘텐츠_20260829_읽기쓰기_1차착수_ABC.md` 참고. A(문단독해)·B(빈칸채우기)는 실제 vocab.json 단어 기반 샘플까지 나왔고 Dio님 확인 대기 중. 확정되면 각 티어(elem-core~ms3+)별 실제 문항 대량 제작이 필요.
 
 ## 🔮 문장 소환 구조 (v1.4.24 — 새 세션 필독)
 - **독립 화면이 아니다.** `content.json`의 각 모듈 `steps` 안에 `{"type":"summon", "prompt_ko":…, "items":[3개]}`로 들어간다. 자리는 **마지막 quiz 바로 앞**.
@@ -90,16 +100,20 @@
 
 **세션 종료 시(필수):** 코드/배포 변경 시 ① RELEASE_LOG 항목 추가 ② 이 문서 스탬프·다음작업 갱신 ③ **기록 3종 동기화(L14·L20: 프로젝트 메모리 + 로컬 + GitHub) — 미루지 말 것.**
 
+> **⚠️⚠️ 2026-08-29 추가 — 이 문서 본문(위 스탬프 포함)은 v1.4.30에서 멈춰 있다. 실제 최신 상태 아님, 착각 금지.** 이 파일의 상단 스탬프는 v1.4.30이지만, **실제 배포·소스는 그 이후로 최소 v1.4.46까지 진행됐다**(이 폴더의 `wordcraft_src_v1.4.46.tgz`·`RELEASE_v1.4.45.md` 존재로 확인). 이 문서 본문이 낡은 채로 유지되는 것은 설계된 동작이다(§0 "낡을 수 있다" 참고, `00_START_HERE_스탬프_최신.md`가 자주 갱신되는 실제 스탬프 역할). **다만 그 스탬프 파일도 2026-08-16(v1.4.42) 이후로 갱신되지 않은 것으로 보인다** — v1.4.45·46은 스탬프 파일의 "최근 릴리스" 목록에도 없다. 즉 **v1.4.43~46 구간의 실제 변경 내용을 요약한 문서가 이 폴더 어디에도 없을 가능성**이 있다(확인 안 됨 — Claude Code 세션이 직접 `RELEASE_v1.4.43~46.md` 존재 여부와 git 커밋 로그를 확인해야 함). **새 세션(Claude Code)은 이 문서의 "지금 최우선"·구조 설명을 참고 자료로만 쓰고, 현재 상태 판단은 반드시 진실 3종(라이브 version.json · RELEASE_v1.4.46 또는 그 이후 · 소스 APP_VERSION)으로 직접 재확인할 것.**
+>
+> **⚠️ 2026-08-29 추가 — 기록 3종 동기화 재확인 필요.** 이 문서와 아래 항목 9~12에서 참조하는 신규 문서들(`콘텐츠_20260829_읽기쓰기_1차착수_ABC.md`·`저작규격_기사갤러리_오버레이파이프라인_v1.md`(v1.4)·`결함대장_DEFECT_LEDGER_v1.md`·`진행상황_20260822_UIUX_MVP_v1.md`)는 **Cowork 세션의 claude.ai Project에서 이 로컬 폴더로 이번에 처음 동기화된 것**이다. `저작규격_기사스프라이트_HERO_SPEC.md`도 v1.1(뿔 negative prompt 수정)로 갱신됐다. 또한 **`개발_영구교훈_LESSONS_3_L45이후.md`부터 `_6_L64이후.md`까지(L45~L64+)가 이 로컬 폴더에 없다** — claude.ai Project에는 있지만 이 세션은 로컬에 아직 내려받지 않았다(사유: 분량이 커서 이번 동기화 범위에서 제외, Dio님께 별도 보고). **다음 세션(특히 Claude Code)은 이 공백을 인지하고, LESSONS 최신본이 필요하면 Dio님께 확인을 요청할 것.**
+
 ## 1. 지금 상태
 - **제품**: 예한이(초6) 영어 학습 웹앱 "WordCraft". 한 번들(main.js)에 두 앱 — 학습자 앱(예한이) + 관제실(아빠, `/#/admin`, PIN 7351).
 - **라이브 v1.4.30**: 학습(유령 보스·수정 동굴·소리 훈련소·문장 소환진·복습 라이트너·출석 15분) + 단어 대륙(2,400단어/200팩) + 워드몬 진화 + 단어 도감 + 이야기(수호자 10·팩 결말 200) + 분류 상자 + 속사 사냥 + 단어 골렘 40 + 뱃지 36종 + **보상 로드맵** + 다가구 인증 라우팅 + 가족 RLS 격리 + 전 재생 항목 음원화.
 - **예한이 폰(갤럭시 A24)**: APK지만 `server.url=wordcraft-app.vercel.app` 라이브 직접 로드 → **웹 배포 = 폰 즉시 반영**. 음원은 Storage 직접 로드.
-- **DB**: Supabase `gbynvzxgbpmoqdsriowz`. families·memberships·learners·answer_events·xp_events·review_cards·module_progress·sessions·tts_clips·parent_rewards·**reward_goals**. Storage `tts-audio` = 6,3xx 클립. Edge: `tts-batch`(v4) · `tts-seed` · `vocab-seed`.
+- **DB**: Supabase `gbynvzxgbpmoqdsriowz`. families·memberships·learners·answer_events·xp_events·review_cards·module_progress·sessions·tts_clips·parent_rewards·**reward_goals**. Storage `tts-audio` = 6,3xx 클립. Storage `art` = 기사 스프라이트/오버레이 자산. Edge: `tts-batch`(v4) · `tts-seed` · `vocab-seed` · `art-forge` · `art-layer`.
 
 ## 2. 🔒 철칙 (어기면 사고 재발)
 1. **소스 SSOT = 로컬 `_dev_github/src_v1.4.30/`(+ tgz), 콘텐츠 SSOT = `wordcraft_content_v1.4.26.json` + 어휘 `wordcraft_vocab_v1.4.20.json`.** 컨테이너에서만 고쳐 배포 금지. ⚠️ **저장소 루트의 content.json/vocab.json은 낡아 있을 수 있다 — 빌드 입력은 tgz 안의 `public/`에서 가져온다(L32).**
 2. **두 앱 공동 기록** (RELEASE_LOG에 예한이 앱+관제실+연동 함께).
-3. **연동 계약 준수**(`앱개발/연동계약_CONTRACT_v1.md`, 현재 **v1.7** — §15 보상 로드맵 신설).
+3. **연동 계약 준수**(`연동계약_CONTRACT_v1.7.md`, 현재 **v1.7** — §15 보상 로드맵 신설).
 4. **배포는 모아서 1회 + 스냅샷**(L1). 대용량은 모델 문맥 무통과(SendUserFile·device_commit — L0/L7).
 5. **answer_events 절대 삭제 금지.** 모든 변경 additive(L17). `db.del()`은 보상 목표 전용.
 6. **기록 3종 동기화(L14·L20)** — 프로젝트 메모리+로컬+GitHub, 미루지 말 것.
@@ -110,12 +124,12 @@
 - 학습자 앱: 스플래시→월드맵(월드1·1.5수정동굴·2~5·소리훈련소·유령출몰)→모듈세션/유령전투/소리훈련소/소환진→복습광산→룬도감→**보상 창고**→내정보→정보. + `#/connect` 연결 화면.
 - **인증 라우팅(App.tsx)**: 시작 시 getAuthUser → legacy(세션無=예한 하위호환)/device(익명=바인딩 아이)/guardian(구글=가족 대시보드 `#/family`).
 - **오디오(v1.4.15)**: 재생 항목 **전부** `audio_url`(Storage 공개 클립). `lib/audio.ts` 단일 채널 + 세대 토큰. TTS는 **비상 폴백으로만 존재**(절대 제거 금지, L19·L21⑤).
-- 커리큘럼(28모듈): A1~A4/R0~R9/C0·C5·C6·C7/B21a·b·B22a·b/D1S·D2S·D3S/T1·T2·T3 + FORGE.
+- 커리큘럼(28모듈): A1~A4/R0~R9/C0·C5·C6·C7/B21a·b/B22a·b/D1S·D2S·D3S/T1·T2·T3 + FORGE.
 
 ## 4. 파일 지도
 | 위치 | 내용 |
 |---|---|
-| 로컬 `Desktop/VIBE CODING/Projects/Word Craft/wordcraft-app/` | GitHub 배포 저장소 사본. 루트 main.js·content.json·vocab.json·app.css·version.json = **v1.4.30** (2026-08-14 라이브 SHA와 일치 확인) |
+| 로컬 `Desktop/VIBE CODING/Projects/WordCraft/wordcraft-app/` | GitHub 배포 저장소 사본. 루트 main.js·content.json·vocab.json·app.css·version.json = **v1.4.30** (2026-08-14 라이브 SHA와 일치 확인) |
 | `_dev_github/src_v1.4.30/` | **소스 SSOT** — App.tsx·screens/{…,VocabContinent,WordDex,**RewardBoard**}·engine/·lib/{audio,tts,store,supabase,version,vocab,wordmon,**rewards**}·tools/음원감사_AUDIO_QA.html |
 | `_dev_github/wordcraft_src_v1.4.30.tgz` | 소스 스냅샷 |
 | `_dev_github/wordcraft_tests_v1.4.30.tgz` | 검사 스크립트(xp_parity·badge_check·**reward_check**·**reward_smoke**·measure20·golem_check·routes20 등) |
@@ -123,7 +137,7 @@
 | ⚠️ `Desktop/YEHAN/Education/Yehan_English_App/_dev_github/` | **미끼 폴더 — 절대 SSOT로 쓰지 말 것.** v1.4.6(7/16)에서 멈춰 있다 |
 | `_dev_github/wordcraft_vocab_v1.4.20.json` + `vocab_packs_v3_final.tgz` | **어휘 SSOT 스냅샷** |
 | `_dev_github/RELEASE_LOG.md` / `00_START_HERE.md` | 개발 원장·현황(GitHub 동반 업로드) |
-| Supabase `gbynvzxgbpmoqdsriowz` | DB + Auth(구글·익명) + Storage(tts-audio) + Edge(tts-batch v4, tts-seed, vocab-seed) |
+| Supabase `gbynvzxgbpmoqdsriowz` | DB + Auth(구글·익명) + Storage(tts-audio, art) + Edge(tts-batch v4, tts-seed, vocab-seed, art-forge, art-layer) |
 | GitHub `JKDIO/wordcraft-app` | 배포 저장소 → Vercel 자동배포 |
 
 ## 5. 빌드 & 배포 퀵스타트 (컨테이너 — 빈 컨테이너 전제)
@@ -151,10 +165,10 @@ node reward_smoke.mjs   # (python3 -m http.server 8099 --directory dist 를 먼�
 6. 신규 클립은 표본 청취까지 하고 릴리스한다.
 
 ## 7. 세션 시작 체크리스트
-1. 이 문서 + `claude/개발_영구교훈_LESSONS.md` 읽기.
+1. 이 문서 + `개발_영구교훈_LESSONS.md`(전 권) 읽기.
 2. 진실 확인: 라이브 version.json(캐시버스터=1.4.30) · RELEASE_LOG 맨 위(v1.4.30) · 로컬 `src_v1.4.30` APP_VERSION · **빌드 번들 grep**(L25) · **라이브 배포물 SHA256 대조**(L32).
 3. 컨테이너 비었으면 §5로 소스 복구·빌드(tgz = v1.4.30). **복구는 반드시 직전 릴리스 tgz로, 복구 직후 `diff -ru`로 유실 0 확인(L27).**
 4. 작업 후: RELEASE_LOG·이 문서 갱신 + 기록 3종 동기화(L14·L20).
 
 ---
-*교훈: `개발_영구교훈_LESSONS.md` (L0~L32 — 특히 L19 오디오 전수감사, L20 로컬↔GitHub 동시기록, L21 오디오 세대 관리, L22 음원은 파형으로 검수, L23 세션 만료 오판, L24 정답 위치 분포, L25 번들 grep, L26 손이 하는 행동, L27 복구 직후 diff·검사는 스크립트, L28 한 테이블 여러 종류, L29 사라진 고침, L30 독립 화면의 비대화, L31 상한·정렬 없는 조회, **L32 로컬 사본도 진실이 아니다 — 라이브 SHA가 기준**).*
+*교훈: `개발_영구교훈_LESSONS.md` (L0~L32 — 특히 L19 오디오 전수감사, L20 로컬↔GitHub 동시기록, L21 오디오 세대 관리, L22 음원은 파형으로 검수, L23 세션 만료 오판, L24 정답 위치 분포, L25 번들 grep, L26 손이 하는 행동, L27 복구 직후 diff·검사는 스크립트, L28 한 테이블 여러 종류, L29 사라진 고침, L30 독립 화면의 비대화, L31 상한·정렬 없는 조회, L32 로컬 사본도 진실이 아니다 — 라이브 SHA가 기준). **L45 이후~L64+는 claude.ai Project에는 있으나 이 로컬 폴더에는 아직 없음(2026-08-29 확인, 위 0번 항목 참고).***
