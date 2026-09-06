@@ -2446,3 +2446,265 @@ html {
   .loadout-art::after, .loadout-stage::before, .loadout-ring::before { animation: none !important; }
   .adm-panel, .adm-filter button, .adm-panel button, .adm-tab { transition: none !important; }
 }
+
+/* 50-uiux-system.css */
+/* ═══════════════════════════════════════════════════════════════════
+   50-uiux-system.css — U1 디자인 시스템 토대 (v1.4.48)
+   근거: 요구사항_20260904_UIUX전면반영_통합본_v1.md v1.3 §4.1
+   원문: UIUX_추출/mockup_css.txt (`.phone-screen` 토큰 블록 + 컴포넌트)
+
+   ★정직하게 먼저 적는다★
+   1) 목업의 클래스명은 접두가 없다(`.bezel`). 프로덕션 관례에 맞춰 `wc-` 접두를 붙였다(§4.1 허용).
+      **값은 목업 원문 그대로다** — px·색·이징·opacity 한 글자도 바꾸지 않았다.
+   2) 이 파일은 **토대만** 깐다. 화면별 적용(마크업 교체)은 U2~U5에서 한다.
+      지금 눈에 보이는 변화는 본문/제목 폰트뿐이고, 나머지 컴포넌트는 아직 쓰는 화면이 없다.
+   3) `.wc-bezel::before` 는 마스크를 쓴다. §6의 "mask-image 금지"와 충돌하는 것처럼 보이므로 근거를 남긴다:
+      · §4.1이 이 컴포넌트를 "`::before` 마스크 그라데이션"이라고 **명시해서** 발부했다(구체 조항 우선)
+      · 금지의 실제 이유는 "3D 컨텍스트(perspective/preserve-3d) 안에서 Chromium이 무시한다"인데
+        `.wc-bezel` 은 3D 컨텍스트가 아니다. verify ⑨-4 게이트(금지 속성명 + 콜론)에도 걸리지 않는다
+      · **그러므로 U3 기사 갤러리의 `perspective:600px` 안에는 `.wc-bezel` 을 넣지 않는다.** 넣으면 그날 하루를 태운다
+      Dio님이 "그래도 쓰지 마라"고 하시면 1줄로 뒤집힌다 — 그때는 테두리를 단색 hairline으로 낮춘다.
+   4) 애니메이션은 transform·opacity 만(L8). hover 는 `@media (hover:hover)` 안에만(45-v647-tone.css 선례).
+   5) 픽셀 폰트(`--wc-font-pixel`)는 **건드리지 않았다.** app.css 1행의 jsdelivr `@import` 로 지금도
+      정상 로딩된다(2026-09-05 실측: HTTP 200, @font-face 9건). §4.1 "현행 유지" 그대로.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ══════════ ① 폰트 — jsdelivr @fontsource CDN (신규 의존성 0 · package.json·bun.lock 무변경) ══════════
+   ★2026-09-05 CDN 전환(Cowork 감사 §4 A안)★ GitHub MCP가 바이너리를 못 올려(base64 이중 인코딩, 커밋 c4dbe53 실측)
+   로컬 ./fonts/ 대신 같은 파일을 CDN에서 받는다. 근거: 픽셀 폰트 Galmuri가 이미 app.css 1행에서 **같은 도메인**
+   (cdn.jsdelivr.net) @import 로 로딩 중 — 예한이 폰에서 픽셀 글씨가 보이면 이 폰트들도 보인다.
+   실측(2026-09-05 curl): 6 URL 전부 HTTP 200 · wOF2 · sha256이 로컬 public/fonts/ 6개와 동일(바이트 수도 동일).
+   로컬 woff2 6개는 public/fonts/ 에 그대로 둔다(장래 로컬 전환용) — CSS는 참조하지 않는다.
+   되돌리기: src 의 https://cdn.jsdelivr.net/npm/@fontsource/<pkg>/files/<file> 을 ./fonts/<로컬파일명> 으로.
+   verify ⑨-5(절대경로 fetch 금지)는 src/*.ts(x) 의 fetch() 만 검사하므로 CSS의 https url() 은 대상이 아니다 — 예외 처리 없음.
+   전부 SIL OFL 1.1. 합계 650,468B (§4.1 목표 1.2MB 이내).
+   ★파일 수는 4개가 아니라 6개다★ — fontsource가 한글/라틴 서브셋을 별도 파일로 나눠 배포하기 때문이다.
+   unicode-range 로 갈라 두면 영문만 있는 화면은 한글 406KB를 **받지 않는다**(오히려 이득). */
+
+@font-face {
+  font-family: 'Gowun Dodum'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/gowun-dodum/files/gowun-dodum-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Gowun Dodum'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/gowun-dodum/files/gowun-dodum-korean-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Black Han Sans'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/black-han-sans/files/black-han-sans-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Black Han Sans'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/black-han-sans/files/black-han-sans-korean-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+}
+
+/* ══════════ ② 디자인 토큰 — mockup_css.txt `.phone-screen` 블록 원문 ══════════ */
+
+:root {
+  --w-bg: #0b0e1a; --w-panel: #161a2c; --w-ink: #f1efe8; --w-sub: #9aa0c0;
+  --w-accent: #7c5cff; --w-accent2: #ffb454; --w-glow: rgba(124, 92, 255, .35);
+
+  /* 폰트 스택 (§4.1 확정값) */
+  --kr-body: 'Gowun Dodum', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  --kr-display: 'Black Han Sans', 'Gowun Dodum', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* 월드 보석톤 — data-world 는 각 화면 루트 요소에 붙인다(U2~U5).
+   프로덕션 월드 매핑(§4.1 확정): grammar=월드1·1.5·2·3·4·5·6·9·10 / vocab=월드7·단어대륙 /
+   speak=월드8 / listen=소리훈련소 / exam=예약(대응 화면 없음, 토큰만 정의).
+   이름 5종을 늘리지도 바꾸지도 않는다. */
+[data-world="vocab"]   { --w-accent: #3fd18b; --w-accent2: #ffd166; --w-glow: rgba(63, 209, 139, .32); }
+[data-world="listen"]  { --w-accent: #37c6ff; --w-accent2: #ffd166; --w-glow: rgba(55, 198, 255, .32); }
+[data-world="grammar"] { --w-accent: #b98bff; --w-accent2: #ff8bd0; --w-glow: rgba(185, 139, 255, .35); }
+[data-world="exam"]    { --w-accent: #ff8b6b; --w-accent2: #ffd166; --w-glow: rgba(255, 139, 107, .3); }
+[data-world="speak"]   { --w-accent: #ff6ba0; --w-accent2: #37c6ff; --w-glow: rgba(255, 107, 160, .3); }
+
+/* ══════════ ③ 폰트 재바인딩 ══════════
+   app.css 를 고치지 않고 별칭만 갈아끼운다(되돌리려면 이 블록만 지우면 원상복구).
+   --wc-font-pixel 은 그대로 둔다 → 무대·워드몬·소환진 등 이 변수를 직접 쓰는 요소는 픽셀 폰트 유지. */
+:root {
+  --wc-font-body: var(--kr-body);
+  --font-body: var(--kr-body);
+  --font-title: var(--kr-display);
+}
+h1, h2, h3 { letter-spacing: .01em; }
+.mono, .wc-mono, .wc-xplabel, .wc-prog { font-variant-numeric: tabular-nums; }
+
+/* ══════════ ④ 컴포넌트 — 목업 원문 값 그대로 ══════════ */
+
+.wc-h-display { font-family: var(--kr-display); letter-spacing: .01em; }
+
+.wc-eyebrow {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .18em; color: var(--w-accent2);
+  font-weight: 700; margin-bottom: 6px; display: block;
+}
+
+.wc-pill-tag {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-family: var(--mono);
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 999px; padding: 3px 10px; color: var(--w-sub);
+}
+
+/* 이중 베젤 — v5 결정: 월드 테마 색으로만 은은하게, 금 액자 이미지 프레임 없음 */
+.wc-bezel {
+  padding: 7px; border-radius: 26px; position: relative; overflow: hidden;
+  background: linear-gradient(155deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .02));
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+.wc-bezel::before {
+  content: ''; position: absolute; inset: 0; border-radius: 26px; padding: 1px; pointer-events: none;
+  background: linear-gradient(155deg, var(--w-accent), transparent 45%, transparent 65%, var(--w-accent2));
+  opacity: .4;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask-composite: exclude;
+}
+.wc-bezel-inner {
+  border-radius: 20px; padding: 18px;
+  background: linear-gradient(165deg, var(--w-panel), rgba(255, 255, 255, .02) 140%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  position: relative; overflow: hidden;
+}
+.wc-bezel-inner::after {
+  content: ''; position: absolute; inset: -40% -40% auto auto; width: 70%; height: 140%;
+  background: radial-gradient(circle, var(--w-glow), transparent 60%); opacity: .5; pointer-events: none;
+}
+
+/* 버튼-속-버튼 — icon-orb 내장 */
+.wc-btn-magic {
+  display: inline-flex; align-items: center; gap: 10px; border: 0; cursor: pointer;
+  background: linear-gradient(135deg, var(--w-accent), var(--w-accent2)); color: #0b0e1a;
+  font-weight: 800; font-family: var(--kr-body); font-size: 13.5px;
+  padding: 5px 6px 5px 18px; border-radius: 999px;
+  box-shadow: 0 10px 24px -8px var(--w-glow);
+  transition: .35s cubic-bezier(.34, 1.4, .64, 1);
+}
+.wc-btn-magic .wc-icon-orb {
+  width: 30px; height: 30px; border-radius: 999px; background: rgba(11, 14, 26, .18);
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+  transition: .35s cubic-bezier(.34, 1.4, .64, 1);
+}
+.wc-btn-ghost {
+  border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .04); color: var(--w-ink);
+  font-family: var(--kr-body); font-weight: 700; font-size: 13px;
+  padding: 11px 18px; border-radius: 999px; cursor: pointer;
+}
+
+/* 월드 노드 — Z-Axis Cascade 용 기울기 포함 */
+.wc-world-node {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 20px;
+  margin-bottom: 14px; background: rgba(255, 255, 255, .03);
+  border: 1px solid rgba(255, 255, 255, .06); position: relative;
+  transition: .3s cubic-bezier(.34, 1.2, .64, 1);
+}
+.wc-world-node.tilt-l { transform: rotate(-1.2deg); }
+.wc-world-node.tilt-r { transform: rotate(1deg); }
+.wc-world-node .wc-orb {
+  width: 52px; height: 52px; border-radius: 18px; display: flex; align-items: center;
+  justify-content: center; font-size: 24px; flex-shrink: 0;
+  background: linear-gradient(155deg, var(--nc, var(--w-accent)), transparent);
+  box-shadow: 0 8px 18px -6px var(--ng, var(--w-glow));
+}
+.wc-world-node .wc-meta { flex: 1; min-width: 0; }
+.wc-world-node .wc-meta h4 { margin: 0 0 3px; font-size: 14px; }
+.wc-world-node .wc-meta p { margin: 0; font-size: 11px; color: var(--w-sub); }
+.wc-world-node .wc-prog { width: 44px; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--w-accent2); }
+.wc-world-node.locked { opacity: .4; }
+.wc-world-node .wc-lockicon { position: absolute; right: 14px; top: 14px; font-size: 14px; }
+
+/* 선택지 카드 — correct/wrong 은 색만. 처벌 문구는 마크업에서 금지(§6) */
+.wc-opt-card {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px;
+  margin-bottom: 10px; background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(255, 255, 255, .08); cursor: pointer; font-size: 14px;
+  transition: .25s cubic-bezier(.34, 1.3, .64, 1);
+}
+.wc-opt-card .wc-k {
+  width: 26px; height: 26px; border-radius: 9px; background: rgba(255, 255, 255, .07);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; color: var(--w-sub); flex-shrink: 0;
+}
+.wc-opt-card.correct { border-color: #3fd18b; background: rgba(63, 209, 139, .1); }
+.wc-opt-card.wrong   { border-color: #ff6b6b; background: rgba(255, 107, 107, .08); }
+
+/* XP 바 — 값·분모는 이 파일이 만지지 않는다. 껍데기만 */
+.wc-xpbar-track { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.wc-xpbar-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--w-accent), var(--w-accent2)); }
+.wc-xplabel     { font-size: 9.5px; color: var(--w-sub); margin-top: 3px; font-family: var(--mono); }
+
+/* 엔진 공통 헤더 · 말풍선 · 진행 점 */
+.wc-engine-header { padding: 16px 20px 8px; }
+.wc-engine-header .wc-char { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.wc-engine-header .wc-face {
+  width: 56px; height: 56px; border-radius: 18px; overflow: hidden;
+  background: linear-gradient(155deg, var(--w-accent), var(--w-accent2));
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+  box-shadow: 0 8px 20px -6px var(--w-glow);
+}
+.wc-engine-header .wc-face img { width: 100%; height: 100%; object-fit: cover; object-position: center 15%; }
+.wc-speech {
+  background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 16px 16px 16px 4px; padding: 12px 14px; font-size: 13px; line-height: 1.6; flex: 1;
+}
+.wc-progress-dots { display: flex; gap: 5px; padding: 0 20px 10px; }
+.wc-progress-dots span { height: 5px; flex: 1; border-radius: 99px; background: rgba(255, 255, 255, .1); }
+.wc-progress-dots span.done { background: linear-gradient(90deg, var(--w-accent), var(--w-accent2)); }
+
+/* 빈칸 · 타일 · 시험범위 배너 */
+.wc-blank-line { border-bottom: 2px dashed rgba(255, 255, 255, .25); min-width: 52px; display: inline-block; padding: 0 6px; text-align: center; }
+.wc-tile {
+  padding: 9px 14px; border-radius: 12px; background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1); font-size: 13.5px; cursor: pointer; font-family: var(--kr-body);
+}
+.wc-tile.placed { background: var(--w-accent); color: #0b0e1a; font-weight: 700; border-color: var(--w-accent); }
+.wc-exam-banner {
+  display: flex; align-items: center; gap: 10px; border-radius: 16px; padding: 12px 14px;
+  font-size: 12px; margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(255, 139, 107, .18), rgba(255, 209, 102, .1));
+  border: 1px solid rgba(255, 139, 107, .3);
+}
+
+/* 하단 네비 glass — 프로덕션 하단 네비 5개 구조는 U5까지 변경하지 않는다. 껍데기만 준비 */
+.wc-bottom-nav {
+  position: absolute; left: 14px; right: 14px; bottom: 16px;
+  display: flex; justify-content: space-around;
+  background: rgba(15, 16, 26, .75); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, .08); border-radius: 22px; padding: 10px 6px;
+}
+.wc-bottom-nav .wc-bi { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 18px; color: var(--w-sub); flex: 1; }
+.wc-bottom-nav .wc-bi.on { color: var(--w-ink); }
+.wc-bottom-nav .wc-bi small { font-size: 8.5px; font-family: var(--kr-body); }
+
+/* ══════════ ⑤ WebView 게이트 (L8 — WebView ≠ 크롬) ══════════ */
+
+/* backdrop-filter 미지원 → 불투명 배경으로 대체(투명 유리가 아니라 그냥 판때기가 된다) */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .wc-bottom-nav { background: rgba(15, 16, 26, .96); }
+}
+
+/* hover 는 진짜 마우스에서만 — 터치에서 :hover 가 붙어 남는 사고 방지 */
+@media (hover: hover) and (pointer: fine) {
+  .wc-btn-magic:hover { transform: translateY(-2px) scale(1.015); }
+  .wc-btn-magic:hover .wc-icon-orb { transform: translate(2px, -1px) scale(1.08); }
+  .wc-opt-card:hover { transform: translateX(3px); border-color: var(--w-accent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-btn-magic, .wc-btn-magic .wc-icon-orb, .wc-opt-card, .wc-world-node { transition-duration: .001ms; }
+}
