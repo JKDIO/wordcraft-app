@@ -2748,7 +2748,7 @@ h1, h2, h3 { letter-spacing: .01em; }
 .map-avatar-marker{
   position:absolute; width:26px; height:26px; border-radius:999px; background:#fff; transform:translate(-50%,-100%);
   box-shadow:0 0 0 3px var(--w-accent2,#ffb454), 0 4px 12px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; font-size:13px;
-  animation:pulse 2.4s ease-in-out infinite; pointer-events:none;
+  animation:pulseMarker 2.4s ease-in-out infinite; pointer-events:none; /* ★접합: 마커는 translate 를 유지해야 해서 이름 분리 — 원문 pulse 는 53-rewards-pass.css */
 }
 
 /* ── 바텀시트 (sticky · 기본 접힘 46px) ── */
@@ -2791,7 +2791,7 @@ h1, h2, h3 { letter-spacing: .01em; }
 .wm-brief-top h2{margin:0;font-size:18px;flex:1}
 
 /* ── 애니메이션 (정답지 원문 + pinbob 정의) ── */
-@keyframes pulse{0%,100%{transform:translate(-50%,-100%) scale(1)} 50%{transform:translate(-50%,-100%) scale(1.06)}}
+@keyframes pulseMarker{0%,100%{transform:translate(-50%,-100%) scale(1)} 50%{transform:translate(-50%,-100%) scale(1.06)}}
 @keyframes pinbob{0%,100%{margin-top:0} 50%{margin-top:-4px}}
 @media (prefers-reduced-motion: reduce){ .map-pin,.map-avatar-marker{animation:none !important} }
 
@@ -2871,3 +2871,139 @@ h1, h2, h3 { letter-spacing: .01em; }
 .bottom-nav .bi .nav-badge { right: 14%; }
 /* ★접합: app.css 옛 .avatar(테두리 2px·패딩 4px)를 wtopbar 안에서만 중화 */
 .wtopbar .avatar { border: 0; padding: 0; }
+
+/* 53-rewards-pass.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   53-rewards-pass.css — U3 22_rewards 보상 시즌패스 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   ★접합: hover 는 WebView 게이트(L8) 안으로 · .btn-magic 이 <button>이라 기본 outline 만 정리 ·
+          목업 @keyframes pulse(scale) 를 원문으로 되살리고, app.css 옛 .loading-msg(불투명 깜빡임)는 별도 이름으로 보존.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 이중 베젤 카드 (v5 — 월드 테마 색으로만 은은하게, 이미지 프레임 없음) ── */
+.bezel { padding:7px; border-radius:26px; position:relative; overflow:hidden;
+  background:linear-gradient(155deg, rgba(255,255,255,.10), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08); }
+.bezel::before { content:''; position:absolute; inset:0; border-radius:26px; padding:1px; pointer-events:none;
+  background:linear-gradient(155deg, var(--w-accent), transparent 45%, transparent 65%, var(--w-accent2));
+  opacity:.4;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude; }
+.bezel-inner { border-radius:20px; padding:18px;
+  background:linear-gradient(165deg, var(--w-panel), rgba(255,255,255,.02) 140%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  position:relative; overflow:hidden; }
+.bezel-inner::after { content:''; position:absolute; inset:-40% -40% auto auto; width:70%; height:140%;
+  background: radial-gradient(circle, var(--w-glow), transparent 60%); opacity:.5; pointer-events:none; }
+
+/* ── 원문: 버튼 ── */
+.btn-magic { display:inline-flex; align-items:center; gap:10px; border:0; cursor:pointer;
+  background:linear-gradient(135deg,var(--w-accent),var(--w-accent2)); color:#0b0e1a; font-weight:800;
+  font-family:var(--kr-body); font-size:13.5px; padding:5px 6px 5px 18px; border-radius:999px;
+  box-shadow:0 10px 24px -8px var(--w-glow); transition:.35s cubic-bezier(.34,1.4,.64,1); }
+.btn-magic .icon-orb { width:30px; height:30px; border-radius:999px; background:rgba(11,14,26,.18);
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+  transition:.35s cubic-bezier(.34,1.4,.64,1); }
+@media (hover:hover) and (pointer:fine) {
+  .btn-magic:hover { transform:translateY(-2px) scale(1.015) }
+  .btn-magic:hover .icon-orb { transform:translate(2px,-1px) scale(1.08) }
+}
+.btn-ghost { border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:var(--w-ink);
+  font-family:var(--kr-body); font-weight:700; font-size:13px; padding:11px 18px; border-radius:999px; cursor:pointer; }
+
+/* ── 원문: 시즌 패스형 보상 로드맵 ── */
+.pass-hero { border-radius:20px; padding:20px; background:linear-gradient(150deg,#3a2a0a,#0b0e1a); position:relative; overflow:hidden; margin-bottom:16px }
+.pass-hero::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at 80% 20%, rgba(255,209,102,.35), transparent 60%) }
+.pass-track { display:flex; gap:0; overflow-x:auto; padding:10px 4px 16px; -webkit-overflow-scrolling:touch }
+.pass-node { flex-shrink:0; width:76px; text-align:center; position:relative; padding-top:8px }
+.pass-node::before { content:''; position:absolute; top:26px; left:-38px; width:76px; height:3px; background:rgba(255,255,255,.1); z-index:0 }
+.pass-node:first-child::before { display:none }
+.pass-node.reached::before { background:linear-gradient(90deg,var(--w-accent2),var(--w-accent2)) }
+.pass-chest { width:44px; height:44px; margin:0 auto; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:20px; position:relative; z-index:1;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); }
+.pass-node.reached .pass-chest { background:linear-gradient(155deg,var(--w-accent2),#ff8b6b); box-shadow:0 8px 18px -6px rgba(255,209,102,.5) }
+.pass-node.next .pass-chest { border-color:var(--w-accent2); animation:pulse 2s ease-in-out infinite }
+.pass-node .lbl { font-size:9px; color:var(--w-sub); margin-top:6px; line-height:1.3 }
+.pace-tag { font-size:11px; color:var(--w-accent2); font-family:var(--mono); margin-top:8px }
+
+/* ── 원문: 애니메이션 ── */
+@keyframes pulse{0%,100%{transform:scale(1)} 50%{transform:scale(1.06)}}
+
+/* ── ★접합 ── */
+.pass-hero::after { pointer-events:none; }                       /* 글로우 층이 탭을 가리지 않게(원문 속성 아님) */
+.pass-hero > div { z-index:1; }                                   /* 본문이 ::after 위로 */
+.rewards .btn-magic:focus-visible { outline:2px solid var(--w-accent2); outline-offset:2px; }
+.loading-msg { animation-name: wcLegacyFade; }                    /* app.css 의 옛 pulse(불투명 깜빡임) 보존 */
+@keyframes wcLegacyFade { 50% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .pass-node.next .pass-chest { animation:none } }
+
+/* 54-scroll-cue.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   54-scroll-cue.css — v1.4.51 (2026-09-07 Dio님 지시)
+   ① 스크롤바는 실제 화면에 절대 보이지 않는다(목업 `.phone-scroll::-webkit-scrollbar{width:0}` 를 앱 전체로).
+   ② 대신 "더 있는 쪽"에 glass 원형 화살표(.scroll-cue)를 띄운다 — 하단 네비와 같은 톤(rgba(15,16,26,.75)+blur 18px),
+      스프링 이징 cubic-bezier(.34,1.4,.64,1), transform·opacity 만(L8). 끝에 닿으면 사라진다.
+   ③ 가로 트랙(.scroll-cue-wrap[data-axis="x"])은 양끝을 배경색으로 살짝 페이드.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ① 스크롤바 숨김 — 스크롤 기능은 그대로 */
+html, body, .app, .app *, .map-scroll, .map-sheet, .pass-track, .appinfo, .admin, .admin * { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar, .app *::-webkit-scrollbar, .map-scroll::-webkit-scrollbar, .map-sheet::-webkit-scrollbar,
+.pass-track::-webkit-scrollbar, .appinfo *::-webkit-scrollbar, .admin *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* ② 방향 단서 */
+.scroll-cue-wrap { position: relative; }
+.scroll-cue {
+  position: absolute; z-index: 5; width: 34px; height: 34px; border-radius: 999px; padding: 0; margin: 0;
+  display: flex; align-items: center; justify-content: center; color: var(--w-ink, #f1efe8);
+  background: rgba(15,16,26,.75); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 8px 22px -6px var(--w-glow, rgba(124,92,255,.35));
+  opacity: 0; pointer-events: none; cursor: pointer; -webkit-tap-highlight-color: transparent; font: inherit;
+  transition: opacity .35s cubic-bezier(.34,1.4,.64,1), transform .35s cubic-bezier(.34,1.4,.64,1);
+}
+.scroll-cue.on { opacity: 1; pointer-events: auto; }
+.scroll-cue.fixed { position: fixed; z-index: 31; }
+.scroll-cue.cue-up    { left: 50%; top: 10px;    transform: translateX(-50%) scale(.6) rotate(180deg); }
+.scroll-cue.cue-down  { left: 50%; bottom: 10px; transform: translateX(-50%) scale(.6); }
+.scroll-cue.cue-left  { left: 6px;  top: 50%;    transform: translateY(-50%) scale(.6) rotate(90deg); }
+.scroll-cue.cue-right { right: 6px; top: 50%;    transform: translateY(-50%) scale(.6) rotate(-90deg); }
+.scroll-cue.cue-up.on    { transform: translateX(-50%) scale(1) rotate(180deg); }
+.scroll-cue.cue-down.on  { transform: translateX(-50%) scale(1); }
+.scroll-cue.cue-left.on  { transform: translateY(-50%) scale(1) rotate(90deg); }
+.scroll-cue.cue-right.on { transform: translateY(-50%) scale(1) rotate(-90deg); }
+/* 페이지 전체(fixed): 위 단서는 상단바 아래, 아래 단서는 하단 네비 도크 위 */
+.scroll-cue.fixed.cue-up   { top: calc(env(safe-area-inset-top) + 8px); }
+.scroll-cue.fixed.cue-down { bottom: calc(96px + env(safe-area-inset-bottom)); }
+/* 지도 안(.map-scroll 래퍼): 아래 단서는 접힌 시트(46px+10px) 위 */
+.map-cue-wrap .scroll-cue.cue-down { bottom: 66px; }
+.scroll-cue i { display: block; line-height: 0; animation: cueBob 1.6s ease-in-out infinite; }
+.scroll-cue svg { display: block; }
+@keyframes cueBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+
+/* ③ 가로 트랙 양끝 페이드 (배경색으로 녹아들게 — 마스크 아님) */
+.scroll-cue-wrap[data-axis="x"]::before, .scroll-cue-wrap[data-axis="x"]::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 18px; z-index: 4; pointer-events: none;
+}
+.scroll-cue-wrap[data-axis="x"]::before { left: 0;  background: linear-gradient(90deg, var(--w-bg, #0b0e1a), transparent); }
+.scroll-cue-wrap[data-axis="x"]::after  { right: 0; background: linear-gradient(270deg, var(--w-bg, #0b0e1a), transparent); }
+
+@supports not (backdrop-filter: blur(1px)) { .scroll-cue { background: rgba(15,16,26,.96); } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue i { animation: none; } .scroll-cue { transition-duration: .001ms; } }
+
+/* 55-review-mine.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   55-review-mine.css — 15_evo 복습 마인 입구 (2026-09-07, U4 항목을 Dio님 지시로 앞당김)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값 무변경(ui_check ⑨-7 대조). .bezel·.btn-magic·.h-display·.section-pad 는 52·53 조각에 있다.
+   ★접합: 옛 입구 안내문(mine-note)은 .pill-tag 값으로 블록 표시(문구는 그대로).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.evo-row { display:flex; align-items:center; justify-content:space-between; padding:6px 2px }
+.evo-stage { display:flex; flex-direction:column; align-items:center; gap:5px; font-size:20px }
+.evo-stage span.lbl { font-size:9px; color:var(--w-sub); font-family:var(--mono) }
+.evo-arrow { color:var(--w-sub); font-size:12px }
+
+/* ★접합 */
+.mine-evo .mine-note { display:block; margin:10px 0 0; padding:8px 12px; font-size:11px; line-height:1.6; font-family:var(--kr-body);
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:16px; color:var(--w-sub); }
+.mine-evo .mine-note b { color:var(--w-ink); }
+.mine-evo .btn-magic:disabled { opacity:.45; cursor:default; }
+.mine-evo .evo-stage .lbl { white-space:nowrap; }
