@@ -3172,3 +3172,293 @@ body:has(.brief) { overflow-x:hidden; }
 .brief-terrain svg { position:absolute; inset:0; width:100%; height:100%; }
 .brief-terrain .pill-tag { position:absolute; bottom:10px; left:20px; cursor:pointer; color:var(--w-ink); }
 .brief .ghost-replay { margin:-6px 0 12px; }
+
+/* 60-engine-core.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   60-engine-core.css — U4 엔진 코어 5화면: 04_e-story · 05_e-learn · 06_e-choice · 09_e-quiz(보스 관문) · 12_respawn (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   .bezel·.btn-magic·.icon-orb 는 53, .h-display·.pill-tag·.section-pad 는 52 조각에 이미 있다 — 여기서는 없는 셀렉터만 원문으로 추가.
+   50-uiux-system.css 의 `.wc-engine-header`·`.wc-opt-card`·`.wc-tile` 등(U1 이식본, wc- 접두)은 그대로 두고 무접두 원문을 추가했다(값 동일).
+   ★접합: 옛 app.css 의 .choice-btn(패딩·그림자·픽셀 글꼴)·.qcard-text(19px 굵게)·.tts-btn 크기를 정답지 껍데기 안에서만 중화.
+          정답지에 없는 애니메이션(오답 흔들림·정답 고리 이어짐)은 README §5 규칙대로 transform·opacity 만, 스프링 이징 cubic-bezier(.34,1.4,.64,1).
+   금지 준수: mask-image·1 미만 brightness 필터·border-image 없음. 오답 = 색만(빨간 X·감점 표기 없음, 문구는 TSX).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 엔진 헤더 · 말풍선 · 진행 점 ── */
+.engine-header{padding:16px 20px 8px}
+.engine-header .char{
+  display:flex; align-items:center; gap:12px; margin-bottom:14px;
+}
+.engine-header .char .face{
+  width:56px; height:56px; border-radius:18px; background:linear-gradient(155deg,var(--w-accent),var(--w-accent2));
+  display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 8px 20px -6px var(--w-glow);
+  overflow:hidden;
+}
+.engine-header .char .face img{width:100%; height:100%; object-fit:cover; object-position:center 15%}
+.speech{
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:16px 16px 16px 4px;
+  padding:12px 14px; font-size:13px; line-height:1.6; flex:1;
+}
+.progress-dots{display:flex; gap:5px; padding:0 20px 10px}
+.progress-dots span{height:5px; flex:1; border-radius:99px; background:rgba(255,255,255,.1)}
+.progress-dots span.done{background:linear-gradient(90deg,var(--w-accent),var(--w-accent2))}
+
+/* ── 원문: 선택지 카드 (correct/wrong 은 색만) ── */
+.opt-card{
+  display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; margin-bottom:10px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:14px;
+  transition:.25s cubic-bezier(.34,1.3,.64,1);
+}
+.opt-card .k{
+  width:26px; height:26px; border-radius:9px; background:rgba(255,255,255,.07); display:flex; align-items:center;
+  justify-content:center; font-family:var(--mono); font-size:11px; color:var(--w-sub); flex-shrink:0;
+}
+.opt-card.correct{border-color:#3fd18b; background:rgba(63,209,139,.1)}
+.opt-card.wrong{border-color:#ff6b6b; background:rgba(255,107,107,.08)}
+@media (hover:hover) and (pointer:fine) {
+  .opt-card:hover{transform:translateX(3px); border-color:var(--w-accent)}
+}
+
+/* ── 원문: 타일 · 빈칸 ── */
+.tile-row{display:flex; flex-wrap:wrap; gap:8px; padding:10px 4px}
+.tile{
+  padding:9px 14px; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  font-size:13.5px; cursor:pointer; font-family:var(--kr-body);
+}
+.tile.placed{background:var(--w-accent); color:#0b0e1a; font-weight:700; border-color:var(--w-accent)}
+.blank-line{border-bottom:2px dashed rgba(255,255,255,.25); min-width:52px; display:inline-block; padding:0 6px; text-align:center}
+
+/* ── ★접합 ── */
+/* ★접합: 선택지는 <button class="choice-btn opt-card"> — 옛 app.css .choice-btn 이 정하는 속성 중 원문 .opt-card 가 정하지 않는 것만 지운다(원문 값은 .opt-card 가 뒤에서 이긴다) */
+.qcard .choices { display: block; gap: 0; }
+.qcard .choices .choice-btn.opt-card { width: 100%; min-height: 0; box-shadow: none; text-align: left; font-weight: 400; color: var(--w-ink); line-height: 1.5; -webkit-tap-highlight-color: transparent; }
+.qcard .choices .choice-btn.opt-card:active { transform: none; box-shadow: none; }
+.qcard .choices .choice-btn.opt-card:disabled { opacity: 1; }
+/* ★접합: 고른 직후 250ms 선택 상태(B-3 유지) — 옛 다이아몬드색 대신 월드 강조색 */
+.qcard .choices .choice-btn.opt-card.selected { border-color: var(--w-accent); background: rgba(255,255,255,.07); box-shadow: none; }
+/* ★접합: 정답지에 없는 동작 — 오답 흔들림(app.css @keyframes shake: translateX 만) · 정답 고리 이어짐(scale·opacity 만) */
+.qcard .choices .opt-card.wrong { animation: shake .35s cubic-bezier(.34,1.4,.64,1); }
+.qcard .choices .opt-card.correct { animation: wcLink .35s cubic-bezier(.34,1.4,.64,1); }
+@keyframes wcLink { from { transform: scale(.96); opacity: .6; } to { transform: scale(1); opacity: 1; } }
+/* ★접합: 문항 문구는 말풍선(.speech 13px) 안에 산다 — 옛 .qcard-text(19px 굵게) 중화 */
+.speech .qcard-text { font-size: inherit; font-weight: inherit; margin: 0; }
+.speech .qcard-sub { display: block; font-size: 11px; font-weight: 400; color: var(--w-sub); }
+.speech .tts-btn { margin-top: 6px; }
+/* ★접합: 듣기 문항은 캐릭터 얼굴 자리가 🔊 재생 버튼(56px 얼굴 안에 꽉 차게) */
+.engine-header .face .tts-btn { width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 26px; }
+/* ★접합: 학습 카드 — 예문 타일 옆 한국어 뜻 · 옛 입모양 다이어그램 상자(app.css .mouth-art)의 테두리만 걷어낸다 */
+.learn-step .wc-ex-ko { flex: 1 1 140px; align-self: center; font-size: 12.5px; color: var(--w-sub); line-height: 1.5; }
+.learn-step .mouth-art { background: transparent; border: 0; padding: 6px 0; }
+.learn-step .opt-card.correct { cursor: default; }
+/* ★접합: 스토리 — 루트 .story 가 탭 대상이라 버튼은 장식(포커스 링만) */
+.steprunner .btn-magic:focus-visible { outline: 2px solid var(--w-accent2); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .qcard .choices .opt-card.wrong, .qcard .choices .opt-card.correct { animation: none; }
+}
+
+/* 61-engine-games.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   61-engine-games.css — U4 엔진 07_e-order · 08_e-match · 11_e-summon (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   이미 이식된 원문(.bezel 계열·.btn-magic·.icon-orb·.btn-ghost = 53 / .h-display·.pill-tag·.section-pad = 52)은 반복하지 않는다.
+   여기 새로 붙인 원문: .opt-card(+:hover·.correct) · .tile-row · .tile · .tile.placed · .blank-line
+   ★접합(wc-): 목업은 <div>·<span>이고 앱은 <button>이라 필요한 리셋, 짝맞추기 연결선(transform·opacity 만),
+              오답 흔들림(빨간색·X 없음), 피드백 카드 톤(빨강 제거), 소환 무대를 bezel 안에 넣는 접합.
+   금지 준수: mask-image·1 미만 brightness·border-image 없음. 오답에 빨간색·"틀렸"·"오답" 문구 없음.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 선택 카드(짝맞추기 좌우 열) ── */
+.opt-card{
+  display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; margin-bottom:10px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:14px;
+  transition:.25s cubic-bezier(.34,1.3,.64,1);
+}
+@media (hover:hover) and (pointer:fine) {
+  .opt-card:hover{transform:translateX(3px); border-color:var(--w-accent)}
+}
+.opt-card.correct{border-color:#3fd18b; background:rgba(63,209,139,.1)}
+
+/* ── 원문: 단어 칩(타일) ── */
+.tile-row{display:flex; flex-wrap:wrap; gap:8px; padding:10px 4px}
+.tile{
+  padding:9px 14px; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  font-size:13.5px; cursor:pointer; font-family:var(--kr-body);
+}
+.tile.placed{background:var(--w-accent); color:#0b0e1a; font-weight:700; border-color:var(--w-accent)}
+
+/* ── 원문: 문장 빈칸 ── */
+.blank-line{border-bottom:2px dashed rgba(255,255,255,.25); min-width:52px; display:inline-block; padding:0 6px; text-align:center}
+
+/* ── ★접합 ── (원문이 정한 속성은 건드리지 않는다. 원문 규칙 뒤에 둔다) */
+/* ★ 타일이 <button>: app.css 전역 button 리셋(배경·테두리 없음·font inherit) 위에 .tile 원문이 얹힌다. 여기서는 상태만 */
+.tile.wc-used{opacity:.25}                         /* 창고에서 이미 올린 블록 — 옛 .token.used 값 그대로 */
+.tile:disabled{cursor:default}
+.tile:focus-visible{outline:2px solid var(--w-accent2); outline-offset:2px}
+/* ★ 빈칸이 <button>: 줄높이는 문장(1.8)을 따라가고, 비어 있으면 높이가 0이 되지 않게 공백 한 칸 */
+.ordergame button.blank-line{line-height:inherit; vertical-align:baseline; min-height:0}
+.ordergame .blank-line.wc-empty::after{content:'\00a0'}
+.ordergame .blank-line:focus-visible{outline:2px solid var(--w-accent2); outline-offset:2px}
+.ordergame .bezel-inner > p{margin:0; position:relative; z-index:1}   /* bezel-inner::after 글로우 위로 */
+.ordergame .btn-ghost{margin-top:10px; width:100%}
+.ordergame .btn-magic:disabled, .summon-step .btn-magic:disabled{opacity:.45; cursor:default; box-shadow:none}
+.ordergame .btn-magic:focus-visible, .summon-step .btn-magic:focus-visible{outline:2px solid var(--w-accent2); outline-offset:2px}
+
+/* ★ 짝맞추기: 카드가 <button>이라 폭·정렬만, 선택은 원문 hover 값(테두리 accent), 짝이 맞으면 원문 .correct */
+.wc-match-wrap{position:relative}
+.wc-match-wrap button.opt-card{width:100%; text-align:left; font-family:var(--kr-body); color:var(--w-ink)}
+.wc-match-wrap .opt-card.wc-sel{border-color:var(--w-accent)}
+.wc-match-wrap .opt-card:disabled{cursor:default}
+/* ★ 오답: 빨간색·X 없이 살짝 흔들리기만 (transform 만) */
+.wc-match-wrap .opt-card.wc-shake{animation:wcNudge .4s cubic-bezier(.34,1.4,.64,1)}
+@keyframes wcNudge{0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)}}
+/* ★ 연결선: 왼쪽 카드 오른끝 → 오른쪽 카드 왼끝. 회전은 바깥 span, 그리기는 안쪽 ::before 의 scaleX(transform·opacity 만) */
+.wc-match-lines{position:absolute; inset:0; pointer-events:none; z-index:1; overflow:visible}
+.wc-match-line{position:absolute; height:2px; margin-top:-1px; transform-origin:0 50%}
+.wc-match-line::before{content:''; position:absolute; inset:0; border-radius:2px;
+  background:linear-gradient(90deg,var(--w-accent),var(--w-accent2)); box-shadow:0 0 8px var(--w-glow);
+  transform-origin:0 50%; animation:wcLineDraw .45s cubic-bezier(.34,1.4,.64,1) both}
+@keyframes wcLineDraw{from{transform:scaleX(0); opacity:0} to{transform:scaleX(1); opacity:1}}
+
+/* ★ 피드백 카드 톤(order·summon 공통): app.css 옛 빨강 테두리·픽셀 폰트를 이 두 화면 안에서만 중화 */
+.ordergame .feedback, .summon-step .feedback{border:1px solid rgba(255,255,255,.08); border-radius:16px; background:rgba(255,255,255,.035); text-align:left}
+.ordergame .feedback.ok, .summon-step .feedback.ok{border-color:#3fd18b; background:rgba(63,209,139,.1)}
+.ordergame .feedback.no, .summon-step .feedback.no{border-color:var(--w-accent); background:rgba(255,255,255,.035)}
+.ordergame .feedback-meme, .summon-step .feedback-meme{font-family:var(--kr-body); font-size:14px; font-weight:800; color:var(--w-ink)}
+.ordergame .feedback.no .feedback-meme, .summon-step .feedback.no .feedback-meme{color:var(--w-ink)}   /* app.css 빨강(.feedback.no .feedback-meme) 중화 */
+.ordergame .feedback.ok .feedback-meme, .summon-step .feedback.ok .feedback-meme{color:#3fd18b}
+.ordergame .feedback-explain, .summon-step .feedback-explain{font-size:12.5px; color:var(--w-sub)}
+.summon-step .feedback .btn-magic{margin-top:10px}
+
+/* ★ 소환진: 무대(forge-stage-box)를 bezel 안에 — 폭을 채우고 글로우(::after) 위에 올린다 */
+.summon-step .bezel{text-align:left}
+.summon-step > .pill-tag{align-self:center}   /* app.css .summon-step(flex column) 이 pill 을 늘리지 않게 */
+.summon-step .bezel-inner .forge-stage-box{width:100%; margin:0; position:relative; z-index:1}
+.summon-step .forge-slots{margin-top:10px; min-height:56px; align-items:center}
+.summon-step .forge-slots .order-hint{font-size:12px; color:var(--w-sub); width:100%; text-align:center}
+.summon-step .order-pool{margin-top:0}
+.summon-step .forge-summon{font-size:13.5px; letter-spacing:0}   /* app.css .forge-root .forge-summon(18px) 중화 → 원문 .btn-magic 값 */
+.summon-step .forge-mission-ko{justify-content:center; font-size:13px}
+.summon-step .forge-mission-ko b{color:var(--w-accent2)}
+.summon-step .summon-pool-label{color:var(--w-sub); font-family:var(--mono); font-weight:400; letter-spacing:.18em; font-size:10px; text-transform:uppercase; margin:16px 0 0}
+.summon-step .summon-focus{background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); border-radius:12px; color:var(--w-sub); font-weight:400; font-size:12px}
+/* ★ 깨진 블록: 빨강 대신 accent2 테두리 + 원문 파단 흔들림(blkShake, transform 만) */
+.summon-step .tile.forge-broken{border-color:var(--w-accent2); background:rgba(255,180,84,.18); color:var(--w-ink); animation:blkShake .32s linear both}
+
+/* 62-vocab.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   62-vocab.css — U4 13_vocab-hub 단어 대륙 티어맵 · 14_vocab-game 한→영 소환 껍데기 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   이 화면이 쓰는 원문 셀렉터는 전부 앞 조각에 이미 있어 여기서 반복하지 않는다(중복 금지):
+     .h-display .pill-tag .eyebrow .section-pad .wtopbar .xpbar-* (52) · .bezel .btn-magic .btn-ghost (53) · .world-node 계열 (58) ·
+     .tile-row .tile .tile.placed · .opt-card .opt-card .k .opt-card.correct (60-engine-core — 같은 날 U4 엔진 이식본)
+   .opt-card.wrong(빨간 테두리)은 이 화면에서 쓰지 않는다(README §2-4) — 못 맞히면 흔들림 + "다시 볼까?" 만.
+   ★접합: 목업 <div> 였던 .tile·.opt-card·.world-node 를 <button> 으로 쓰기 위한 리셋(원문이 정하지 않는 속성만) ·
+          허브 상단 wtopbar 풀블리드 · 힌트 상자 · 흔들림(transform 만, 스프링 이징).
+   금지 준수: 마스크 이미지·1 미만 밝기 필터·금색 액자 프레임·빨간 X 없음.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── ★접합 ── */
+/* 허브: 셸 상단 wtopbar 를 화면 안에서 그린다(App 은 '/' 에서만 그린다) — .app-main 안쪽 여백(12px 14px)을 상쇄해 풀블리드 */
+.vocab-hub .wc-hub-top { margin: -12px -14px 0; }
+.vocab-hub .wc-hub-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.vocab-hub .wc-hub-head .eyebrow { flex: 1; margin: 0; }
+.vocab-hub .wc-hub-head .pill-tag { flex-shrink: 0; cursor: pointer; color: var(--w-ink); -webkit-tap-highlight-color: transparent; }
+.vocab-hub .wc-hub-sub { margin: -8px 0 14px; font-size: 11.5px; color: var(--w-sub); font-family: var(--mono); }
+/* 티어·팩·골렘 노드는 <button> — 브라우저 버튼 기본값만 지운다(값은 58-brief 의 .world-node 원문이 정한다) */
+.vocab-hub button.world-node { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.vocab-hub button.world-node:disabled { cursor: default; }
+.vocab-hub .world-node .meta h4 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vocab-hub .world-node .meta p { line-height: 1.45; }
+.vocab-hub .bezel .pill-tag { vertical-align: middle; }
+
+/* 게임: 머리 줄(← 나가기 · 팩 이름) — 카운터 pill 은 목업처럼 가운데 */
+.vocab-game .wc-game-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: -12px 0 10px; }
+.vocab-game .wc-game-top .pill-tag[role="button"] { cursor: pointer; color: var(--w-ink); -webkit-tap-highlight-color: transparent; }
+/* 글자 타일·보기 카드는 <button> — 원문이 정한 padding·font-size·font-family·cursor 는 건드리지 않는다 */
+.vocab-game button.tile { color: var(--w-ink); line-height: 1.2; font-weight: 400; margin: 0; -webkit-tap-highlight-color: transparent; }
+.vocab-game button.tile:disabled { cursor: default; }
+.vocab-game button.opt-card { width: 100%; text-align: left; color: var(--w-ink); font-family: var(--kr-body); font-weight: 400; line-height: 1.45; -webkit-tap-highlight-color: transparent; }
+.vocab-game button.opt-card:disabled { cursor: default; }
+.vocab-game .wc-choices { margin: 14px 0; text-align: left; }
+.vocab-game .wc-hintbox { margin-top: 8px; padding: 8px 12px; text-align: left; font-size: 12.5px; line-height: 1.6;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; color: var(--w-sub); }
+.vocab-game .wc-speak { margin: 14px 0; display: grid; gap: 8px; justify-items: center; }
+.vocab-game .btn-magic:disabled, .vocab-game .btn-ghost:disabled { opacity: .45; cursor: default; }
+/* 오답: 빨간 표시 없이 살짝 흔들리기만(transform 만 · 스프링 이징) + "다시 볼까?" */
+@keyframes wcVocabShake { 0%,100% { transform: translateX(0) } 20% { transform: translateX(-4px) } 40% { transform: translateX(4px) } 60% { transform: translateX(-3px) } 80% { transform: translateX(3px) } }
+.vocab-game .wc-shake { animation: wcVocabShake .45s cubic-bezier(.34,1.4,.64,1); }
+@media (prefers-reduced-motion: reduce) { .vocab-game .wc-shake { animation: none; } }
+
+/* 63-ghost-listen.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   63-ghost-listen.css — U4 16_ghostboss 유령보스전 · 20_listen 리스닝 아케이드 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값 무변경(ui_check ⑨-7 대조).
+   .bezel·.btn-magic·.btn-ghost 는 53, .h-display·.pill-tag·.section-pad·.xpbar-* 는 52 조각에 이미 있다(중복 안 함).
+   여기서 새로 옮긴 원문은 .opt-card 계열뿐이다. (.opt-card.wrong 은 빨간 테두리라 README §2-4 금지 취지대로 옮기지 않았다.)
+   ★접합: 선택지 버튼은 engine/QuestionCard(.choice-btn)가 그린다 — 06 e-choice 이식 전까지는 .choice-btn 에 .opt-card 값을 wc- 접합으로 입힌다.
+   금지 준수: mask-image·brightness<1·border-image 없음. 애니메이션은 transform 만.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 선택지 카드 ── */
+.opt-card { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; margin-bottom:10px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:14px;
+  transition:.25s cubic-bezier(.34,1.3,.64,1); }
+@media (hover:hover) and (pointer:fine) {
+  .opt-card:hover { transform:translateX(3px); border-color:var(--w-accent) }
+}
+.opt-card .k { width:26px; height:26px; border-radius:9px; background:rgba(255,255,255,.07); display:flex; align-items:center;
+  justify-content:center; font-family:var(--mono); font-size:11px; color:var(--w-sub); flex-shrink:0; }
+.opt-card.correct { border-color:#3fd18b; background:rgba(63,209,139,.1) }
+
+/* ── ★접합 ── */
+
+/* 16 유령보스 인트로 — app.css 옛 .ghost-screen(padding 16px)은 .section-pad 원문(뒤에 옴)이 덮는다 */
+.ghost-boss .btn-magic:focus-visible, .ghost-boss .btn-ghost:focus-visible, .listen-arcade button:focus-visible { outline:2px solid var(--w-accent2); outline-offset:2px; box-shadow:none; }
+.ghost-boss .btn-ghost { display:block; margin:18px auto 0; }
+/* 유령의 이름·대사(콘텐츠 실데이터)와 문항 수 안내 — 정답지 밖 요소라 sub 톤으로만 */
+.ghost-boss .wc-ghost-quote { margin:18px 0 0; font-size:12px; color:var(--w-sub); line-height:1.6; }
+.ghost-boss .wc-ghost-quote b { color:var(--w-ink); font-weight:700; }
+.ghost-boss .wc-ghost-meta { margin:10px 0 0; font-size:11px; color:var(--w-sub); line-height:1.8; }
+.ghost-boss .wc-ghost-meta .pill-tag { margin-right:6px; }
+
+/* 20 리스닝 아케이드 — 문항 화면. app.css 옛 .arcade(flex·gap 12)는 정답지 여백을 흔들어 블록으로 되돌린다 */
+.arcade.listen-arcade { display:block; gap:0; }
+.listen-arcade .wc-listen-top { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.listen-arcade .wc-listen-back { font-size:22px; line-height:1; padding:2px 8px; color:inherit; background:none; border:0; cursor:pointer; }
+.listen-arcade .wc-listen-top .pill-tag { flex-shrink:0; }
+/* 재생 카드 안 ▶️ ⏸ — 정답지의 글자 그대로를 버튼으로(크기는 부모 26px 상속) */
+.listen-arcade .wc-play { font-size:inherit; line-height:1; padding:0 6px; background:none; border:0; color:inherit; cursor:pointer; }
+.listen-arcade .bezel-inner > * { position:relative; z-index:1; }
+/* QuestionCard 의 프롬프트 상자(🔊 + 문구)는 위 재생 카드가 대신한다 — 숨김. 🐢 천천히 토글은 pill-tag 톤으로 유지 */
+.listen-arcade .wc-listen-q .qcard-q { display:none; }
+/* U4 통합(2026-09-08): QuestionCard 가 06 정답지 `.engine-header` 말풍선을 그리게 되어(엔진 core 이식) 재생 카드와 문장이 중복 → 리스닝에서는 말풍선을 숨긴다(재생·다시 듣기는 카드의 ▶️/⏸) */
+.listen-arcade .wc-listen-q .engine-header { display:none; }
+.listen-arcade .wc-listen-q .slow-toggle { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-family:var(--mono);
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:3px 10px;
+  color:var(--w-sub); font-weight:400; margin:0 0 12px; }
+.listen-arcade .wc-listen-q .slow-toggle.on { border-color:var(--w-accent); color:var(--w-ink); background:rgba(255,255,255,.07); }
+/* 선택지 = .opt-card 값(원문과 동일)을 .choice-btn 에 입힌다. 06 e-choice 에서 QuestionCard 가 .opt-card 를 달면 이 블록은 지운다 */
+.listen-arcade .wc-listen-q .choices { display:block; gap:0; }
+.listen-arcade .wc-listen-q .choice-btn { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; margin-bottom:10px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:14px;
+  transition:.25s cubic-bezier(.34,1.3,.64,1);
+  width:100%; min-height:0; text-align:left; color:var(--w-ink); font-family:var(--kr-body); font-weight:400; box-shadow:none; }
+.listen-arcade .wc-listen-q .choice-btn:active { transform:translateX(3px); box-shadow:none; }
+.listen-arcade .wc-listen-q .choice-btn .key { width:26px; height:26px; border-radius:9px; background:rgba(255,255,255,.07); display:flex; align-items:center;
+  justify-content:center; font-family:var(--mono); font-size:11px; color:var(--w-sub); flex-shrink:0; margin:0; }
+.listen-arcade .wc-listen-q .choice-btn .mark { float:none; margin-left:auto; font-size:12px; color:var(--w-sub); }
+.listen-arcade .wc-listen-q .choice-btn.selected { border-color:var(--w-accent); background:rgba(255,255,255,.07); box-shadow:none; }
+.listen-arcade .wc-listen-q .choice-btn.correct { border-color:#3fd18b; background:rgba(63,209,139,.1); }
+.listen-arcade .wc-listen-q .choice-btn.correct .mark { color:#3fd18b; }
+.listen-arcade .wc-listen-q .choice-btn.answer-reveal { border:1px dashed #3fd18b; background:rgba(255,255,255,.035); }
+.listen-arcade .wc-listen-q .choice-btn.answer-reveal .mark { color:#3fd18b; }
+/* 못 맞힌 보기 = 빨강 없이 흔들림(README 06 규칙 · transform 만) */
+.listen-arcade .wc-listen-q .choice-btn.wrong { border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.05); animation:wcOptShake .4s cubic-bezier(.34,1.4,.64,1); }
+.listen-arcade .wc-listen-q .choice-btn.wrong .mark { color:var(--w-sub); }
+@keyframes wcOptShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+/* 피드백 상자 — 빨간 틴트 대신 카드 톤 */
+.listen-arcade .wc-listen-q .feedback { text-align:left; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.035); }
+.listen-arcade .wc-listen-q .feedback.ok { border-color:#3fd18b; background:rgba(63,209,139,.1); }
+.listen-arcade .wc-listen-q .feedback.no { border-color:rgba(255,255,255,.08); background:rgba(255,255,255,.035); }
+.listen-arcade .wc-listen-q .feedback.no .feedback-meme { color:var(--w-accent2); }
+@media (prefers-reduced-motion: reduce) { .listen-arcade .wc-listen-q .choice-btn.wrong { animation:none } }
