@@ -2794,3 +2794,80 @@ h1, h2, h3 { letter-spacing: .01em; }
 @keyframes pulse{0%,100%{transform:translate(-50%,-100%) scale(1)} 50%{transform:translate(-50%,-100%) scale(1.06)}}
 @keyframes pinbob{0%,100%{margin-top:0} 50%{margin-top:-4px}}
 @media (prefers-reduced-motion: reduce){ .map-pin,.map-avatar-marker{animation:none !important} }
+
+/* 52-shell-hall.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   52-shell-hall.css — U3-0 공통 셸(wtopbar · bottom-nav) + U3 23_profile 성취의 전당 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check가 원문과 대조한다).
+   추가한 것은 ★표시된 "접합 규칙"뿐: 목업의 phone-screen(absolute) 좌표계를 앱의 fixed 하단 도크에 얹고,
+   <div>였던 .bi 를 <button>으로 쓰기 위한 리셋, app.css 옛 .avatar 규칙 중화.
+   금지 준수: 마스크 이미지·1 미만 밝기 필터·금색 액자 프레임 없음.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ★접합: 목업 .bottom-nav 는 phone-screen 기준 absolute — 앱에서는 뷰포트 하단 도크(폭 480 중앙)에 같은 좌표로 얹는다 */
+.wc-nav-dock { position: fixed; left: 50%; bottom: env(safe-area-inset-bottom); transform: translateX(-50%); width: 100%; max-width: 480px; height: 0; z-index: 30; pointer-events: none; }
+.wc-nav-dock .bottom-nav { pointer-events: auto; }
+/* ★접합: 도크 높이(≈57px + bottom 16px)만큼 본문 하단 여백 */
+.app-main { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+/* ★접합: 구경 모드 배너 → pill-tag 톤으로 축소(문구는 App.tsx 그대로). 값은 .pill-tag 원문과 동일 */
+.wc-observer-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 8px; margin: 8px 14px 0; padding: 3px 10px;
+  font-size: 10.5px; font-family: var(--mono); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 999px; color: var(--w-sub); line-height: 1.5; }
+.wc-observer-bar > b { font-size: 10.5px; }
+.wc-observer-bar > span { flex: 1 1 160px; }
+.wc-observer-bar b { color: var(--w-ink); }
+.wc-observer-btn { min-height: 0; padding: 2px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); color: var(--w-ink); cursor: pointer; }
+
+/* ── 원문: 공통 유틸 ── */
+.mono, .kpi, .xplabel, .prog, .c-bar-track ~ span{ font-variant-numeric: tabular-nums; }
+.h-display { font-family:var(--kr-display); letter-spacing:.01em }
+.pill-tag { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-family:var(--mono);
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:3px 10px;
+  color:var(--w-sub); }
+.eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.18em; color:var(--w-accent2); font-weight:700;
+  margin-bottom:6px; display:block; }
+.section-pad{padding:6px 20px 100px}
+
+/* ── 원문: 상단 wtopbar ── */
+.wtopbar { display:flex; align-items:center; justify-content:space-between; padding:6px 20px 10px }
+.wtopbar .avatar { width:38px; height:38px; border-radius:14px; background:linear-gradient(155deg,var(--w-accent),var(--w-accent2));
+  display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 4px 14px var(--w-glow); }
+.xpwrap { flex:1; margin:0 12px }
+.xpbar-track { height:8px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden }
+.xpbar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--w-accent),var(--w-accent2)) }
+.xplabel { font-size:9.5px; color:var(--w-sub); margin-top:3px; font-family:var(--mono) }
+.gembadge { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  border-radius:999px; padding:5px 10px; font-size:11px; font-family:var(--mono); }
+
+/* ── 원문: 하단 bottom-nav (5탭 glass) ── */
+.bottom-nav { position:absolute; left:14px; right:14px; bottom:16px; display:flex; justify-content:space-around;
+  background:rgba(15,16,26,.75); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.08);
+  border-radius:22px; padding:10px 6px; }
+.bottom-nav .bi { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:18px; color:var(--w-sub); flex:1 }
+.bottom-nav .bi.on { color:var(--w-ink) }
+.bottom-nav .bi small { font-size:8.5px; font-family:var(--kr-body) }
+@supports not (backdrop-filter:blur(1px)) { .bottom-nav { background: rgba(15,16,26,.96); } } /* ★접합: WebView 게이트(L8) */
+
+/* ── 원문: 성취의 전당 프로필 ── */
+.hall-hero { text-align:center; padding:26px 16px 18px; position:relative }
+.hall-hero .ring { width:120px; height:120px; margin:0 auto 10px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:56px;
+  background:conic-gradient(var(--w-accent) 0% 72%, rgba(255,255,255,.08) 72% 100%); position:relative; }
+.hall-hero .ring::before { content:''; position:absolute; inset:6px; border-radius:50%; background:var(--w-bg) }
+.hall-hero .ring span { position:relative; z-index:1 }
+.timeline { position:relative; padding-left:22px; margin-top:6px }
+.timeline::before { content:''; position:absolute; left:6px; top:4px; bottom:4px; width:2px; background:rgba(255,255,255,.1) }
+.tl-item { position:relative; padding-bottom:18px }
+.tl-item::before { content:''; position:absolute; left:-22px; top:2px; width:11px; height:11px; border-radius:50%; background:var(--w-accent2); box-shadow:0 0 0 3px rgba(255,255,255,.08) }
+.tl-item h5 { margin:0 0 2px; font-size:12.5px }
+.tl-item p { margin:0; font-size:10.5px; color:var(--w-sub) }
+.trophy-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:6px }
+.trophy-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px; text-align:center }
+.trophy-card .big { font-size:22px; font-family:var(--mono); font-weight:700; color:var(--w-accent2) }
+.trophy-card .lbl { font-size:10px; color:var(--w-sub); margin-top:3px }
+
+/* ── ★접합 리셋(원문이 정하지 않는 속성만) — 원문 규칙 뒤에 둔다 ── */
+/* ★접합: .bi 는 목업에서 <div>, 앱에서는 <button> — 브라우저 버튼 기본값만 지운다(값은 위 원문이 정한다) */
+.bottom-nav .bi { background: none; border: 0; padding: 0; margin: 0; font: inherit; cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent; }
+.bottom-nav .bi .nav-badge { right: 14%; }
+/* ★접합: app.css 옛 .avatar(테두리 2px·패딩 4px)를 wtopbar 안에서만 중화 */
+.wtopbar .avatar { border: 0; padding: 0; }
