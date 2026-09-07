@@ -3007,3 +3007,42 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, .app *::-webkit-scrollbar, .ma
 .mine-evo .mine-note b { color:var(--w-ink); }
 .mine-evo .btn-magic:disabled { opacity:.45; cursor:default; }
 .mine-evo .evo-stage .lbl { white-space:nowrap; }
+
+/* 56-appinfo.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   56-appinfo.css — v1.4.52 정보 화면·스플래시 아이콘 (2026-09-07 Dio님: "정보 화면도 예전과 똑같다", "빈 사각형만 나온다")
+   정답지 30화면에 정보 화면은 없다 → U1 디자인 시스템 값(section-pad·bezel·eyebrow·pill-tag·btn-magic/ghost)만 쓴다.
+   ★접합: app.css 옛 .appinfo/.ai-* 규칙 중 새 톤과 충돌하는 것만 중화. 아이콘 로드 실패 시 대체 블록(빈 사각형 금지).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.appinfo.section-pad { padding-left: 20px; padding-right: 20px; padding-bottom: 100px; max-width: none; margin: 0; }
+.appinfo .ai-hero { text-align: center; padding: 10px 0 0; display: flex; flex-direction: column; align-items: center; }
+.appinfo .ai-icon { width: 108px; height: 108px; border-radius: 26px; box-shadow: 0 10px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); display: block; object-fit: cover; }
+.ai-icon-fallback, .sp-icon-fallback {
+  display: flex !important; align-items: center; justify-content: center;
+  background: linear-gradient(155deg, var(--w-accent), var(--w-accent2)); color: #0b0e1a;
+}
+.ai-icon-fallback { font-size: 56px; }
+.sp-icon-fallback { font-size: 44%; width: 100%; height: 100%; }
+.appinfo .ai-name { color: var(--w-ink); letter-spacing: .01em; margin: 12px 0 0; }
+.appinfo .ai-p { font-size: 13.5px; line-height: 1.65; margin: 0; color: var(--w-ink); }
+.appinfo .ai-p b { color: #fff; }
+.appinfo .ai-love { margin: 10px 0 0; padding: 10px 12px; border-radius: 14px; font-size: 13px; line-height: 1.6;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
+.appinfo .ai-love b { color: var(--w-accent2); }
+.appinfo .ai-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 12.5px; color: var(--w-sub);
+  border-bottom: 1px solid rgba(255,255,255,.06); }
+.appinfo .ai-row:last-of-type { border-bottom: none; }
+.appinfo .ai-row b { color: var(--w-ink); font-size: 13.5px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.appinfo .ai-status { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-family: var(--mono); border-radius: 999px; padding: 3px 10px;
+  margin: 8px 0 0; text-align: left; font-weight: 400; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); color: var(--w-sub); }
+.appinfo .ai-status.ok  { color: #3fd18b; border-color: rgba(63,209,139,.35); }
+.appinfo .ai-status.old { color: var(--w-accent2); border-color: rgba(255,180,84,.4); }
+.appinfo .ai-notes { font-size: 11.5px; color: var(--w-sub); text-align: left; margin: 8px 0 0; line-height: 1.55; }
+.appinfo .btn-magic:disabled { opacity: .45; cursor: default; }
+.appinfo .btn-ghost:disabled { opacity: .5; cursor: default; }
+.appinfo .wc-selfcheck dl { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px; }
+.appinfo .wc-selfcheck dt { color: var(--w-sub); }
+.appinfo .wc-selfcheck dd { margin: 0; color: var(--w-ink); font-family: var(--mono); font-size: 11.5px; }
+.appinfo .wc-selfcheck dd.warn { color: var(--w-accent2); }
+.appinfo .wc-selfcheck .note { font-size: 11.5px; color: var(--w-sub); margin: 10px 0 0; line-height: 1.55; }
+.appinfo .ai-foot { text-align: center; font-size: 11.5px; color: var(--w-sub); margin-top: 18px; line-height: 1.6; }
