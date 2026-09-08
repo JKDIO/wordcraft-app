@@ -3844,3 +3844,15 @@ body:has(.onboard) .wtopbar { display: none; }
 .steprunner[data-world="exam"] .exam-head { text-align: center; padding: 10px 20px 0; }
 .steprunner[data-world="exam"] .qcard-text em, .steprunner[data-world="exam"] .speech em, .steprunner[data-world="exam"] .ordergame .bezel-inner p em {
   color: #ff8b6b; text-decoration: underline wavy; font-style: normal; }
+
+/* 67-safe-top.css */
+/* 67-safe-top.css — v1.4.60 상단 안전영역 (2026-09-08 Dio님: "아바타·레벨·다이아·XP 게이지가 폰 상단 바와 겹쳐 보기 힘들다")
+   원인: index.html 이 viewport-fit=cover 이고 앱(Capacitor, Android 15 edge-to-edge)이 WebView 를 상태 표시줄 밑까지 그리는데,
+         아래쪽(.app-main padding-bottom · .wc-nav-dock)만 env(safe-area-inset-bottom) 을 쓰고 위쪽은 아무도 안 썼다.
+   방법: 앱 전체 컨테이너(.app)에 위 안전영역만큼 padding-top. 브라우저(값 0)에서는 아무것도 달라지지 않는다.
+         WebView 가 env() 를 0 으로 보고하는 경우(WebView<140, capacitor#8103)는 index.html 프로브가 --wc-inset-top-fallback:32px 를 넣는다 — max() 로 둘 중 큰 값.
+   범위: .app 컨테이너 · 토스트 · 스플래시 건너뛰기 버튼(이미 env 사용)만. 화면 개별 레이아웃 무변경. */
+:root { --wc-inset-top: env(safe-area-inset-top, 0px); --wc-inset-top-fallback: 0px; }
+.app { padding-top: max(var(--wc-inset-top), var(--wc-inset-top-fallback)); }
+.toast { top: calc(14px + max(var(--wc-inset-top), var(--wc-inset-top-fallback))); }
+.splash-skip { top: calc(max(var(--wc-inset-top), var(--wc-inset-top-fallback)) + 44px); }
