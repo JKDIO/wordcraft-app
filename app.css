@@ -712,53 +712,66 @@ button:focus-visible, a:focus-visible { outline: none; box-shadow: var(--wc-focu
   background: var(--wc-redstone); border-radius: var(--wc-r-1); padding: 1px 5px; vertical-align: middle; }
 
 /* ============================================================
-   WordCraft 스플래시 v4 — 실제 아이콘 이미지 사용 (반응형)
+   WordCraft 스플래시 v5 — 브랜드 리뉴얼(2026-09-07, Dio님 승인 A+S1)
+   월드맵 히어로 + 룬 기사 엠블럼. 기존 v4 블록(.splash ~ prefers-reduced-motion)을 통째로 교체한다.
+   토큰: --w-bg #0b0e1a · --w-accent #7c5cff · --w-accent2 #ffd166 · --w-sub #9aa0c0
    ============================================================ */
-.splash{position:fixed;inset:0;z-index:9999;overflow:hidden;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:min(3.6vh,28px);cursor:pointer;user-select:none;
-  -webkit-tap-highlight-color:transparent;opacity:1;transition:opacity .5s ease, transform .5s ease}
-.splash-leave{opacity:0;transform:scale(1.06)}
-.splash-learner{background:radial-gradient(120% 95% at 50% 32%,#20344c 0%,#141d2a 46%,#0a0f17 100%)}
-.splash-admin{background:radial-gradient(120% 95% at 50% 20%,#0e211b 0%,#0a1512 46%,#060b0a 100%)}
-.splash-skip{position:absolute;right:16px;bottom:16px;z-index:6;background:rgba(255,255,255,.08);color:#9fb0c3;
-  border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer;backdrop-filter:blur(4px)}
-.splash-skip:hover{background:rgba(255,255,255,.16);color:#e8eef5}
-.sp-star{position:absolute;width:min(2vw,8px);height:min(2vw,8px);border-radius:2px;background:#cfe4ff;opacity:0;
-  box-shadow:0 0 10px 2px rgba(180,215,255,.7);animation:spTwinkle 2.6s ease-in-out infinite;z-index:0}
-.sp-star:nth-child(2){animation-delay:.6s}.sp-star:nth-child(3){animation-delay:1.1s}.sp-star:nth-child(4){animation-delay:1.7s}
-@keyframes spTwinkle{0%,100%{opacity:.12;transform:scale(.7)}50%{opacity:.9;transform:scale(1.12)}}
+.splash{position:fixed;inset:0;z-index:9999;overflow:hidden;background:#0b0e1a;cursor:pointer;user-select:none;
+  -webkit-tap-highlight-color:transparent;opacity:1;transition:opacity .5s ease, transform .5s ease;
+  font-family:'Gowun Dodum','Noto Sans KR',system-ui,sans-serif;color:#f1efe8}
+.splash-leave{opacity:0;transform:scale(1.04)}
 
-.sp-iconwrap{position:relative;width:min(64vw,268px);height:min(64vw,268px);flex:0 0 auto;display:flex;align-items:center;justify-content:center;z-index:2}
-.sp-iconglow{position:absolute;width:132%;height:132%;border-radius:50%;opacity:0;
-  background:radial-gradient(circle,rgba(120,220,255,.34),rgba(120,220,255,.07) 46%,transparent 70%);
-  animation:spGlowIn .8s ease .1s both, spGlowPulse 2.6s ease-in-out 1s infinite}
-.splash-admin .sp-iconglow{background:radial-gradient(circle,rgba(90,240,170,.3),rgba(90,240,170,.06) 46%,transparent 70%)}
-@keyframes spGlowIn{0%{opacity:0;transform:scale(.6)}55%{opacity:1;transform:scale(1.05)}100%{opacity:.65;transform:scale(1)}}
-@keyframes spGlowPulse{0%,100%{opacity:.45}50%{opacity:.8}}
-.sp-iconbox{position:relative;width:100%;height:100%;border-radius:23%;overflow:hidden;opacity:0;
-  filter:drop-shadow(0 12px 22px rgba(0,0,0,.4));animation:spIconIn .72s cubic-bezier(.2,1.42,.4,1) .1s both}
-@keyframes spIconIn{0%{opacity:0;transform:scale(.32) rotate(-8deg)}58%{opacity:1;transform:scale(1.08) rotate(2deg)}78%{transform:scale(.97) rotate(-1deg)}100%{opacity:1;transform:none}}
-.sp-icon{width:100%;height:100%;display:block;-webkit-user-drag:none}
-.sp-shine{position:absolute;top:-50%;left:0;width:34%;height:200%;pointer-events:none;opacity:0;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:spShine 1s ease .85s both}
-@keyframes spShine{0%{opacity:0;transform:rotate(20deg) translateX(-320%)}22%{opacity:1}80%{opacity:1;transform:rotate(20deg) translateX(640%)}100%{opacity:0;transform:rotate(20deg) translateX(640%)}}
-.sp-burst{position:absolute;left:50%;top:50%;width:0;height:0;z-index:3}
-.sp-spark{position:absolute;left:0;top:0;width:min(2.2vw,9px);height:min(2.2vw,9px);border-radius:50%;
-  background:radial-gradient(circle,#fff,#9fe8f5);opacity:0;animation:spSpark .6s ease-out both}
-.splash-admin .sp-spark{background:radial-gradient(circle,#fff,#8ff0c4)}
-@keyframes spSpark{0%{opacity:0;transform:rotate(var(--a)) translateX(24%) scale(.6)}15%{opacity:1}
-  100%{opacity:0;transform:rotate(var(--a)) translateX(clamp(82px,28vw,140px)) scale(.2)}}
+/* 배경: 월드맵(원본 = MAP_BG_URL, art/map/worldmap_tall_v2.jpg) — 로드 전엔 단색, 로드 후 페이드인 + 느린 줌 */
+.sp-map{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 62%;
+  filter:saturate(1.05);opacity:0;transform:scale(1.08);transition:opacity .6s ease;
+  animation:spKen 3.2s cubic-bezier(.2,.6,.2,1) both}
+.sp-map.on{opacity:1}
+@keyframes spKen{from{transform:scale(1.08)}to{transform:scale(1)}}
+.sp-veil{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(11,14,26,.10) 0%,rgba(11,14,26,.05) 30%,rgba(11,14,26,.72) 62%,rgba(11,14,26,.97) 82%,#0b0e1a 100%)}
+.splash-admin .sp-veil{background:linear-gradient(180deg,rgba(6,23,25,.35) 0%,rgba(6,23,25,.30) 30%,rgba(6,23,25,.82) 62%,rgba(6,23,25,.98) 82%,#061719 100%)}
+.splash-admin{background:#061719}
 
-.sp-titlewrap{display:flex;flex-direction:column;align-items:center;gap:min(1.4vh,8px);z-index:4}
-.sp-title{font-weight:900;font-size:clamp(38px,12vw,64px);letter-spacing:.01em;line-height:1;
-  background:linear-gradient(#fff,#ffd257 55%,#f0a52a);-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 2px 12px rgba(255,200,80,.45));opacity:0;animation:spTitleIn .6s cubic-bezier(.2,1.5,.4,1) 1s both}
-.sp-title-admin{background:linear-gradient(#eafff6,#5df2b0 60%,#28c98a);-webkit-background-clip:text;background-clip:text;
-  filter:drop-shadow(0 2px 12px rgba(60,240,170,.45))}
-.sp-sub{color:#9fb6d2;font-weight:700;font-size:clamp(13px,3.8vw,18px);opacity:0;animation:spFadeUp .5s ease 1.35s both}
+/* 엠블럼(더블 베젤): 바깥 유리 셸 + 안쪽 아이콘 */
+.sp-emblem{position:absolute;left:50%;top:54%;width:min(34vw,132px);height:min(34vw,132px);
+  transform:translate(-50%,-50%);border-radius:26%;padding:5px;
+  background:linear-gradient(160deg,rgba(255,255,255,.28),rgba(255,255,255,.04));
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 24px 60px rgba(0,0,0,.55),0 0 80px rgba(124,92,255,.35);
+  opacity:0;animation:spIconIn .72s cubic-bezier(.2,1.42,.4,1) .15s both}
+.splash-admin .sp-emblem{box-shadow:0 0 0 1px rgba(255,255,255,.08),0 24px 60px rgba(0,0,0,.55),0 0 80px rgba(60,240,170,.30)}
+.sp-emblem img{width:100%;height:100%;display:block;object-fit:cover;border-radius:22%;-webkit-user-drag:none}
+@keyframes spIconIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.32) rotate(-8deg)}
+  58%{opacity:1;transform:translate(-50%,-50%) scale(1.08) rotate(2deg)}
+  78%{transform:translate(-50%,-50%) scale(.97) rotate(-1deg)}
+  100%{opacity:1;transform:translate(-50%,-50%)}}
+
+/* 타이틀 묶음 */
+.sp-titlewrap{position:absolute;left:0;right:0;top:63.5%;text-align:center;z-index:4}
+.sp-title{font-family:'Black Han Sans','Gowun Dodum',sans-serif;font-weight:400;font-size:clamp(34px,11.3vw,44px);
+  letter-spacing:.02em;line-height:1;
+  background:linear-gradient(180deg,#fff 0%,#e9e2ff 45%,#b98bff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 6px 18px rgba(124,92,255,.45));opacity:0;animation:spTitleIn .6s cubic-bezier(.2,1.5,.4,1) .55s both}
+.sp-title-admin{background:linear-gradient(180deg,#eafff6,#5df2b0 60%,#28c98a);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 6px 18px rgba(60,240,170,.45))}
+.sp-sub{margin-top:10px;color:#9aa0c0;font-size:clamp(12px,3.6vw,14px);letter-spacing:.06em;opacity:0;animation:spFadeUp .5s ease .85s both}
 .sp-sub-admin{color:#6f9a89;letter-spacing:.16em;text-transform:uppercase;font-size:clamp(11px,3vw,13px)}
+.sp-badge{display:inline-block;margin-top:14px;padding:5px 12px;border-radius:999px;font-size:11px;letter-spacing:.18em;
+  color:#ffd166;border:1px solid rgba(255,209,102,.35);background:rgba(255,209,102,.08);opacity:0;animation:spFadeUp .5s ease 1.05s both}
+.splash-admin .sp-badge{color:#5df2b0;border-color:rgba(93,242,176,.35);background:rgba(93,242,176,.08)}
 @keyframes spTitleIn{0%,25%{opacity:0;transform:scale(.7) translateY(8px)}100%{opacity:1;transform:none}}
 @keyframes spFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* 로더 + 버전 + 건너뛰기 */
+.sp-loader{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);width:132px;height:6px;border-radius:999px;
+  background:rgba(255,255,255,.10);overflow:hidden;z-index:4}
+.sp-loader i{display:block;height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,#7c5cff,#b98bff 60%,#ffd166);animation:spLoad 2.4s cubic-bezier(.3,.7,.3,1) .2s forwards}
+@keyframes spLoad{from{width:0}to{width:100%}}
+.sp-ver{position:absolute;left:0;right:0;bottom:44px;text-align:center;color:rgba(154,160,192,.55);font-size:11px;letter-spacing:.14em;z-index:4}
+.splash-skip{position:absolute;top:calc(env(safe-area-inset-top,0px) + 44px);right:18px;z-index:6;padding:6px 14px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#9aa0c0;font-size:12px;cursor:pointer;
+  font-family:inherit;backdrop-filter:blur(4px)}
+.splash-skip:hover{background:rgba(255,255,255,.16);color:#f1efe8}
 @media (prefers-reduced-motion: reduce){.splash{display:none}}
 
 /* ── 정보(About) 화면 v1 ── */
@@ -1786,6 +1799,8 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
 @media (max-width:340px){
   .loadout-slots{grid-template-columns:repeat(3,1fr);}
 }
+
+/* 10-loadout-art.css */
 /* v1.4.31 장비창 부위 레이어 — <img> 겹치기. canvas 금지(WebView·L8)
    ★이 파일이 따로 있는 이유★ app.css는 114KB다. 작은 수정 하나 때문에 그 큰 파일을
    통째로 커밋하면 모델 문맥을 통과시켜야 해서 토큰이 폭증한다(L7).
@@ -1810,6 +1825,8 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
 @media (max-width:360px){
   .loadout-slots{grid-template-columns:repeat(2,1fr);}
 }
+
+/* 20-loadout-levelup.css */
 /* v1.4.34 등급 상승 연출 — CSS만. Web Animations API·canvas 금지(WebView·L8)
    ★왜 필요한가★ 장비는 뱃지를 딴 순간이 아니라 다음에 장비창을 열 때 바뀌어 있다.
    표시가 없으면 아이는 뭐가 달라졌는지 모른 채 지나간다 — 보상이 없는 것과 같다. */
@@ -1858,6 +1875,8 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
   .loadout[data-up="1"] .loadout-art{ animation:none !important; }
   .loadout-slot.ls-up{ box-shadow:0 0 16px 4px rgba(245,197,66,.7) !important; }
 }
+
+/* 30-admin-v3.css */
 /* 관제실 v3 — 오늘 브리핑 · 정합성 진단 (v1.4.35)
    app.css를 통째로 고치지 않고 조각으로 얹는다(L34 ②). 클래스 접두사는 .ah- 로 고정한다. */
 
@@ -1958,6 +1977,8 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
 
 /* ── 문제 다시보기: 점 생략 표시 ────────────────────────── */
 .pv-dots-more { font-size: 10px; color: var(--text-2); align-self: center; padding: 0 4px; }
+
+/* 40-review-integrity.css */
 /* v1.4.40 — 복습 무결성 UI (하루 상한 · 읽는 시간 게이트)
    왜 조각 파일인가: app.css 통째 수정 금지(배포 파이프라인 규칙). 이 파일만 추가한다. */
 
@@ -2069,6 +2090,8 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
   color: #9fb0c3;
   text-align: center;
 }
+
+/* 41-v1443-integrity.css */
 /* v1.4.43 — C4 복습 조회 실패 화면 · C4 뱃지 캐시 안내 · N2 앞면 듣기 버튼 · N1 반복 라운드 안내 */
 .mine-loaderr { gap: 10px; }
 .mine-loaderr p { margin: 0 0 4px; line-height: 1.5; }
@@ -2088,6 +2111,8 @@ button.badge-card { font-family: inherit; color: inherit; cursor: pointer; }
   background: rgba(255, 208, 80, .10); border: 1px solid rgba(255, 208, 80, .30);
   font-size: 13.5px; line-height: 1.55; color: #ffe6a8;
 }
+
+/* 42-v1446.css */
 /* v1.4.46 — C5 구경 모드 띠 · L61 저장 실패 안내 · A24 폰트 부스팅 방어 · 정보탭 자가진단 */
 
 /* ★안드로이드 WebView 폰트 부스팅 방어 (L8 미검증 3종 중 하나)★
@@ -2136,3 +2161,1686 @@ html {
 .wc-selfcheck dd { margin: 0; color: #e8eef6; word-break: break-all; }
 .wc-selfcheck .warn { color: #ffd050; }
 .wc-selfcheck .note { margin: 9px 0 0; font-size: 12.5px; line-height: 1.55; color: #9fb0c4; }
+
+/* 43-write-free.css */
+/* v1.4.47 — ✍️ 자유 작문(write_free) 스텝 + 관제실 작문 감사 패널
+   원칙 셋:
+   ① 입력 글자는 16px 이상 — 그보다 작으면 모바일 브라우저가 입력 시 화면을 확대해 버린다.
+   ② 누르는 것은 전부 44px 이상 — A24 실기기에서 단어 칩이 안 눌리면 기능이 없는 것과 같다(L37 계열).
+   ③ 애니메이션은 transform·opacity 만 — WebView에서 다른 속성을 움직이면 끊긴다(L8). */
+
+/* ── 미션 머리 ── */
+.writefree { display: flex; flex-direction: column; gap: 12px; }
+.writefree .wf-section { margin: 0; font-size: 13.5px; color: var(--text-2, #b9c6d8); }
+.wf-mission {
+  padding: 14px 15px; border-radius: 14px;
+  background: linear-gradient(180deg, rgba(124, 196, 255, .12), rgba(124, 196, 255, .05));
+  border: 1px solid rgba(124, 196, 255, .28);
+}
+.wf-badge {
+  display: inline-block; margin-bottom: 7px; padding: 3px 10px; border-radius: 999px;
+  background: rgba(124, 196, 255, .20); border: 1px solid rgba(124, 196, 255, .40);
+  color: #d7ecff; font-size: 12px; font-weight: 800; letter-spacing: .3px;
+}
+.wf-mission h3 { margin: 0; font-size: 17px; line-height: 1.5; color: #eaf3ff; }
+.wf-starter { margin: 9px 0 0; font-size: 13.5px; line-height: 1.55; color: #b9c6d8; }
+.wf-starter b { color: #ffe6a8; }
+
+/* ── 입력 ── */
+.wf-input {
+  width: 100%; box-sizing: border-box; min-height: 132px; padding: 13px 14px;
+  border-radius: 13px; border: 1px solid rgba(255, 255, 255, .17);
+  background: rgba(9, 14, 24, .60); color: #eaf3ff;
+  /* ★16px 미만 금지★ — 아래로 내리면 입력할 때 화면이 확대된다. */
+  font-size: 16px; line-height: 1.65; font-family: inherit;
+  resize: vertical;
+}
+.wf-input::placeholder { color: #7b8ba3; }
+.wf-input:focus { outline: none; border-color: rgba(124, 196, 255, .55); background: rgba(9, 14, 24, .78); }
+
+.wf-meter { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; color: #8fa0b8; }
+.wf-meter > span:first-child { font-weight: 800; color: #b9c6d8; }
+.wf-meter > span.ok { color: #7ee0a0; }
+.wf-meter-hint { flex: 1 1 auto; min-width: 0; }
+
+/* ── 단어 칩 ── */
+.wf-words { display: flex; flex-wrap: wrap; gap: 8px; }
+.wf-word {
+  min-height: 44px; padding: 10px 14px; border-radius: 999px;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .16);
+  color: #dce8f7; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  transition: transform .12s cubic-bezier(.34, 1.56, .64, 1), background .12s ease;
+}
+.wf-word:active { transform: scale(.94); background: rgba(124, 196, 255, .22); }
+
+.wf-hint-btn { min-height: 44px; }
+.wf-hint {
+  margin: 0; padding: 11px 13px; border-radius: 11px;
+  background: rgba(255, 208, 80, .10); border: 1px solid rgba(255, 208, 80, .28);
+  color: #ffe6a8; font-size: 13.5px; line-height: 1.6;
+}
+
+/* ── 채점 중 ── */
+.wf-grading { padding: 34px 16px; text-align: center; }
+.wf-grading p { margin: 6px 0 0; font-size: 15px; color: #dce8f7; }
+.wf-grading-sub { font-size: 13px !important; color: #8fa0b8 !important; }
+.wf-quill { font-size: 46px; animation: wfQuill 1.5s ease-in-out infinite; }
+@keyframes wfQuill {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50%      { transform: translateY(-7px) rotate(8deg); }
+}
+
+/* ── 결과 ── */
+.wf-result { display: flex; flex-direction: column; gap: 11px; }
+.wf-mine {
+  margin: 0; padding: 13px 15px; border-radius: 13px;
+  background: rgba(255, 255, 255, .05); border-left: 3px solid rgba(124, 196, 255, .55);
+  color: #eaf3ff; font-size: 15.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+}
+.wf-xp {
+  align-self: flex-start; padding: 7px 15px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 208, 80, .26), rgba(255, 208, 80, .13));
+  border: 1px solid rgba(255, 208, 80, .52);
+  color: #ffe6a8; font-size: 15px; font-weight: 900;
+}
+.wf-feedback {
+  margin: 0; padding: 14px 15px; border-radius: 13px;
+  background: rgba(126, 224, 160, .09); border: 1px solid rgba(126, 224, 160, .26);
+  color: #dff5e6; font-size: 15px; line-height: 1.72;
+}
+.wf-result.retry .wf-feedback {
+  background: rgba(124, 196, 255, .09); border-color: rgba(124, 196, 255, .26); color: #dce8f7;
+}
+.wf-note { margin: 0; font-size: 12.5px; line-height: 1.55; color: #f0c98a; }
+
+/* ── 관제실 · 작문 감사 패널 ─────────────────────────────────────
+   2주 감사 모드: 판정 전건을 아빠가 훑어볼 수 있어야 한다(콘텐츠_20260829 §C-4). */
+.adm-write-sum { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.adm-write-sum .pill {
+  padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .14); color: #dce8f7;
+}
+.adm-write-sum .pill.warn { background: rgba(255, 208, 80, .14); border-color: rgba(255, 208, 80, .40); color: #ffe6a8; }
+.adm-write-sum .pill.bad  { background: rgba(255, 122, 122, .14); border-color: rgba(255, 122, 122, .40); color: #ffd0d0; }
+
+.adm-write-list { display: flex; flex-direction: column; gap: 10px; }
+.adm-write-card {
+  padding: 12px 13px; border-radius: 12px;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .12);
+}
+.adm-write-card.flagged { border-color: rgba(255, 208, 80, .42); background: rgba(255, 208, 80, .07); }
+.adm-write-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  font-size: 12px; color: #8fa0b8; margin-bottom: 8px;
+}
+.adm-write-head .xp { color: #ffe6a8; font-weight: 800; }
+.adm-write-head .cf { padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .08); }
+.adm-write-head .cf.medium { background: rgba(255, 208, 80, .18); color: #ffe6a8; }
+.adm-write-head .cf.low { background: rgba(255, 122, 122, .18); color: #ffd0d0; }
+.adm-write-text {
+  margin: 0 0 8px; padding: 9px 11px; border-radius: 9px;
+  background: rgba(9, 14, 24, .50); color: #eaf3ff;
+  font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word;
+}
+.adm-write-fb { margin: 0; font-size: 13.5px; line-height: 1.65; color: #cfe4ff; }
+.adm-write-q { margin: 8px 0 0; font-size: 12.5px; line-height: 1.6; color: #ffe6a8; }
+.adm-write-empty { padding: 22px 12px; text-align: center; font-size: 13.5px; color: #8fa0b8; }
+
+/* 44-reading-passage.css */
+/* v1.4.47 — 📖 읽기 지문 상자 (문단 독해, ReadingPassage.tsx)
+   원칙 셋 — 43-write-free.css 와 같은 근거를 따른다:
+   ① 지문 본문 15px 이상 — 4~6문장을 읽어야 하는 글이라 더 작으면 아이가 읽기를 포기한다.
+   ② 접기 버튼은 44px 이상 — A24 실기기에서 안 눌리면 없는 기능이다(L37 계열).
+   ③ 애니메이션은 transform·opacity 만 — WebView에서 다른 속성을 움직이면 끊긴다(L8).
+
+   ★왜 접을 수 있나★ 360px 화면에서 지문 6줄 + 문항 + 보기 4개는 한 화면에 안 들어간다.
+   지문을 다 읽은 아이가 보기를 고를 때는 접어서 볼 수 있어야 한다. 기본값은 **펼침**이다 —
+   접힌 채로 시작하면 지문이 있다는 것 자체를 놓친다(v1.4.30 뱃지 도감과 반대 판단이다.
+   그건 훑어보는 목록이고 이건 반드시 읽어야 하는 본문이라 기본값이 다르다). */
+
+.rd-passage {
+  margin: 0 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 214, 138, .30);
+  background: linear-gradient(180deg, rgba(255, 214, 138, .10), rgba(255, 214, 138, .04));
+  overflow: hidden;
+}
+
+/* ── 머리(접기/펴기) ── */
+.rd-passage-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; box-sizing: border-box;
+  min-height: 44px; padding: 10px 14px;
+  background: transparent; border: 0; border-bottom: 1px solid rgba(255, 214, 138, .18);
+  color: #ffe6a8; font-family: inherit; font-size: 13.5px; font-weight: 800;
+  text-align: left; cursor: pointer;
+}
+.rd-passage-title { letter-spacing: .2px; }
+.rd-passage-toggle {
+  flex: 0 0 auto;
+  padding: 4px 11px; border-radius: 999px;
+  background: rgba(255, 214, 138, .18); border: 1px solid rgba(255, 214, 138, .38);
+  color: #ffeec2; font-size: 12px; font-weight: 900;
+}
+
+/* ── 본문 ── */
+.rd-passage-body { padding: 12px 15px 14px; }
+.rd-passage-body p {
+  margin: 0 0 10px;
+  /* ★15px 미만 금지★ — 읽기 활동의 본문이다. 작게 만들면 읽기를 포기한다. */
+  font-size: 15.5px; line-height: 1.72; color: #eaf3ff;
+  /* 영어 지문은 좌우 정렬을 두 번 바꾸지 않는다 — 눈이 줄을 잃는다 */
+  text-align: left; word-break: normal; overflow-wrap: break-word;
+}
+.rd-passage-body p:last-child { margin-bottom: 0; }
+
+/* 지문이 아주 길어지면(6문장 초과) 상자 안에서만 스크롤한다 — 문항이 화면 밖으로 밀리지 않게 */
+@media (max-height: 720px) {
+  .rd-passage-body { max-height: 38vh; overflow-y: auto; }
+}
+
+/* 45-v647-tone.css */
+/* v1.4.47 — UI/UX v6 톤 격상을 **프로덕션 소스에 실제 반영**
+   (근거 문서: 진행상황_20260822_UIUX_MVP_v1.md v6 ①·②)
+
+   ★먼저 정직하게 적어 둘 것★ 목업(`wordcraft_uiux_mvp_v6.html`)과 이 앱은 **클래스 체계가 다르다.**
+   목업에는 `.console`·`.knight-stage`·`.portrait-clip` 이 있지만 프로덕션에는 하나도 없다(2026-09-03 전수 grep 확인).
+   그래서 CSS를 복사해 붙이는 것은 불가능했고, **결정 사항만 이 앱의 클래스(`.adm-*`·`.loadout-*`)에 옮겼다.**
+   목업 CSS를 그대로 붙였다고 적으면 그건 거짓말이 된다.
+
+   ★v6.2에서 산 교훈 — 여기에 박아 둔다★
+   `mask-image` 는 `perspective`·`transform-style:preserve-3d` 로 만들어진 **3D 렌더링 컨텍스트 안에서
+   Chromium이 사실상 무시한다.** 부드러운 페이드가 필요하면 `clip-path` 를 쓴다.
+   이 앱에는 그 대상(회화풍 초상화)이 아직 없지만, 생기는 날 같은 함정을 다시 밟지 않으려고 남긴다.
+
+   원칙 — 마크업 불변, CSS만. 애니메이션은 transform·opacity 만(WebView, L8). */
+
+/* ══════════ ① 관제실 톤 격상 (v6 ①) ══════════ */
+
+:root {
+  /* 스프링형 이징 — 목업에서 실제로 쓰던 값 그대로 */
+  --wc-spring: cubic-bezier(.34, 1.4, .64, 1);
+  --wc-spring-soft: cubic-bezier(.34, 1.2, .64, 1);
+}
+
+/* 카드: 소프트 앰비언트 그림자 + 상단 헤어라인 액센트바 */
+.adm-panel {
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .18), 0 8px 22px -12px rgba(0, 0, 0, .55);
+  transition: box-shadow .28s var(--wc-spring-soft), transform .28s var(--wc-spring-soft);
+}
+.adm-panel::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, var(--info, #58a6e8), var(--success, #4ecb71));
+  opacity: .55; pointer-events: none;
+}
+/* 호버 elevation 은 **포인터가 있는 기기에서만** — A24 터치에서는 눌린 채로 굳는다 */
+@media (hover: hover) and (pointer: fine) {
+  .adm-panel:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0, 0, 0, .20), 0 14px 30px -14px rgba(0, 0, 0, .62); }
+}
+
+/* KPI 라벨: uppercase + tracking (숫자는 건드리지 않는다 — 읽는 값이다) */
+.adm-panel h4 { text-transform: uppercase; letter-spacing: .6px; }
+
+/* pill 에 도트 인디케이터 — 색만으로 구분하지 않게 하는 효과도 있다(색각 배려) */
+.adm-pill::before {
+  content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+  margin-right: 5px; vertical-align: middle; background: currentColor; opacity: .85;
+}
+
+/* 버튼·스위치: 스프링 트랜지션 + 누를 때 살짝 들어감 */
+.adm-filter button, .adm-panel button, .adm-tab {
+  transition: background-color .2s var(--wc-spring-soft), color .2s var(--wc-spring-soft),
+              transform .14s var(--wc-spring), box-shadow .2s var(--wc-spring-soft);
+}
+.adm-filter button:active, .adm-panel button:active, .adm-tab:active { transform: scale(.965); }
+
+/* 활성 탭: 그림자 + 미세 이동 */
+.adm-tab.on, .adm-filter button.on {
+  box-shadow: 0 2px 10px -4px rgba(88, 166, 232, .75);
+  transform: translateY(-1px);
+}
+
+/* 종이 그레인 — 아주 옅게. 클릭을 먹으면 안 되므로 pointer-events:none */
+.adm-panel::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  opacity: .035;
+  background-image: repeating-linear-gradient(0deg, rgba(255, 255, 255, .6) 0 1px, transparent 1px 3px),
+                    repeating-linear-gradient(90deg, rgba(255, 255, 255, .4) 0 1px, transparent 1px 4px);
+}
+
+/* ══════════ ② 오라 강화 (v6 ②) ══════════
+   목업은 링 3겹→4겹(+코어 글로우), 파티클 6→11개, 피크 불투명도 .22→.38,
+   펄스 스케일 1.06→1.12 로 올렸다. 이 앱의 오라는 `.loadout-ring`(현재 2겹: 본체 + ::after)이라
+   **::before 로 3겹째를 더하고, `.loadout-art::after` 로 코어 글로우를 만든다** = 총 4겹.
+   파티클은 DOM을 늘리지 않고 box-shadow 11점으로 찍는다(마크업 불변 원칙). */
+
+.loadout-ring::before {
+  content: ''; position: absolute; left: -6%; top: -10%; right: -6%; bottom: -10%;
+  border-radius: 50%; border: 1px dashed rgba(143, 212, 255, .28);
+  animation: loRing 15s linear infinite;
+}
+/* 코어 글로우 — 기사 뒤에서 은은하게 숨 쉰다 */
+.loadout-art::after {
+  content: ''; position: absolute; left: 50%; top: 52%; width: 118px; height: 118px;
+  margin: -59px 0 0 -59px; border-radius: 50%; pointer-events: none; z-index: -1;
+  background: radial-gradient(circle, rgba(143, 212, 255, .38) 0%, rgba(143, 212, 255, 0) 68%);
+  animation: wcAuraPulse 4.1s ease-in-out infinite;
+}
+@keyframes wcAuraPulse {
+  0%, 100% { opacity: .40; transform: scale(1); }
+  50%      { opacity: .78; transform: scale(1.12); }
+}
+
+/* 파티클 11개 — 크기·색을 일부러 고르지 않게 섞었다(똑같은 점이 줄지어 뜨면 기계처럼 보인다) */
+.loadout-stage { position: relative; }
+.loadout-stage::before {
+  content: ''; position: absolute; left: 50%; top: 60%; width: 3px; height: 3px;
+  border-radius: 50%; background: transparent; pointer-events: none; z-index: 1;
+  box-shadow:
+    -54px -34px 0 0 rgba(143, 212, 255, .55), 46px -28px 0 1px rgba(185, 140, 255, .48),
+    -30px -58px 0 0 rgba(143, 212, 255, .38), 62px 10px 0 0 rgba(245, 197, 66, .42),
+    -66px 12px 0 1px rgba(143, 212, 255, .30), 22px -66px 0 0 rgba(185, 140, 255, .34),
+    -14px 30px 0 0 rgba(143, 212, 255, .26), 38px 34px 0 1px rgba(143, 212, 255, .34),
+    -44px 44px 0 0 rgba(245, 197, 66, .28), 8px -44px 0 0 rgba(143, 212, 255, .46),
+    68px -50px 0 0 rgba(185, 140, 255, .26);
+  animation: wcAuraDrift 6.4s ease-in-out infinite;
+}
+@keyframes wcAuraDrift {
+  0%, 100% { opacity: .35; transform: translateY(0) scale(1); }
+  50%      { opacity: .85; transform: translateY(-6px) scale(1.06); }
+}
+/* 등급이 오를수록 오라가 세진다 — 기존 data-stage 규칙과 같은 문법을 따른다 */
+.loadout[data-stage="3"] .loadout-art::after { background: radial-gradient(circle, rgba(185, 140, 255, .44) 0%, rgba(185, 140, 255, 0) 68%); }
+.loadout[data-stage="4"] .loadout-art::after { background: radial-gradient(circle, rgba(245, 197, 66, .52) 0%, rgba(245, 197, 66, 0) 70%); animation-duration: 3.2s; }
+
+/* 애니메이션을 꺼둔 사용자는 존중한다 (기존 20-loadout-levelup.css 와 같은 방침) */
+@media (prefers-reduced-motion: reduce) {
+  .loadout-art::after, .loadout-stage::before, .loadout-ring::before { animation: none !important; }
+  .adm-panel, .adm-filter button, .adm-panel button, .adm-tab { transition: none !important; }
+}
+
+/* 50-uiux-system.css */
+/* ═══════════════════════════════════════════════════════════════════
+   50-uiux-system.css — U1 디자인 시스템 토대 (v1.4.48)
+   근거: 요구사항_20260904_UIUX전면반영_통합본_v1.md v1.3 §4.1
+   원문: UIUX_추출/mockup_css.txt (`.phone-screen` 토큰 블록 + 컴포넌트)
+
+   ★정직하게 먼저 적는다★
+   1) 목업의 클래스명은 접두가 없다(`.bezel`). 프로덕션 관례에 맞춰 `wc-` 접두를 붙였다(§4.1 허용).
+      **값은 목업 원문 그대로다** — px·색·이징·opacity 한 글자도 바꾸지 않았다.
+   2) 이 파일은 **토대만** 깐다. 화면별 적용(마크업 교체)은 U2~U5에서 한다.
+      지금 눈에 보이는 변화는 본문/제목 폰트뿐이고, 나머지 컴포넌트는 아직 쓰는 화면이 없다.
+   3) `.wc-bezel::before` 는 마스크를 쓴다. §6의 "mask-image 금지"와 충돌하는 것처럼 보이므로 근거를 남긴다:
+      · §4.1이 이 컴포넌트를 "`::before` 마스크 그라데이션"이라고 **명시해서** 발부했다(구체 조항 우선)
+      · 금지의 실제 이유는 "3D 컨텍스트(perspective/preserve-3d) 안에서 Chromium이 무시한다"인데
+        `.wc-bezel` 은 3D 컨텍스트가 아니다. verify ⑨-4 게이트(금지 속성명 + 콜론)에도 걸리지 않는다
+      · **그러므로 U3 기사 갤러리의 `perspective:600px` 안에는 `.wc-bezel` 을 넣지 않는다.** 넣으면 그날 하루를 태운다
+      Dio님이 "그래도 쓰지 마라"고 하시면 1줄로 뒤집힌다 — 그때는 테두리를 단색 hairline으로 낮춘다.
+   4) 애니메이션은 transform·opacity 만(L8). hover 는 `@media (hover:hover)` 안에만(45-v647-tone.css 선례).
+   5) 픽셀 폰트(`--wc-font-pixel`)는 **건드리지 않았다.** app.css 1행의 jsdelivr `@import` 로 지금도
+      정상 로딩된다(2026-09-05 실측: HTTP 200, @font-face 9건). §4.1 "현행 유지" 그대로.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ══════════ ① 폰트 — jsdelivr @fontsource CDN (신규 의존성 0 · package.json·bun.lock 무변경) ══════════
+   ★2026-09-05 CDN 전환(Cowork 감사 §4 A안)★ GitHub MCP가 바이너리를 못 올려(base64 이중 인코딩, 커밋 c4dbe53 실측)
+   로컬 ./fonts/ 대신 같은 파일을 CDN에서 받는다. 근거: 픽셀 폰트 Galmuri가 이미 app.css 1행에서 **같은 도메인**
+   (cdn.jsdelivr.net) @import 로 로딩 중 — 예한이 폰에서 픽셀 글씨가 보이면 이 폰트들도 보인다.
+   실측(2026-09-05 curl): 6 URL 전부 HTTP 200 · wOF2 · sha256이 로컬 public/fonts/ 6개와 동일(바이트 수도 동일).
+   로컬 woff2 6개는 public/fonts/ 에 그대로 둔다(장래 로컬 전환용) — CSS는 참조하지 않는다.
+   되돌리기: src 의 https://cdn.jsdelivr.net/npm/@fontsource/<pkg>/files/<file> 을 ./fonts/<로컬파일명> 으로.
+   verify ⑨-5(절대경로 fetch 금지)는 src/*.ts(x) 의 fetch() 만 검사하므로 CSS의 https url() 은 대상이 아니다 — 예외 처리 없음.
+   전부 SIL OFL 1.1. 합계 650,468B (§4.1 목표 1.2MB 이내).
+   ★파일 수는 4개가 아니라 6개다★ — fontsource가 한글/라틴 서브셋을 별도 파일로 나눠 배포하기 때문이다.
+   unicode-range 로 갈라 두면 영문만 있는 화면은 한글 406KB를 **받지 않는다**(오히려 이득). */
+
+@font-face {
+  font-family: 'Gowun Dodum'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/gowun-dodum/files/gowun-dodum-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Gowun Dodum'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/gowun-dodum/files/gowun-dodum-korean-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Black Han Sans'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/black-han-sans/files/black-han-sans-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Black Han Sans'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/black-han-sans/files/black-han-sans-korean-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+}
+
+/* ══════════ ② 디자인 토큰 — mockup_css.txt `.phone-screen` 블록 원문 ══════════ */
+
+:root {
+  --w-bg: #0b0e1a; --w-panel: #161a2c; --w-ink: #f1efe8; --w-sub: #9aa0c0;
+  --w-accent: #7c5cff; --w-accent2: #ffb454; --w-glow: rgba(124, 92, 255, .35);
+
+  /* 폰트 스택 (§4.1 확정값) */
+  --kr-body: 'Gowun Dodum', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  --kr-display: 'Black Han Sans', 'Gowun Dodum', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* 월드 보석톤 — data-world 는 각 화면 루트 요소에 붙인다(U2~U5).
+   프로덕션 월드 매핑(§4.1 확정): grammar=월드1·1.5·2·3·4·5·6·9·10 / vocab=월드7·단어대륙 /
+   speak=월드8 / listen=소리훈련소 / exam=예약(대응 화면 없음, 토큰만 정의).
+   이름 5종을 늘리지도 바꾸지도 않는다. */
+[data-world="vocab"]   { --w-accent: #3fd18b; --w-accent2: #ffd166; --w-glow: rgba(63, 209, 139, .32); }
+[data-world="listen"]  { --w-accent: #37c6ff; --w-accent2: #ffd166; --w-glow: rgba(55, 198, 255, .32); }
+[data-world="grammar"] { --w-accent: #b98bff; --w-accent2: #ff8bd0; --w-glow: rgba(185, 139, 255, .35); }
+[data-world="exam"]    { --w-accent: #ff8b6b; --w-accent2: #ffd166; --w-glow: rgba(255, 139, 107, .3); }
+[data-world="speak"]   { --w-accent: #ff6ba0; --w-accent2: #37c6ff; --w-glow: rgba(255, 107, 160, .3); }
+
+/* ══════════ ③ 폰트 재바인딩 ══════════
+   app.css 를 고치지 않고 별칭만 갈아끼운다(되돌리려면 이 블록만 지우면 원상복구).
+   --wc-font-pixel 은 그대로 둔다 → 무대·워드몬·소환진 등 이 변수를 직접 쓰는 요소는 픽셀 폰트 유지. */
+:root {
+  --wc-font-body: var(--kr-body);
+  --font-body: var(--kr-body);
+  --font-title: var(--kr-display);
+}
+h1, h2, h3 { letter-spacing: .01em; }
+.mono, .wc-mono, .wc-xplabel, .wc-prog { font-variant-numeric: tabular-nums; }
+
+/* ══════════ ④ 컴포넌트 — 목업 원문 값 그대로 ══════════ */
+
+.wc-h-display { font-family: var(--kr-display); letter-spacing: .01em; }
+
+.wc-eyebrow {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .18em; color: var(--w-accent2);
+  font-weight: 700; margin-bottom: 6px; display: block;
+}
+
+.wc-pill-tag {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-family: var(--mono);
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 999px; padding: 3px 10px; color: var(--w-sub);
+}
+
+/* 이중 베젤 — v5 결정: 월드 테마 색으로만 은은하게, 금 액자 이미지 프레임 없음 */
+.wc-bezel {
+  padding: 7px; border-radius: 26px; position: relative; overflow: hidden;
+  background: linear-gradient(155deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .02));
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+.wc-bezel::before {
+  content: ''; position: absolute; inset: 0; border-radius: 26px; padding: 1px; pointer-events: none;
+  background: linear-gradient(155deg, var(--w-accent), transparent 45%, transparent 65%, var(--w-accent2));
+  opacity: .4;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask-composite: exclude;
+}
+.wc-bezel-inner {
+  border-radius: 20px; padding: 18px;
+  background: linear-gradient(165deg, var(--w-panel), rgba(255, 255, 255, .02) 140%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  position: relative; overflow: hidden;
+}
+.wc-bezel-inner::after {
+  content: ''; position: absolute; inset: -40% -40% auto auto; width: 70%; height: 140%;
+  background: radial-gradient(circle, var(--w-glow), transparent 60%); opacity: .5; pointer-events: none;
+}
+
+/* 버튼-속-버튼 — icon-orb 내장 */
+.wc-btn-magic {
+  display: inline-flex; align-items: center; gap: 10px; border: 0; cursor: pointer;
+  background: linear-gradient(135deg, var(--w-accent), var(--w-accent2)); color: #0b0e1a;
+  font-weight: 800; font-family: var(--kr-body); font-size: 13.5px;
+  padding: 5px 6px 5px 18px; border-radius: 999px;
+  box-shadow: 0 10px 24px -8px var(--w-glow);
+  transition: .35s cubic-bezier(.34, 1.4, .64, 1);
+}
+.wc-btn-magic .wc-icon-orb {
+  width: 30px; height: 30px; border-radius: 999px; background: rgba(11, 14, 26, .18);
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+  transition: .35s cubic-bezier(.34, 1.4, .64, 1);
+}
+.wc-btn-ghost {
+  border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .04); color: var(--w-ink);
+  font-family: var(--kr-body); font-weight: 700; font-size: 13px;
+  padding: 11px 18px; border-radius: 999px; cursor: pointer;
+}
+
+/* 월드 노드 — Z-Axis Cascade 용 기울기 포함 */
+.wc-world-node {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 20px;
+  margin-bottom: 14px; background: rgba(255, 255, 255, .03);
+  border: 1px solid rgba(255, 255, 255, .06); position: relative;
+  transition: .3s cubic-bezier(.34, 1.2, .64, 1);
+}
+.wc-world-node.tilt-l { transform: rotate(-1.2deg); }
+.wc-world-node.tilt-r { transform: rotate(1deg); }
+.wc-world-node .wc-orb {
+  width: 52px; height: 52px; border-radius: 18px; display: flex; align-items: center;
+  justify-content: center; font-size: 24px; flex-shrink: 0;
+  background: linear-gradient(155deg, var(--nc, var(--w-accent)), transparent);
+  box-shadow: 0 8px 18px -6px var(--ng, var(--w-glow));
+}
+.wc-world-node .wc-meta { flex: 1; min-width: 0; }
+.wc-world-node .wc-meta h4 { margin: 0 0 3px; font-size: 14px; }
+.wc-world-node .wc-meta p { margin: 0; font-size: 11px; color: var(--w-sub); }
+.wc-world-node .wc-prog { width: 44px; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--w-accent2); }
+.wc-world-node.locked { opacity: .4; }
+.wc-world-node .wc-lockicon { position: absolute; right: 14px; top: 14px; font-size: 14px; }
+
+/* 선택지 카드 — correct/wrong 은 색만. 처벌 문구는 마크업에서 금지(§6) */
+.wc-opt-card {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px;
+  margin-bottom: 10px; background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(255, 255, 255, .08); cursor: pointer; font-size: 14px;
+  transition: .25s cubic-bezier(.34, 1.3, .64, 1);
+}
+.wc-opt-card .wc-k {
+  width: 26px; height: 26px; border-radius: 9px; background: rgba(255, 255, 255, .07);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; color: var(--w-sub); flex-shrink: 0;
+}
+.wc-opt-card.correct { border-color: #3fd18b; background: rgba(63, 209, 139, .1); }
+.wc-opt-card.wrong   { border-color: #ff6b6b; background: rgba(255, 107, 107, .08); }
+
+/* XP 바 — 값·분모는 이 파일이 만지지 않는다. 껍데기만 */
+.wc-xpbar-track { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.wc-xpbar-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--w-accent), var(--w-accent2)); }
+.wc-xplabel     { font-size: 9.5px; color: var(--w-sub); margin-top: 3px; font-family: var(--mono); }
+
+/* 엔진 공통 헤더 · 말풍선 · 진행 점 */
+.wc-engine-header { padding: 16px 20px 8px; }
+.wc-engine-header .wc-char { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.wc-engine-header .wc-face {
+  width: 56px; height: 56px; border-radius: 18px; overflow: hidden;
+  background: linear-gradient(155deg, var(--w-accent), var(--w-accent2));
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+  box-shadow: 0 8px 20px -6px var(--w-glow);
+}
+.wc-engine-header .wc-face img { width: 100%; height: 100%; object-fit: cover; object-position: center 15%; }
+.wc-speech {
+  background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 16px 16px 16px 4px; padding: 12px 14px; font-size: 13px; line-height: 1.6; flex: 1;
+}
+.wc-progress-dots { display: flex; gap: 5px; padding: 0 20px 10px; }
+.wc-progress-dots span { height: 5px; flex: 1; border-radius: 99px; background: rgba(255, 255, 255, .1); }
+.wc-progress-dots span.done { background: linear-gradient(90deg, var(--w-accent), var(--w-accent2)); }
+
+/* 빈칸 · 타일 · 시험범위 배너 */
+.wc-blank-line { border-bottom: 2px dashed rgba(255, 255, 255, .25); min-width: 52px; display: inline-block; padding: 0 6px; text-align: center; }
+.wc-tile {
+  padding: 9px 14px; border-radius: 12px; background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1); font-size: 13.5px; cursor: pointer; font-family: var(--kr-body);
+}
+.wc-tile.placed { background: var(--w-accent); color: #0b0e1a; font-weight: 700; border-color: var(--w-accent); }
+.wc-exam-banner {
+  display: flex; align-items: center; gap: 10px; border-radius: 16px; padding: 12px 14px;
+  font-size: 12px; margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(255, 139, 107, .18), rgba(255, 209, 102, .1));
+  border: 1px solid rgba(255, 139, 107, .3);
+}
+
+/* 하단 네비 glass — 프로덕션 하단 네비 5개 구조는 U5까지 변경하지 않는다. 껍데기만 준비 */
+.wc-bottom-nav {
+  position: absolute; left: 14px; right: 14px; bottom: 16px;
+  display: flex; justify-content: space-around;
+  background: rgba(15, 16, 26, .75); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, .08); border-radius: 22px; padding: 10px 6px;
+}
+.wc-bottom-nav .wc-bi { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 18px; color: var(--w-sub); flex: 1; }
+.wc-bottom-nav .wc-bi.on { color: var(--w-ink); }
+.wc-bottom-nav .wc-bi small { font-size: 8.5px; font-family: var(--kr-body); }
+
+/* ══════════ ⑤ WebView 게이트 (L8 — WebView ≠ 크롬) ══════════ */
+
+/* backdrop-filter 미지원 → 불투명 배경으로 대체(투명 유리가 아니라 그냥 판때기가 된다) */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .wc-bottom-nav { background: rgba(15, 16, 26, .96); }
+}
+
+/* hover 는 진짜 마우스에서만 — 터치에서 :hover 가 붙어 남는 사고 방지 */
+@media (hover: hover) and (pointer: fine) {
+  .wc-btn-magic:hover { transform: translateY(-2px) scale(1.015); }
+  .wc-btn-magic:hover .wc-icon-orb { transform: translate(2px, -1px) scale(1.08); }
+  .wc-opt-card:hover { transform: translateX(3px); border-color: var(--w-accent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-btn-magic, .wc-btn-magic .wc-icon-orb, .wc-opt-card, .wc-world-node { transition-duration: .001ms; }
+}
+
+/* 51-worldmap-hub.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   51-worldmap-hub.css — U2b 월드맵 허브 v2.1 (2026-09-07, 정답지 worldmap_golden_v2)
+   원문: UIUX_추출/worldmap_golden_v2/worldmap_tall_reference.html <style> — 값은 그대로 가져왔다.
+   바꾼 것 둘뿐(사유 명시):
+     ① .map-scroll 높이 640px 고정 → 화면 - 상단바 - 하단네비 (정답지 layout.container 규정)
+     ② :hover 는 @media (hover:hover) and (pointer:fine) 안으로 (요구사항 §4.1 WebView 게이트 L8)
+   금지 준수: brightness < 1 없음 · 오버레이 알파 상단 .08 / 하단 .22 · mask-image 없음(⑨-4).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 스크롤 컨테이너 · 캔버스 · 배경 ── */
+.map-scroll{position:relative;height:var(--wm-h,640px);overflow-y:auto;overflow-x:hidden;border-radius:20px;background:#050611;-webkit-overflow-scrolling:touch}
+.map-canvas{position:relative;width:100%;aspect-ratio:1536/2752}
+.map-canvas img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.05) brightness(1.02)}
+/* 하단만 시트 가독용으로 살짝 (정답지 layout.overlay 원문) */
+.map-overlay{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(5,6,17,.08) 0%,transparent 12%,transparent 90%,rgba(5,6,17,.22) 100%)}
+/* 상단 밝은 안개 띠 — 향후 월드 11~16 타일을 이 위에 이어 붙인다 */
+.map-fog{position:absolute;left:0;right:0;top:0;height:16%;background:linear-gradient(180deg,rgba(230,236,255,.35),rgba(230,236,255,.10) 60%,transparent);display:flex;align-items:flex-start;justify-content:center;padding-top:22px;font-size:11px;color:#3b4470;letter-spacing:.12em;text-shadow:0 1px 6px rgba(255,255,255,.8);pointer-events:none}
+
+/* ── 핀 ── */
+.map-pin{
+  position:absolute; width:46px; height:46px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; transform:translate(-50%,-50%);
+  background:radial-gradient(circle,var(--pc,#7c5cff),transparent 75%);
+  box-shadow:0 0 0 2px rgba(255,255,255,.18), 0 8px 22px -6px var(--pc,#7c5cff);
+  transition:.3s cubic-bezier(.34,1.5,.64,1); animation:pinbob 3.2s ease-in-out infinite;
+  border:0; padding:0; font-family:inherit; color:inherit; -webkit-tap-highlight-color:transparent;
+}
+@media (hover:hover) and (pointer:fine){
+  .map-pin:hover, .map-pin:focus-visible{transform:translate(-50%,-50%) scale(1.14)}
+}
+.map-pin.locked{filter:grayscale(1) brightness(.55); animation:none; cursor:default}
+.map-pin.active{transform:translate(-50%,-50%) scale(1.14); box-shadow:0 0 0 3px rgba(255,255,255,.55), 0 8px 22px -6px var(--pc,#7c5cff)}
+.map-pin .lbl{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px;font-size:9px;white-space:nowrap;background:rgba(0,0,0,.55);padding:1px 6px;border-radius:99px;color:#fff}
+
+/* ── 아바타 마커 ── */
+.map-avatar-marker{
+  position:absolute; width:26px; height:26px; border-radius:999px; background:#fff; transform:translate(-50%,-100%);
+  box-shadow:0 0 0 3px var(--w-accent2,#ffb454), 0 4px 12px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; font-size:13px;
+  animation:pulseMarker 2.4s ease-in-out infinite; pointer-events:none; /* ★접합: 마커는 translate 를 유지해야 해서 이름 분리 — 원문 pulse 는 53-rewards-pass.css */
+}
+
+/* ── 바텀시트 (sticky · 기본 접힘 46px) ── */
+.map-sheet{
+  position:sticky; bottom:10px; margin:0 10px; z-index:3; border-radius:22px; background:rgba(11,13,24,.85); backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.1); padding:16px 18px 18px; transition:.5s cubic-bezier(.22,1,.36,1); max-height:70%; overflow-y:auto;
+  color:var(--w-ink,#f1efe8); box-sizing:border-box;
+}
+@supports not (backdrop-filter:blur(1px)){ .map-sheet{background:rgba(11,13,24,.96)} }
+.map-sheet .handle{width:36px; height:4px; border-radius:99px; background:rgba(255,255,255,.2); margin:0 auto 12px}
+.map-sheet.closed{height:46px; padding:12px 18px 0; overflow:hidden}
+.map-sheet.closed .handle{margin-bottom:8px}
+.map-sheet.closed .sheet-body{display:none}
+.map-sheet .sheet-peek{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--w-sub,#9aa0c0);line-height:1;margin-top:-4px;white-space:nowrap;overflow:hidden}
+.map-sheet .sheet-peek b{color:var(--w-ink,#f1efe8);font-weight:700}
+.map-sheet .sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.map-sheet .sheet-close{background:none;border:0;color:var(--w-sub,#9aa0c0);font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
+.map-sheet .eyebrow{font-size:10px; text-transform:uppercase; letter-spacing:.18em; color:var(--w-accent2,#ffb454); font-weight:700; margin-bottom:6px; display:block}
+.map-sheet .pill-tag{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-family:var(--mono,ui-monospace,monospace); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:3px 10px; color:var(--w-sub,#9aa0c0)}
+.map-sheet .h-display{font-family:var(--kr-display,'Black Han Sans',sans-serif); letter-spacing:.01em; font-size:22px; margin:6px 0 4px}
+.map-sheet .sheet-sub{font-size:12.5px;color:var(--w-sub,#9aa0c0);margin:0 0 12px;line-height:1.5}
+.map-sheet .btn-magic{
+  display:inline-flex; align-items:center; gap:10px; border:0; cursor:pointer;
+  background:linear-gradient(135deg,var(--w-accent,#7c5cff),var(--w-accent2,#ffb454)); color:#0b0e1a; font-weight:800;
+  font-family:var(--kr-body,inherit); font-size:13.5px; padding:5px 6px 5px 18px; border-radius:999px;
+  box-shadow:0 10px 24px -8px var(--w-glow,rgba(124,92,255,.35)); transition:.35s cubic-bezier(.34,1.4,.64,1);
+}
+.map-sheet .btn-magic .icon-orb{width:30px; height:30px; border-radius:999px; background:rgba(11,14,26,.18); display:flex; align-items:center; justify-content:center; font-size:14px; transition:.35s cubic-bezier(.34,1.4,.64,1)}
+@media (hover:hover) and (pointer:fine){
+  .map-sheet .btn-magic:hover{transform:translateY(-2px) scale(1.015)}
+  .map-sheet .btn-magic:hover .icon-orb{transform:translate(2px,-1px) scale(1.08)}
+}
+.map-sheet .btn-magic:disabled{opacity:.5;cursor:default}
+.map-sheet .sheet-extras{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.map-sheet .sheet-extras .due-banner,.map-sheet .sheet-extras .diag-banner{margin:0}
+
+/* ── 지역 화면(brief) 상단 ── */
+.wm-brief-top{display:flex;align-items:center;gap:10px;margin:2px 0 10px}
+.wm-brief-top .wm-back{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--w-ink,#f1efe8);border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.wm-brief-top h2{margin:0;font-size:18px;flex:1}
+
+/* ── 애니메이션 (정답지 원문 + pinbob 정의) ── */
+@keyframes pulseMarker{0%,100%{transform:translate(-50%,-100%) scale(1)} 50%{transform:translate(-50%,-100%) scale(1.06)}}
+@keyframes pinbob{0%,100%{margin-top:0} 50%{margin-top:-4px}}
+@media (prefers-reduced-motion: reduce){ .map-pin,.map-avatar-marker{animation:none !important} }
+
+/* 52-shell-hall.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   52-shell-hall.css — U3-0 공통 셸(wtopbar · bottom-nav) + U3 23_profile 성취의 전당 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check가 원문과 대조한다).
+   추가한 것은 ★표시된 "접합 규칙"뿐: 목업의 phone-screen(absolute) 좌표계를 앱의 fixed 하단 도크에 얹고,
+   <div>였던 .bi 를 <button>으로 쓰기 위한 리셋, app.css 옛 .avatar 규칙 중화.
+   금지 준수: 마스크 이미지·1 미만 밝기 필터·금색 액자 프레임 없음.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ★접합: 목업 .bottom-nav 는 phone-screen 기준 absolute — 앱에서는 뷰포트 하단 도크(폭 480 중앙)에 같은 좌표로 얹는다 */
+.wc-nav-dock { position: fixed; left: 50%; bottom: env(safe-area-inset-bottom); transform: translateX(-50%); width: 100%; max-width: 480px; height: 0; z-index: 30; pointer-events: none; }
+.wc-nav-dock .bottom-nav { pointer-events: auto; }
+/* ★접합: 도크 높이(≈57px + bottom 16px)만큼 본문 하단 여백 */
+.app-main { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+/* ★접합: 구경 모드 배너 → pill-tag 톤으로 축소(문구는 App.tsx 그대로). 값은 .pill-tag 원문과 동일 */
+.wc-observer-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 8px; margin: 8px 14px 0; padding: 3px 10px;
+  font-size: 10.5px; font-family: var(--mono); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 999px; color: var(--w-sub); line-height: 1.5; }
+.wc-observer-bar > b { font-size: 10.5px; }
+.wc-observer-bar > span { flex: 1 1 160px; }
+.wc-observer-bar b { color: var(--w-ink); }
+.wc-observer-btn { min-height: 0; padding: 2px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); color: var(--w-ink); cursor: pointer; }
+
+/* ── 원문: 공통 유틸 ── */
+.mono, .kpi, .xplabel, .prog, .c-bar-track ~ span{ font-variant-numeric: tabular-nums; }
+.h-display { font-family:var(--kr-display); letter-spacing:.01em }
+.pill-tag { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-family:var(--mono);
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:3px 10px;
+  color:var(--w-sub); }
+.eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.18em; color:var(--w-accent2); font-weight:700;
+  margin-bottom:6px; display:block; }
+.section-pad{padding:6px 20px 100px}
+
+/* ── 원문: 상단 wtopbar ── */
+.wtopbar { display:flex; align-items:center; justify-content:space-between; padding:6px 20px 10px }
+.wtopbar .avatar { width:38px; height:38px; border-radius:14px; background:linear-gradient(155deg,var(--w-accent),var(--w-accent2));
+  display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 4px 14px var(--w-glow); }
+.xpwrap { flex:1; margin:0 12px }
+.xpbar-track { height:8px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden }
+.xpbar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--w-accent),var(--w-accent2)) }
+.xplabel { font-size:9.5px; color:var(--w-sub); margin-top:3px; font-family:var(--mono) }
+.gembadge { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  border-radius:999px; padding:5px 10px; font-size:11px; font-family:var(--mono); }
+
+/* ── 원문: 하단 bottom-nav (5탭 glass) ── */
+.bottom-nav { position:absolute; left:14px; right:14px; bottom:16px; display:flex; justify-content:space-around;
+  background:rgba(15,16,26,.75); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.08);
+  border-radius:22px; padding:10px 6px; }
+.bottom-nav .bi { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:18px; color:var(--w-sub); flex:1 }
+.bottom-nav .bi.on { color:var(--w-ink) }
+.bottom-nav .bi small { font-size:8.5px; font-family:var(--kr-body) }
+@supports not (backdrop-filter:blur(1px)) { .bottom-nav { background: rgba(15,16,26,.96); } } /* ★접합: WebView 게이트(L8) */
+
+/* ── 원문: 성취의 전당 프로필 ── */
+.hall-hero { text-align:center; padding:26px 16px 18px; position:relative }
+.hall-hero .ring { width:120px; height:120px; margin:0 auto 10px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:56px;
+  background:conic-gradient(var(--w-accent) 0% 72%, rgba(255,255,255,.08) 72% 100%); position:relative; }
+.hall-hero .ring::before { content:''; position:absolute; inset:6px; border-radius:50%; background:var(--w-bg) }
+.hall-hero .ring span { position:relative; z-index:1 }
+.timeline { position:relative; padding-left:22px; margin-top:6px }
+.timeline::before { content:''; position:absolute; left:6px; top:4px; bottom:4px; width:2px; background:rgba(255,255,255,.1) }
+.tl-item { position:relative; padding-bottom:18px }
+.tl-item::before { content:''; position:absolute; left:-22px; top:2px; width:11px; height:11px; border-radius:50%; background:var(--w-accent2); box-shadow:0 0 0 3px rgba(255,255,255,.08) }
+.tl-item h5 { margin:0 0 2px; font-size:12.5px }
+.tl-item p { margin:0; font-size:10.5px; color:var(--w-sub) }
+.trophy-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:6px }
+.trophy-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px; text-align:center }
+.trophy-card .big { font-size:22px; font-family:var(--mono); font-weight:700; color:var(--w-accent2) }
+.trophy-card .lbl { font-size:10px; color:var(--w-sub); margin-top:3px }
+
+/* ── ★접합 리셋(원문이 정하지 않는 속성만) — 원문 규칙 뒤에 둔다 ── */
+/* ★접합: .bi 는 목업에서 <div>, 앱에서는 <button> — 브라우저 버튼 기본값만 지운다(값은 위 원문이 정한다) */
+.bottom-nav .bi { background: none; border: 0; padding: 0; margin: 0; font: inherit; cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent; }
+.bottom-nav .bi .nav-badge { right: 14%; }
+/* ★접합: app.css 옛 .avatar(테두리 2px·패딩 4px)를 wtopbar 안에서만 중화 */
+.wtopbar .avatar { border: 0; padding: 0; }
+
+/* 53-rewards-pass.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   53-rewards-pass.css — U3 22_rewards 보상 시즌패스 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   ★접합: hover 는 WebView 게이트(L8) 안으로 · .btn-magic 이 <button>이라 기본 outline 만 정리 ·
+          목업 @keyframes pulse(scale) 를 원문으로 되살리고, app.css 옛 .loading-msg(불투명 깜빡임)는 별도 이름으로 보존.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 이중 베젤 카드 (v5 — 월드 테마 색으로만 은은하게, 이미지 프레임 없음) ── */
+.bezel { padding:7px; border-radius:26px; position:relative; overflow:hidden;
+  background:linear-gradient(155deg, rgba(255,255,255,.10), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08); }
+.bezel::before { content:''; position:absolute; inset:0; border-radius:26px; padding:1px; pointer-events:none;
+  background:linear-gradient(155deg, var(--w-accent), transparent 45%, transparent 65%, var(--w-accent2));
+  opacity:.4;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude; }
+.bezel-inner { border-radius:20px; padding:18px;
+  background:linear-gradient(165deg, var(--w-panel), rgba(255,255,255,.02) 140%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  position:relative; overflow:hidden; }
+.bezel-inner::after { content:''; position:absolute; inset:-40% -40% auto auto; width:70%; height:140%;
+  background: radial-gradient(circle, var(--w-glow), transparent 60%); opacity:.5; pointer-events:none; }
+
+/* ── 원문: 버튼 ── */
+.btn-magic { display:inline-flex; align-items:center; gap:10px; border:0; cursor:pointer;
+  background:linear-gradient(135deg,var(--w-accent),var(--w-accent2)); color:#0b0e1a; font-weight:800;
+  font-family:var(--kr-body); font-size:13.5px; padding:5px 6px 5px 18px; border-radius:999px;
+  box-shadow:0 10px 24px -8px var(--w-glow); transition:.35s cubic-bezier(.34,1.4,.64,1); }
+.btn-magic .icon-orb { width:30px; height:30px; border-radius:999px; background:rgba(11,14,26,.18);
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+  transition:.35s cubic-bezier(.34,1.4,.64,1); }
+@media (hover:hover) and (pointer:fine) {
+  .btn-magic:hover { transform:translateY(-2px) scale(1.015) }
+  .btn-magic:hover .icon-orb { transform:translate(2px,-1px) scale(1.08) }
+}
+.btn-ghost { border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:var(--w-ink);
+  font-family:var(--kr-body); font-weight:700; font-size:13px; padding:11px 18px; border-radius:999px; cursor:pointer; }
+
+/* ── 원문: 시즌 패스형 보상 로드맵 ── */
+.pass-hero { border-radius:20px; padding:20px; background:linear-gradient(150deg,#3a2a0a,#0b0e1a); position:relative; overflow:hidden; margin-bottom:16px }
+.pass-hero::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at 80% 20%, rgba(255,209,102,.35), transparent 60%) }
+.pass-track { display:flex; gap:0; overflow-x:auto; padding:10px 4px 16px; -webkit-overflow-scrolling:touch }
+.pass-node { flex-shrink:0; width:76px; text-align:center; position:relative; padding-top:8px }
+.pass-node::before { content:''; position:absolute; top:26px; left:-38px; width:76px; height:3px; background:rgba(255,255,255,.1); z-index:0 }
+.pass-node:first-child::before { display:none }
+.pass-node.reached::before { background:linear-gradient(90deg,var(--w-accent2),var(--w-accent2)) }
+.pass-chest { width:44px; height:44px; margin:0 auto; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:20px; position:relative; z-index:1;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); }
+.pass-node.reached .pass-chest { background:linear-gradient(155deg,var(--w-accent2),#ff8b6b); box-shadow:0 8px 18px -6px rgba(255,209,102,.5) }
+.pass-node.next .pass-chest { border-color:var(--w-accent2); animation:pulse 2s ease-in-out infinite }
+.pass-node .lbl { font-size:9px; color:var(--w-sub); margin-top:6px; line-height:1.3 }
+.pace-tag { font-size:11px; color:var(--w-accent2); font-family:var(--mono); margin-top:8px }
+
+/* ── 원문: 애니메이션 ── */
+@keyframes pulse{0%,100%{transform:scale(1)} 50%{transform:scale(1.06)}}
+
+/* ── ★접합 ── */
+.pass-hero::after { pointer-events:none; }                       /* 글로우 층이 탭을 가리지 않게(원문 속성 아님) */
+.pass-hero > div { z-index:1; }                                   /* 본문이 ::after 위로 */
+.rewards .btn-magic:focus-visible { outline:2px solid var(--w-accent2); outline-offset:2px; }
+.loading-msg { animation-name: wcLegacyFade; }                    /* app.css 의 옛 pulse(불투명 깜빡임) 보존 */
+@keyframes wcLegacyFade { 50% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .pass-node.next .pass-chest { animation:none } }
+
+/* 54-scroll-cue.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   54-scroll-cue.css — v1.4.51 (2026-09-07 Dio님 지시)
+   ① 스크롤바는 실제 화면에 절대 보이지 않는다(목업 `.phone-scroll::-webkit-scrollbar{width:0}` 를 앱 전체로).
+   ② 대신 "더 있는 쪽"에 glass 원형 화살표(.scroll-cue)를 띄운다 — 하단 네비와 같은 톤(rgba(15,16,26,.75)+blur 18px),
+      스프링 이징 cubic-bezier(.34,1.4,.64,1), transform·opacity 만(L8). 끝에 닿으면 사라진다.
+   ③ 가로 트랙(.scroll-cue-wrap[data-axis="x"])은 양끝을 배경색으로 살짝 페이드.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ① 스크롤바 숨김 — 스크롤 기능은 그대로 */
+html, body, .app, .app *, .map-scroll, .map-sheet, .pass-track, .appinfo, .admin, .admin * { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar, .app *::-webkit-scrollbar, .map-scroll::-webkit-scrollbar, .map-sheet::-webkit-scrollbar,
+.pass-track::-webkit-scrollbar, .appinfo *::-webkit-scrollbar, .admin *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* ② 방향 단서 */
+.scroll-cue-wrap { position: relative; }
+.scroll-cue {
+  position: absolute; z-index: 5; width: 34px; height: 34px; border-radius: 999px; padding: 0; margin: 0;
+  display: flex; align-items: center; justify-content: center; color: var(--w-ink, #f1efe8);
+  background: rgba(15,16,26,.75); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 8px 22px -6px var(--w-glow, rgba(124,92,255,.35));
+  opacity: 0; pointer-events: none; cursor: pointer; -webkit-tap-highlight-color: transparent; font: inherit;
+  transition: opacity .35s cubic-bezier(.34,1.4,.64,1), transform .35s cubic-bezier(.34,1.4,.64,1);
+}
+.scroll-cue.on { opacity: 1; pointer-events: auto; }
+.scroll-cue.fixed { position: fixed; z-index: 31; }
+.scroll-cue.cue-up    { left: 50%; top: 10px;    transform: translateX(-50%) scale(.6) rotate(180deg); }
+.scroll-cue.cue-down  { left: 50%; bottom: 10px; transform: translateX(-50%) scale(.6); }
+.scroll-cue.cue-left  { left: 6px;  top: 50%;    transform: translateY(-50%) scale(.6) rotate(90deg); }
+.scroll-cue.cue-right { right: 6px; top: 50%;    transform: translateY(-50%) scale(.6) rotate(-90deg); }
+.scroll-cue.cue-up.on    { transform: translateX(-50%) scale(1) rotate(180deg); }
+.scroll-cue.cue-down.on  { transform: translateX(-50%) scale(1); }
+.scroll-cue.cue-left.on  { transform: translateY(-50%) scale(1) rotate(90deg); }
+.scroll-cue.cue-right.on { transform: translateY(-50%) scale(1) rotate(-90deg); }
+/* 페이지 전체(fixed): 위 단서는 상단바 아래, 아래 단서는 하단 네비 도크 위 */
+.scroll-cue.fixed.cue-up   { top: calc(env(safe-area-inset-top) + 8px); }
+.scroll-cue.fixed.cue-down { bottom: calc(96px + env(safe-area-inset-bottom)); }
+/* 지도 안(.map-scroll 래퍼): 아래 단서는 접힌 시트(46px+10px) 위 */
+.map-cue-wrap .scroll-cue.cue-down { bottom: 66px; }
+.scroll-cue i { display: block; line-height: 0; animation: cueBob 1.6s ease-in-out infinite; }
+.scroll-cue svg { display: block; }
+@keyframes cueBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+
+/* ③ 가로 트랙 양끝 페이드 (배경색으로 녹아들게 — 마스크 아님) */
+.scroll-cue-wrap[data-axis="x"]::before, .scroll-cue-wrap[data-axis="x"]::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 18px; z-index: 4; pointer-events: none;
+}
+.scroll-cue-wrap[data-axis="x"]::before { left: 0;  background: linear-gradient(90deg, var(--w-bg, #0b0e1a), transparent); }
+.scroll-cue-wrap[data-axis="x"]::after  { right: 0; background: linear-gradient(270deg, var(--w-bg, #0b0e1a), transparent); }
+
+@supports not (backdrop-filter: blur(1px)) { .scroll-cue { background: rgba(15,16,26,.96); } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue i { animation: none; } .scroll-cue { transition-duration: .001ms; } }
+
+/* 55-review-mine.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   55-review-mine.css — 15_evo 복습 마인 입구 (2026-09-07, U4 항목을 Dio님 지시로 앞당김)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값 무변경(ui_check ⑨-7 대조). .bezel·.btn-magic·.h-display·.section-pad 는 52·53 조각에 있다.
+   ★접합: 옛 입구 안내문(mine-note)은 .pill-tag 값으로 블록 표시(문구는 그대로).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.evo-row { display:flex; align-items:center; justify-content:space-between; padding:6px 2px }
+.evo-stage { display:flex; flex-direction:column; align-items:center; gap:5px; font-size:20px }
+.evo-stage span.lbl { font-size:9px; color:var(--w-sub); font-family:var(--mono) }
+.evo-arrow { color:var(--w-sub); font-size:12px }
+
+/* ★접합 */
+.mine-evo .mine-note { display:block; margin:10px 0 0; padding:8px 12px; font-size:11px; line-height:1.6; font-family:var(--kr-body);
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:16px; color:var(--w-sub); }
+.mine-evo .mine-note b { color:var(--w-ink); }
+.mine-evo .btn-magic:disabled { opacity:.45; cursor:default; }
+.mine-evo .evo-stage .lbl { white-space:nowrap; }
+
+/* 56-appinfo.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   56-appinfo.css — v1.4.52 정보 화면·스플래시 아이콘 (2026-09-07 Dio님: "정보 화면도 예전과 똑같다", "빈 사각형만 나온다")
+   정답지 30화면에 정보 화면은 없다 → U1 디자인 시스템 값(section-pad·bezel·eyebrow·pill-tag·btn-magic/ghost)만 쓴다.
+   ★접합: app.css 옛 .appinfo/.ai-* 규칙 중 새 톤과 충돌하는 것만 중화. 아이콘 로드 실패 시 대체 블록(빈 사각형 금지).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.appinfo.section-pad { padding-left: 20px; padding-right: 20px; padding-bottom: 100px; max-width: none; margin: 0; }
+.appinfo .ai-hero { text-align: center; padding: 10px 0 0; display: flex; flex-direction: column; align-items: center; }
+.appinfo .ai-icon { width: 108px; height: 108px; border-radius: 26px; box-shadow: 0 10px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); display: block; object-fit: cover; }
+.ai-icon-fallback, .sp-icon-fallback {
+  display: flex !important; align-items: center; justify-content: center;
+  background: linear-gradient(155deg, var(--w-accent), var(--w-accent2)); color: #0b0e1a;
+}
+.ai-icon-fallback { font-size: 56px; }
+.sp-icon-fallback { font-size: 44%; width: 100%; height: 100%; }
+.appinfo .ai-name { color: var(--w-ink); letter-spacing: .01em; margin: 12px 0 0; }
+.appinfo .ai-p { font-size: 13.5px; line-height: 1.65; margin: 0; color: var(--w-ink); }
+.appinfo .ai-p b { color: #fff; }
+.appinfo .ai-love { margin: 10px 0 0; padding: 10px 12px; border-radius: 14px; font-size: 13px; line-height: 1.6;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
+.appinfo .ai-love b { color: var(--w-accent2); }
+.appinfo .ai-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 12.5px; color: var(--w-sub);
+  border-bottom: 1px solid rgba(255,255,255,.06); }
+.appinfo .ai-row:last-of-type { border-bottom: none; }
+.appinfo .ai-row b { color: var(--w-ink); font-size: 13.5px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.appinfo .ai-status { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-family: var(--mono); border-radius: 999px; padding: 3px 10px;
+  margin: 8px 0 0; text-align: left; font-weight: 400; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); color: var(--w-sub); }
+.appinfo .ai-status.ok  { color: #3fd18b; border-color: rgba(63,209,139,.35); }
+.appinfo .ai-status.old { color: var(--w-accent2); border-color: rgba(255,180,84,.4); }
+.appinfo .ai-notes { font-size: 11.5px; color: var(--w-sub); text-align: left; margin: 8px 0 0; line-height: 1.55; }
+.appinfo .btn-magic:disabled { opacity: .45; cursor: default; }
+.appinfo .btn-ghost:disabled { opacity: .5; cursor: default; }
+.appinfo .wc-selfcheck dl { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px; }
+.appinfo .wc-selfcheck dt { color: var(--w-sub); }
+.appinfo .wc-selfcheck dd { margin: 0; color: var(--w-ink); font-family: var(--mono); font-size: 11.5px; }
+.appinfo .wc-selfcheck dd.warn { color: var(--w-accent2); }
+.appinfo .wc-selfcheck .note { font-size: 11.5px; color: var(--w-sub); margin: 10px 0 0; line-height: 1.55; }
+.appinfo .ai-foot { text-align: center; font-size: 11.5px; color: var(--w-sub); margin-top: 18px; line-height: 1.6; }
+
+/* 57-knight.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   57-knight.css — U3 21_runes 기사 갤러리 v4 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값 무변경(ui_check ⑨-7 대조).
+   3D 컨텍스트(.knight-stage perspective · .knight-figure preserve-3d) 안에서는 mask-image 를 쓰지 않는다(원문 v6.1 기록) — clip-path 만.
+   ★접합: 터치 드래그 틸트는 JS(transform 만) · 슬라이더는 pointer 이벤트 · reduced-motion.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 기사 갤러리 (3D 틸트 + 세트효과 + 등급 슬라이더) ── */
+.knight-stage { position:relative; height:300px; border-radius:22px; margin-bottom:14px; overflow:hidden;
+  background:radial-gradient(circle at 50% 30%, var(--w-glow), transparent 65%), linear-gradient(180deg,#11101c,#0b0e1a);
+  display:flex; align-items:center; justify-content:center; perspective:600px; }
+.knight-figure { width:150px; height:220px; position:relative; transition:transform .12s ease-out; transform-style:preserve-3d; }
+.knight-figure .layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:120px; filter:drop-shadow(0 14px 20px rgba(0,0,0,.5)) }
+.knight-figure .glow-ring { position:absolute; inset:-20px; border-radius:50%; border:2px solid var(--w-accent2); opacity:.35; animation:pulse 2.6s ease-in-out infinite }
+/* ── 원문 v4: 고해상도 기사 포트레이트 + 다층 오라 ── */
+.knight-portrait-wrap { position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center }
+.portrait-clip { position:relative; z-index:3; width:100%; height:100%;
+  clip-path: ellipse(50% 45% at 50% 45%);
+  filter:drop-shadow(0 18px 30px rgba(0,0,0,.55)); }
+.portrait-clip img.hero-portrait { width:100%; height:100%; object-fit:cover; display:block; image-rendering:auto; }
+.portrait-frame-ring { position:absolute; z-index:4; pointer-events:none; inset:6% 14%;
+  border-radius:50%; border:1px solid rgba(255,205,140,.22);
+  box-shadow:0 0 24px 2px rgba(255,180,84,.12), inset 0 0 30px rgba(255,180,84,.06); }
+.aura-core { position:absolute; inset:22%; z-index:0; pointer-events:none; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,200,120,.55) 0%, rgba(255,180,84,.28) 45%, rgba(255,180,84,0) 72%);
+  animation:auraCorePulse 2.4s ease-in-out infinite; }
+.aura-ring { position:absolute; border-radius:50%; z-index:1; pointer-events:none;
+  background:radial-gradient(circle, rgba(255,180,84,.0) 50%, rgba(255,180,84,.38) 66%, rgba(255,180,84,0) 80%); }
+.aura-ring.r1 { inset:4%; animation:auraSpin 7s linear infinite }
+.aura-ring.r2 { inset:-8%; animation:auraSpin 11s linear infinite reverse; opacity:.85 }
+.aura-ring.r3 { inset:-20%; animation:auraPulse 2.6s ease-in-out infinite }
+.aura-ring.r4 { inset:-30%; animation:auraPulse 4.1s ease-in-out infinite reverse; opacity:.5;
+  background:radial-gradient(circle, rgba(255,220,150,0) 55%, rgba(255,220,150,.24) 70%, rgba(255,220,150,0) 82%); }
+.aura-particles { position:absolute; inset:0; z-index:2; pointer-events:none; overflow:visible }
+.aura-particles span { position:absolute; bottom:6%; width:4px; height:4px; border-radius:50%; background:var(--w-accent2,#ffb454);
+  box-shadow:0 0 6px 2px rgba(255,180,84,.7), 0 0 14px 5px rgba(255,180,84,.35); animation:emberRise 3.2s ease-in infinite; }
+.aura-particles span:nth-child(1) { left:14%; animation-delay:0s }
+.aura-particles span:nth-child(2) { left:28%; animation-delay:.35s; width:3px; height:3px }
+.aura-particles span:nth-child(3) { left:40%; animation-delay:.9s; width:5px; height:5px }
+.aura-particles span:nth-child(4) { left:52%; animation-delay:1.3s }
+.aura-particles span:nth-child(5) { left:64%; animation-delay:1.7s; width:3px; height:3px }
+.aura-particles span:nth-child(6) { left:76%; animation-delay:2.1s; width:5px; height:5px }
+.aura-particles span:nth-child(7) { left:86%; animation-delay:2.5s }
+.aura-particles span:nth-child(8) { left:34%; animation-delay:.15s; width:3px; height:3px; background:#fff2d9 }
+.aura-particles span:nth-child(9) { left:58%; animation-delay:1.05s; width:3px; height:3px; background:#fff2d9 }
+.aura-particles span:nth-child(10) { left:22%; animation-delay:1.9s; width:4px; height:4px }
+.aura-particles span:nth-child(11) { left:70%; animation-delay:.6s; width:4px; height:4px }
+.portrait-note { font-size:10px; color:var(--w-sub); text-align:center; margin-top:6px; opacity:.75 }
+.tier-track { display:flex; gap:5px; margin-top:10px }
+.tier-track span { flex:1; height:6px; border-radius:99px; background:rgba(255,255,255,.1) }
+.tier-track span.on { background:linear-gradient(90deg,var(--w-accent),var(--w-accent2)) }
+.slot-row { display:flex; align-items:center; gap:12px; padding:11px 6px; border-bottom:1px solid rgba(255,255,255,.06); cursor:pointer }
+.slot-row .ic { width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center; font-size:18px }
+.slot-row .meta { flex:1; min-width:0 }
+.slot-row .meta h5 { margin:0 0 2px; font-size:12.5px }
+.slot-row .meta p { margin:0; font-size:10px; color:var(--w-sub) }
+.compare-slider { position:relative; height:150px; border-radius:16px; overflow:hidden; margin-top:8px }
+.compare-slider .before, .compare-slider .after { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:70px }
+.compare-slider .before { background:linear-gradient(155deg,#3a3428,#1c1810) } /* Dio님 결정 2026-09-08: 정답지 원문의 grayscale(.6) brightness(.7) 제거 — '이전 등급' 기사도 어둡게 하지 않는다 */
+.compare-slider .after { background:linear-gradient(155deg,var(--w-accent),var(--w-accent2)); clip-path:inset(0 0 0 55%) }
+.compare-slider .handle-bar { position:absolute; top:0; bottom:0; left:55%; width:3px; background:#fff; box-shadow:0 0 10px rgba(255,255,255,.6) }
+.compare-slider .handle-bar::after { content:'↔'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; background:#fff; color:#111; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:13px }
+.set-banner { display:flex; align-items:center; gap:10px; background:linear-gradient(135deg,rgba(255,209,102,.18),rgba(124,92,255,.15)); border:1px solid rgba(255,209,102,.35); border-radius:14px; padding:10px 12px; font-size:11.5px; margin-bottom:12px }
+
+/* ── 원문: 오라 keyframes ── */
+@keyframes auraCorePulse{0%,100%{opacity:.7; transform:scale(1)} 50%{opacity:1; transform:scale(1.09)}}
+@keyframes auraSpin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
+@keyframes auraPulse{0%,100%{opacity:.4; transform:scale(1)} 50%{opacity:.85; transform:scale(1.12)}}
+@keyframes emberRise{
+  0%{transform:translateY(0) scale(.5); opacity:0}
+  12%{opacity:1}
+  100%{transform:translateY(-190px) scale(1.15); opacity:0}
+}
+
+/* ── ★접합 ── */
+.knight-stage { touch-action:none; }                                  /* 드래그 틸트가 스크롤과 싸우지 않게 */
+.knight-stage.no-aura .aura-core, .knight-stage.no-aura .aura-ring, .knight-stage.no-aura .aura-particles { display:none; } /* 세트 미완성 → 전신 오라 꺼짐(정답지 문구 "전신 오라 활성화") */
+.knight .slot-row { -webkit-tap-highlight-color:transparent; }
+.knight .slot-row.sel { background:rgba(255,255,255,.04); border-radius:12px; }
+.compare-slider { touch-action:pan-y; user-select:none; }
+.knight .portrait-fallback { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:110px; background:linear-gradient(155deg,var(--w-accent),var(--w-accent2)); }
+@media (prefers-reduced-motion: reduce) { .aura-core, .aura-ring, .aura-particles span, .knight-figure .glow-ring { animation:none !important; } }
+
+/* 58-brief.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   58-brief.css — U3 03_brief 지역 확대 진입 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt `.world-node` 계열 — 값 무변경(ui_check ⑨-7 대조).
+   50-uiux-system.css 의 `.wc-world-node`(U1 이식본)는 그대로 두고 무접두 원문을 추가했다(값 동일).
+   ★접합: 수호자 이미지가 없는 월드는 이모지 원형 · 월드 머리글(eyebrow 행) · 모듈 노드가 <button> 이라 리셋.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.world-node { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:20px; margin-bottom:14px;
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); position:relative;
+  transition:.3s cubic-bezier(.34,1.2,.64,1); }
+.world-node.tilt-l { transform:rotate(-1.2deg) }
+.world-node.tilt-r { transform:rotate(1deg) }
+.world-node .orb { width:52px; height:52px; border-radius:18px; display:flex; align-items:center; justify-content:center;
+  font-size:24px; background:linear-gradient(155deg,var(--nc,var(--w-accent)),transparent); box-shadow:0 8px 18px -6px var(--ng,var(--w-glow));
+  flex-shrink:0; }
+.world-node .meta { flex:1; min-width:0 }
+.world-node .meta h4 { margin:0 0 3px; font-size:14px }
+.world-node .meta p { margin:0; font-size:11px; color:var(--w-sub) }
+.world-node .prog { width:44px; text-align:right; font-family:var(--mono); font-size:11px; color:var(--w-accent2) }
+.world-node.locked { opacity:.4 }
+.world-node .lockicon { position:absolute; right:14px; top:14px; font-size:14px }
+
+/* ── ★접합 ── */
+.brief button.world-node { width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.brief button.world-node:disabled { cursor:default; }
+.brief .world-node .meta h4 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.brief .world-node.has-ghost .orb { box-shadow:0 8px 18px -6px rgba(185,139,255,.6); }
+.brief-guardian { width:72px; height:72px; border-radius:50%; overflow:hidden; margin:0 auto; box-shadow:0 8px 20px -6px var(--w-glow); border:2px solid rgba(255,255,255,.15);
+  display:flex; align-items:center; justify-content:center; font-size:34px; background:linear-gradient(155deg,var(--w-accent),var(--w-accent2)); }
+.brief-guardian img { width:100%; height:100%; object-fit:cover; object-position:center 15%; display:block; }
+.brief-world-head { display:flex; align-items:center; gap:8px; margin:14px 0 8px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.brief-world-head .eyebrow { margin:0; flex:1; }
+.brief-world-head .pill-tag { flex-shrink:0; }
+/* 지형 헤더는 정답지처럼 화면 가장자리까지(풀블리드): section-pad 20px + .app-main 14px 을 상쇄, 위 12px 도 상쇄 */
+.brief-terrain { position:relative; height:180px; overflow:hidden; margin:-12px -34px 0; }
+/* 정답지 03_brief 에는 상단 wtopbar 가 없다 — 지역 화면이 열려 있는 동안만 셸 상단바를 숨긴다(LV·XP 는 화면 안 HUD 가 보여준다) */
+body:has(.brief) .wtopbar { display:none; }
+body:has(.brief) { overflow-x:hidden; }
+.brief-terrain svg { position:absolute; inset:0; width:100%; height:100%; }
+.brief-terrain .pill-tag { position:absolute; bottom:10px; left:20px; cursor:pointer; color:var(--w-ink); }
+.brief .ghost-replay { margin:-6px 0 12px; }
+
+/* 59-badgedex.css */
+/* ============================================================
+   WordCraft 뱃지 도감 v2 — 디자인 시스템 적용(2026-09-08, 정답지 31_badgedex)
+   내용·산식·동작(v1.4.27~34)은 그대로, 껍데기만 교체한다.
+   의존: 50-uiux-system.css 토큰(--w-*), .bezel/.bezel-inner/.pill-tag/.h-display/.btn-ghost/.xpbar-*/.world-node .orb
+   금지 항목(README 참조): 마스크 이미지 · 어둡게 하는 filter · 새 의존성
+   ============================================================ */
+
+/* ── 머리 ── */
+.dex{padding-top:8px}
+.dex-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 0 12px}
+.dex-head .h-display{font-size:18px; margin:0}
+.dex-head .pill-tag{font-size:11px; color:var(--w-accent2); border-color:rgba(255,209,102,.3); background:rgba(255,209,102,.08)}
+.dex-stale{display:block; margin:-4px 0 12px; padding:8px 12px; border-radius:14px; font-size:11px; line-height:1.5; color:var(--w-sub);
+  background:rgba(255,255,255,.04); border:1px dashed rgba(255,255,255,.14)}
+
+/* ── 장비창(룬 기사 카드) — 기존 .loadout(128px 픽셀) 대체: 페인터리 전신 기사 = base + 부위 오버레이(6슬롯×4등급) 실시간 겹치기 ── */
+.dex-hero{margin-bottom:12px}
+.dex-hero .bezel-inner{padding:14px 14px 14px; text-align:center}
+.dex-hero .bezel-inner::after{display:none} /* 기본 코너 글로우는 카드가 길어 세로 경계가 드러난다 — 마법진 글로우로 대체 */
+.dex-stage{position:relative; height:262px; display:flex; align-items:flex-end; justify-content:center; margin:-2px 0 4px}
+/* 바닥 마법진(원근 타원) — mask 미사용: 타원(overflow:hidden) 안에서 정사각 conic(::before)만 돌고, ::after 가 안쪽을 덮어 테두리만 남긴다 */
+.dex-ring{position:absolute; left:50%; bottom:10px; width:212px; height:64px; margin-left:-106px; border-radius:50%; overflow:hidden; opacity:.95}
+.dex-ring::before{content:''; position:absolute; left:50%; top:50%; width:260px; height:260px; margin:-130px 0 0 -130px;
+  background:conic-gradient(from 0deg, var(--w-accent), transparent 30%, var(--w-accent2) 55%, transparent 80%, var(--w-accent)); animation:dexSpin 9s linear infinite}
+.dex-ring::after{content:''; position:absolute; inset:3px; border-radius:50%; background:radial-gradient(ellipse at 50% 50%, var(--w-glow), var(--w-panel) 74%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.dex-ring i{position:absolute; inset:13px 24px; border-radius:50%; border:1px dashed rgba(255,255,255,.18); z-index:1}
+@keyframes dexSpin{to{transform:rotate(360deg)}}
+.dex-glow{position:absolute; left:50%; top:18px; width:220px; height:220px; margin-left:-110px; border-radius:50%;
+  background:radial-gradient(circle, var(--w-glow), transparent 66%); opacity:.55}
+/* 꾸준함(오라 슬롯) 등급이 오를수록 글로우가 세진다 — 오라는 그림이 아니라 빛으로 표현(오버레이 슬롯 없음) */
+.dex-hero[data-aura="0"] .dex-glow{opacity:.35} .dex-hero[data-aura="2"] .dex-glow{opacity:.7} .dex-hero[data-aura="3"] .dex-glow{opacity:.85} .dex-hero[data-aura="4"] .dex-glow{opacity:1; width:260px; margin-left:-130px}
+/* 전신 기사 896:1200 — 절대배치 img 겹치기(캔버스 합성 아님, L8) */
+.dex-knight{position:relative; width:186px; height:249px; margin-bottom:22px; filter:drop-shadow(0 16px 18px rgba(0,0,0,.55))}
+.dex-knight img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; -webkit-user-drag:none}
+.dex-knight.is-loading img{opacity:0}
+.dex-art-fallback{position:relative; display:flex; align-items:center; justify-content:center; height:249px; margin-bottom:14px}
+.dex-name{margin:6px 0 10px}
+.dex-name b{display:block; font-family:var(--kr-display); font-weight:400; font-size:20px; letter-spacing:.02em;
+  background:linear-gradient(180deg,#fff,var(--w-accent2)); -webkit-background-clip:text; background-clip:text; color:transparent}
+.dex-name span{display:block; margin-top:4px; font-size:11.5px; color:var(--w-sub); line-height:1.45}
+.dex-bar{position:relative; margin:0 6px 14px}
+.dex-bar .xpbar-track{height:10px}
+.dex-bar em{display:block; margin-top:5px; font-style:normal; font-family:var(--mono); font-size:10.5px; color:var(--w-sub); text-align:right}
+
+/* 장비 슬롯 11칸 — 3열, 등급 t0~t4 (loadout.ts TIER_NAME: 빈 슬롯·낡은·강철·룬각인·전설) */
+.dex-slots{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; text-align:left}
+.dex-slot{--tc:rgba(255,255,255,.35); --tb:rgba(255,255,255,.12); --tbg:rgba(255,255,255,.03); --tg:transparent;
+  position:relative; display:flex; flex-direction:column; gap:2px; padding:10px 10px 9px; border-radius:16px; cursor:pointer; text-align:left;
+  background:var(--tbg); border:1px solid var(--tb); box-shadow:0 0 0 0 var(--tg); color:var(--w-ink); font-family:var(--kr-body);
+  transition:.3s cubic-bezier(.34,1.4,.64,1)}
+.dex-slot:active{transform:scale(.97)}
+.dex-slot .em{font-size:22px; line-height:1; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+.dex-slot b{font-size:12.5px; margin-top:4px}
+.dex-slot small{font-size:9.5px; color:var(--w-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.dex-slot .cnt{position:absolute; right:9px; top:9px; font-style:normal; font-family:var(--mono); font-size:10px; color:var(--tc)}
+.dex-slot .tbar{display:block; height:4px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:5px}
+.dex-slot .tbar i{display:block; height:100%; border-radius:99px; background:var(--tc)}
+.dex-slot.t0 .em{filter:grayscale(1) opacity(.35)}
+.dex-slot.t1{--tc:#d9a066; --tb:rgba(217,160,102,.45); --tbg:rgba(138,90,59,.14)}
+.dex-slot.t2{--tc:#8fd4ff; --tb:rgba(143,212,255,.45); --tbg:rgba(143,212,255,.10); --tg:rgba(143,212,255,.18)}
+.dex-slot.t3{--tc:#b98bff; --tb:rgba(185,139,255,.55); --tbg:rgba(124,92,255,.14); --tg:rgba(124,92,255,.22); box-shadow:0 0 14px -2px var(--tg)}
+.dex-slot.t4{--tc:#ffd166; --tb:rgba(255,209,102,.7); --tbg:linear-gradient(155deg,rgba(255,209,102,.22),rgba(255,180,84,.08)); --tg:rgba(255,209,102,.3); box-shadow:0 0 18px -2px var(--tg)}
+.dex-slot.t4::after{content:'★'; position:absolute; right:8px; bottom:7px; font-size:9px; color:#ffd166}
+/* 등급 상승 연출(기존 .ls-up 대응) — 한 번만 */
+.dex-slot.is-up{animation:dexUp 1.2s cubic-bezier(.34,1.4,.64,1) 2}
+@keyframes dexUp{0%,100%{transform:scale(1)} 40%{transform:scale(1.06); box-shadow:0 0 26px 2px var(--w-glow)}}
+.dex-tip{margin:12px 2px 0; font-size:10.5px; color:var(--w-sub); line-height:1.5; text-align:left}
+.dex-artfail{margin:0; font-size:11px; color:var(--w-sub); line-height:1.5}
+
+/* 기사 갤러리 진입 */
+.dex-gallery{width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 6px 11px 16px; margin:0 0 14px}
+.dex-gallery .arrow{width:30px; height:30px; border-radius:999px; background:rgba(255,255,255,.08); display:inline-flex; align-items:center; justify-content:center; font-size:13px}
+
+/* 툴바 */
+.dex-toolbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 2px 10px}
+.dex-toolbar p{margin:0; flex:1; font-size:11px; color:var(--w-sub); line-height:1.4}
+.dex-toolbar .pill-tag{cursor:pointer; font-family:var(--kr-body); font-weight:700; color:var(--w-ink); white-space:nowrap}
+
+/* 분야 11개 — .world-node 어휘 */
+.dex-group{border-radius:20px; margin-bottom:10px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); overflow:hidden;
+  transition:.3s cubic-bezier(.34,1.2,.64,1)}
+.dex-group.is-full{border-color:rgba(255,209,102,.4); background:linear-gradient(135deg,rgba(255,209,102,.10),rgba(255,255,255,.02))}
+.dex-group.is-open{border-color:rgba(255,255,255,.14)}
+.dex-group-head{width:100%; display:flex; align-items:center; gap:9px; padding:11px 12px; background:transparent; border:0; color:var(--w-ink);
+  font-family:var(--kr-body); text-align:left; cursor:pointer}
+.dex-group-head .orb{width:42px; height:42px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
+  background:linear-gradient(155deg,var(--w-accent),transparent); box-shadow:0 8px 18px -6px var(--w-glow)}
+.dex-group.is-zero .orb{background:rgba(255,255,255,.06); box-shadow:none; filter:grayscale(1) opacity(.6)}
+.dex-group.is-full .orb{background:linear-gradient(155deg,var(--w-accent2),transparent)}
+.dex-group-head .meta{flex:1; min-width:0}
+.dex-group-head .meta h4{margin:0 0 3px; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.dex-group-head .meta p{margin:0; font-size:10.5px; color:var(--w-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.dex-group-head .gbar{width:38px; height:5px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; flex-shrink:0}
+.dex-group-head .gbar i{display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--w-accent),var(--w-accent2))}
+.dex-group.is-full .gbar i{background:var(--w-accent2)}
+.dex-group-head .prog{font-family:var(--mono); font-size:11px; color:var(--w-accent2); width:30px; text-align:right; flex-shrink:0}
+.dex-group-head .chev{width:24px; height:24px; flex-shrink:0; border-radius:999px; background:rgba(255,255,255,.06); display:inline-flex; align-items:center; justify-content:center;
+  font-size:11px; color:var(--w-sub); transition:.3s cubic-bezier(.34,1.4,.64,1)}
+.dex-group.is-open .chev{transform:rotate(180deg); background:var(--w-accent); color:#0b0e1a}
+
+/* 뱃지 카드 3열 */
+.dex-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:2px 10px 12px}
+.dex-badge{display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; padding:12px 6px 10px; border-radius:16px;
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); color:var(--w-ink); font-family:var(--kr-body); cursor:default;
+  transition:.3s cubic-bezier(.34,1.4,.64,1)}
+.dex-badge .bo{width:44px; height:44px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:22px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08)}
+.dex-badge b{font-size:11.5px; line-height:1.25}
+.dex-badge small{font-size:9.5px; color:var(--w-sub); line-height:1.4}
+.dex-badge.got{border-color:rgba(255,209,102,.35); background:linear-gradient(165deg,rgba(255,209,102,.12),rgba(255,255,255,.02))}
+.dex-badge.got .bo{background:linear-gradient(155deg,rgba(255,209,102,.35),rgba(124,92,255,.25)); border-color:rgba(255,209,102,.5); box-shadow:0 8px 18px -6px rgba(255,209,102,.45)}
+.dex-badge.lock{cursor:pointer}
+.dex-badge.lock .bo{filter:grayscale(1) opacity(.55)}
+.dex-badge.lock b, .dex-badge.lock small{color:var(--w-sub)}
+.dex-badge.lock:active{transform:scale(.97)}
+.dex-badge.lock.revealed{border-color:rgba(185,139,255,.5); background:rgba(124,92,255,.10)}
+.dex-badge.lock.revealed .bo{filter:none; border-color:rgba(185,139,255,.6); background:rgba(124,92,255,.22)}
+.dex-badge.lock.revealed b{color:var(--w-ink)}
+.dex-badge .hint{color:#d8d4ee; font-size:9.5px}
+.dex-badge .bprog{width:100%; height:6px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:4px}
+.dex-badge .bprog i{display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--w-accent),var(--w-accent2))}
+.dex-badge .bnum{font-style:normal; font-family:var(--mono); font-size:9.5px; color:var(--w-accent2); margin-top:1px}
+@media (max-width:370px){ .dex-grid,.dex-slots{gap:6px} .dex-slot{padding:9px 8px 8px} .dex-badge{padding:10px 4px 9px} }
+
+/* 59b-badgedex-glue.css */
+/* ============================================================
+   59b-badgedex-glue.css — 뱃지 도감 v2 ★접합★ (2026-09-08, v1.4.56)
+   59-badgedex.css(정답지 원문, sha 고정)는 손대지 않고 앱 트리에 붙일 때 필요한 것만 여기에 둔다.
+   ============================================================ */
+/* A6: 도감 블록 좌우 = 화면 가장자리 20px. .app-main 이 14px 을 이미 주므로 그만큼 되돌려 이중 패딩을 없앤다 */
+.profile .dex.section-pad{margin-left:-14px; margin-right:-14px}
+
+/* 기사 갤러리(21_runes) 포트레이트 = base + 오버레이 스택. .portrait-clip / .compare-slider .before·.after 는 정답지대로 position 이 잡혀 있다 */
+.knight-stack{position:absolute; inset:0}
+.knight-stack img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 12%; display:block; -webkit-user-drag:none}
+
+/* 60-engine-core.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   60-engine-core.css — U4 엔진 코어 5화면: 04_e-story · 05_e-learn · 06_e-choice · 09_e-quiz(보스 관문) · 12_respawn (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   .bezel·.btn-magic·.icon-orb 는 53, .h-display·.pill-tag·.section-pad 는 52 조각에 이미 있다 — 여기서는 없는 셀렉터만 원문으로 추가.
+   50-uiux-system.css 의 `.wc-engine-header`·`.wc-opt-card`·`.wc-tile` 등(U1 이식본, wc- 접두)은 그대로 두고 무접두 원문을 추가했다(값 동일).
+   ★접합: 옛 app.css 의 .choice-btn(패딩·그림자·픽셀 글꼴)·.qcard-text(19px 굵게)·.tts-btn 크기를 정답지 껍데기 안에서만 중화.
+          정답지에 없는 애니메이션(오답 흔들림·정답 고리 이어짐)은 README §5 규칙대로 transform·opacity 만, 스프링 이징 cubic-bezier(.34,1.4,.64,1).
+   금지 준수: mask-image·1 미만 brightness 필터·border-image 없음. 오답 = 색만(빨간 X·감점 표기 없음, 문구는 TSX).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 엔진 헤더 · 말풍선 · 진행 점 ── */
+.engine-header{padding:16px 20px 8px}
+.engine-header .char{
+  display:flex; align-items:center; gap:12px; margin-bottom:14px;
+}
+.engine-header .char .face{
+  width:56px; height:56px; border-radius:18px; background:linear-gradient(155deg,var(--w-accent),var(--w-accent2));
+  display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 8px 20px -6px var(--w-glow);
+  overflow:hidden;
+}
+.engine-header .char .face img{width:100%; height:100%; object-fit:cover; object-position:center 15%}
+.speech{
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:16px 16px 16px 4px;
+  padding:12px 14px; font-size:13px; line-height:1.6; flex:1;
+}
+.progress-dots{display:flex; gap:5px; padding:0 20px 10px}
+.progress-dots span{height:5px; flex:1; border-radius:99px; background:rgba(255,255,255,.1)}
+.progress-dots span.done{background:linear-gradient(90deg,var(--w-accent),var(--w-accent2))}
+
+/* ── 원문: 선택지 카드 (correct/wrong 은 색만) ── */
+.opt-card{
+  display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; margin-bottom:10px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:14px;
+  transition:.25s cubic-bezier(.34,1.3,.64,1);
+}
+.opt-card .k{
+  width:26px; height:26px; border-radius:9px; background:rgba(255,255,255,.07); display:flex; align-items:center;
+  justify-content:center; font-family:var(--mono); font-size:11px; color:var(--w-sub); flex-shrink:0;
+}
+.opt-card.correct{border-color:#3fd18b; background:rgba(63,209,139,.1)}
+.opt-card.wrong{border-color:#ff6b6b; background:rgba(255,107,107,.08)}
+@media (hover:hover) and (pointer:fine) {
+  .opt-card:hover{transform:translateX(3px); border-color:var(--w-accent)}
+}
+
+/* ── 원문: 타일 · 빈칸 ── */
+.tile-row{display:flex; flex-wrap:wrap; gap:8px; padding:10px 4px}
+.tile{
+  padding:9px 14px; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  font-size:13.5px; cursor:pointer; font-family:var(--kr-body);
+}
+.tile.placed{background:var(--w-accent); color:#0b0e1a; font-weight:700; border-color:var(--w-accent)}
+.blank-line{border-bottom:2px dashed rgba(255,255,255,.25); min-width:52px; display:inline-block; padding:0 6px; text-align:center}
+
+/* ── ★접합 ── */
+/* ★접합: 선택지는 <button class="choice-btn opt-card"> — 옛 app.css .choice-btn 이 정하는 속성 중 원문 .opt-card 가 정하지 않는 것만 지운다(원문 값은 .opt-card 가 뒤에서 이긴다) */
+.qcard .choices { display: block; gap: 0; }
+.qcard .choices .choice-btn.opt-card { width: 100%; min-height: 0; box-shadow: none; text-align: left; font-weight: 400; color: var(--w-ink); line-height: 1.5; -webkit-tap-highlight-color: transparent; }
+.qcard .choices .choice-btn.opt-card:active { transform: none; box-shadow: none; }
+.qcard .choices .choice-btn.opt-card:disabled { opacity: 1; }
+/* ★접합: 고른 직후 250ms 선택 상태(B-3 유지) — 옛 다이아몬드색 대신 월드 강조색 */
+.qcard .choices .choice-btn.opt-card.selected { border-color: var(--w-accent); background: rgba(255,255,255,.07); box-shadow: none; }
+/* ★접합: 정답지에 없는 동작 — 오답 흔들림(app.css @keyframes shake: translateX 만) · 정답 고리 이어짐(scale·opacity 만) */
+.qcard .choices .opt-card.wrong { animation: shake .35s cubic-bezier(.34,1.4,.64,1); }
+.qcard .choices .opt-card.correct { animation: wcLink .35s cubic-bezier(.34,1.4,.64,1); }
+@keyframes wcLink { from { transform: scale(.96); opacity: .6; } to { transform: scale(1); opacity: 1; } }
+/* ★접합: 문항 문구는 말풍선(.speech 13px) 안에 산다 — 옛 .qcard-text(19px 굵게) 중화 */
+.speech .qcard-text { font-size: inherit; font-weight: inherit; margin: 0; }
+.speech .qcard-sub { display: block; font-size: 11px; font-weight: 400; color: var(--w-sub); }
+.speech .tts-btn { margin-top: 6px; }
+/* ★접합: 듣기 문항은 캐릭터 얼굴 자리가 🔊 재생 버튼(56px 얼굴 안에 꽉 차게) */
+.engine-header .face .tts-btn { width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 26px; }
+/* ★접합: 학습 카드 — 예문 타일 옆 한국어 뜻 · 옛 입모양 다이어그램 상자(app.css .mouth-art)의 테두리만 걷어낸다 */
+.learn-step .wc-ex-ko { flex: 1 1 140px; align-self: center; font-size: 12.5px; color: var(--w-sub); line-height: 1.5; }
+.learn-step .mouth-art { background: transparent; border: 0; padding: 6px 0; }
+.learn-step .opt-card.correct { cursor: default; }
+/* ★접합: 스토리 — 루트 .story 가 탭 대상이라 버튼은 장식(포커스 링만) */
+.steprunner .btn-magic:focus-visible { outline: 2px solid var(--w-accent2); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .qcard .choices .opt-card.wrong, .qcard .choices .opt-card.correct { animation: none; }
+}
+
+/* 61-engine-games.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   61-engine-games.css — U4 엔진 07_e-order · 08_e-match · 11_e-summon (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   이미 이식된 원문(.bezel 계열·.btn-magic·.icon-orb·.btn-ghost = 53 / .h-display·.pill-tag·.section-pad = 52)은 반복하지 않는다.
+   여기 새로 붙인 원문: .opt-card(+:hover·.correct) · .tile-row · .tile · .tile.placed · .blank-line
+   ★접합(wc-): 목업은 <div>·<span>이고 앱은 <button>이라 필요한 리셋, 짝맞추기 연결선(transform·opacity 만),
+              오답 흔들림(빨간색·X 없음), 피드백 카드 톤(빨강 제거), 소환 무대를 bezel 안에 넣는 접합.
+   금지 준수: mask-image·1 미만 brightness·border-image 없음. 오답에 빨간색·"틀렸"·"오답" 문구 없음.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 선택 카드(짝맞추기 좌우 열) ── */
+.opt-card{
+  display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; margin-bottom:10px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:14px;
+  transition:.25s cubic-bezier(.34,1.3,.64,1);
+}
+@media (hover:hover) and (pointer:fine) {
+  .opt-card:hover{transform:translateX(3px); border-color:var(--w-accent)}
+}
+.opt-card.correct{border-color:#3fd18b; background:rgba(63,209,139,.1)}
+
+/* ── 원문: 단어 칩(타일) ── */
+.tile-row{display:flex; flex-wrap:wrap; gap:8px; padding:10px 4px}
+.tile{
+  padding:9px 14px; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  font-size:13.5px; cursor:pointer; font-family:var(--kr-body);
+}
+.tile.placed{background:var(--w-accent); color:#0b0e1a; font-weight:700; border-color:var(--w-accent)}
+
+/* ── 원문: 문장 빈칸 ── */
+.blank-line{border-bottom:2px dashed rgba(255,255,255,.25); min-width:52px; display:inline-block; padding:0 6px; text-align:center}
+
+/* ── ★접합 ── (원문이 정한 속성은 건드리지 않는다. 원문 규칙 뒤에 둔다) */
+/* ★ 타일이 <button>: app.css 전역 button 리셋(배경·테두리 없음·font inherit) 위에 .tile 원문이 얹힌다. 여기서는 상태만 */
+.tile.wc-used{opacity:.25}                         /* 창고에서 이미 올린 블록 — 옛 .token.used 값 그대로 */
+.tile:disabled{cursor:default}
+.tile:focus-visible{outline:2px solid var(--w-accent2); outline-offset:2px}
+/* ★ 빈칸이 <button>: 줄높이는 문장(1.8)을 따라가고, 비어 있으면 높이가 0이 되지 않게 공백 한 칸 */
+.ordergame button.blank-line{line-height:inherit; vertical-align:baseline; min-height:0}
+.ordergame .blank-line.wc-empty::after{content:'\00a0'}
+.ordergame .blank-line:focus-visible{outline:2px solid var(--w-accent2); outline-offset:2px}
+.ordergame .bezel-inner > p{margin:0; position:relative; z-index:1}   /* bezel-inner::after 글로우 위로 */
+.ordergame .btn-ghost{margin-top:10px; width:100%}
+.ordergame .btn-magic:disabled, .summon-step .btn-magic:disabled{opacity:.45; cursor:default; box-shadow:none}
+.ordergame .btn-magic:focus-visible, .summon-step .btn-magic:focus-visible{outline:2px solid var(--w-accent2); outline-offset:2px}
+
+/* ★ 짝맞추기: 카드가 <button>이라 폭·정렬만, 선택은 원문 hover 값(테두리 accent), 짝이 맞으면 원문 .correct */
+.wc-match-wrap{position:relative}
+.wc-match-wrap button.opt-card{width:100%; text-align:left; font-family:var(--kr-body); color:var(--w-ink)}
+.wc-match-wrap .opt-card.wc-sel{border-color:var(--w-accent)}
+.wc-match-wrap .opt-card:disabled{cursor:default}
+/* ★ 오답: 빨간색·X 없이 살짝 흔들리기만 (transform 만) */
+.wc-match-wrap .opt-card.wc-shake{animation:wcNudge .4s cubic-bezier(.34,1.4,.64,1)}
+@keyframes wcNudge{0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)}}
+/* ★ 연결선: 왼쪽 카드 오른끝 → 오른쪽 카드 왼끝. 회전은 바깥 span, 그리기는 안쪽 ::before 의 scaleX(transform·opacity 만) */
+.wc-match-lines{position:absolute; inset:0; pointer-events:none; z-index:1; overflow:visible}
+.wc-match-line{position:absolute; height:2px; margin-top:-1px; transform-origin:0 50%}
+.wc-match-line::before{content:''; position:absolute; inset:0; border-radius:2px;
+  background:linear-gradient(90deg,var(--w-accent),var(--w-accent2)); box-shadow:0 0 8px var(--w-glow);
+  transform-origin:0 50%; animation:wcLineDraw .45s cubic-bezier(.34,1.4,.64,1) both}
+@keyframes wcLineDraw{from{transform:scaleX(0); opacity:0} to{transform:scaleX(1); opacity:1}}
+
+/* ★ 피드백 카드 톤(order·summon 공통): app.css 옛 빨강 테두리·픽셀 폰트를 이 두 화면 안에서만 중화 */
+.ordergame .feedback, .summon-step .feedback{border:1px solid rgba(255,255,255,.08); border-radius:16px; background:rgba(255,255,255,.035); text-align:left}
+.ordergame .feedback.ok, .summon-step .feedback.ok{border-color:#3fd18b; background:rgba(63,209,139,.1)}
+.ordergame .feedback.no, .summon-step .feedback.no{border-color:var(--w-accent); background:rgba(255,255,255,.035)}
+.ordergame .feedback-meme, .summon-step .feedback-meme{font-family:var(--kr-body); font-size:14px; font-weight:800; color:var(--w-ink)}
+.ordergame .feedback.no .feedback-meme, .summon-step .feedback.no .feedback-meme{color:var(--w-ink)}   /* app.css 빨강(.feedback.no .feedback-meme) 중화 */
+.ordergame .feedback.ok .feedback-meme, .summon-step .feedback.ok .feedback-meme{color:#3fd18b}
+.ordergame .feedback-explain, .summon-step .feedback-explain{font-size:12.5px; color:var(--w-sub)}
+.summon-step .feedback .btn-magic{margin-top:10px}
+
+/* ★ 소환진: 무대(forge-stage-box)를 bezel 안에 — 폭을 채우고 글로우(::after) 위에 올린다 */
+.summon-step .bezel{text-align:left}
+.summon-step > .pill-tag{align-self:center}   /* app.css .summon-step(flex column) 이 pill 을 늘리지 않게 */
+.summon-step .bezel-inner .forge-stage-box{width:100%; margin:0; position:relative; z-index:1}
+.summon-step .forge-slots{margin-top:10px; min-height:56px; align-items:center}
+.summon-step .forge-slots .order-hint{font-size:12px; color:var(--w-sub); width:100%; text-align:center}
+.summon-step .order-pool{margin-top:0}
+.summon-step .forge-summon{font-size:13.5px; letter-spacing:0}   /* app.css .forge-root .forge-summon(18px) 중화 → 원문 .btn-magic 값 */
+.summon-step .forge-mission-ko{justify-content:center; font-size:13px}
+.summon-step .forge-mission-ko b{color:var(--w-accent2)}
+.summon-step .summon-pool-label{color:var(--w-sub); font-family:var(--mono); font-weight:400; letter-spacing:.18em; font-size:10px; text-transform:uppercase; margin:16px 0 0}
+.summon-step .summon-focus{background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); border-radius:12px; color:var(--w-sub); font-weight:400; font-size:12px}
+/* ★ 깨진 블록: 빨강 대신 accent2 테두리 + 원문 파단 흔들림(blkShake, transform 만) */
+.summon-step .tile.forge-broken{border-color:var(--w-accent2); background:rgba(255,180,84,.18); color:var(--w-ink); animation:blkShake .32s linear both}
+
+/* 62-vocab.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   62-vocab.css — U4 13_vocab-hub 단어 대륙 티어맵 · 14_vocab-game 한→영 소환 껍데기 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   이 화면이 쓰는 원문 셀렉터는 전부 앞 조각에 이미 있어 여기서 반복하지 않는다(중복 금지):
+     .h-display .pill-tag .eyebrow .section-pad .wtopbar .xpbar-* (52) · .bezel .btn-magic .btn-ghost (53) · .world-node 계열 (58) ·
+     .tile-row .tile .tile.placed · .opt-card .opt-card .k .opt-card.correct (60-engine-core — 같은 날 U4 엔진 이식본)
+   .opt-card.wrong(빨간 테두리)은 이 화면에서 쓰지 않는다(README §2-4) — 못 맞히면 흔들림 + "다시 볼까?" 만.
+   ★접합: 목업 <div> 였던 .tile·.opt-card·.world-node 를 <button> 으로 쓰기 위한 리셋(원문이 정하지 않는 속성만) ·
+          허브 상단 wtopbar 풀블리드 · 힌트 상자 · 흔들림(transform 만, 스프링 이징).
+   금지 준수: 마스크 이미지·1 미만 밝기 필터·금색 액자 프레임·빨간 X 없음.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── ★접합 ── */
+/* 허브: 셸 상단 wtopbar 를 화면 안에서 그린다(App 은 '/' 에서만 그린다) — .app-main 안쪽 여백(12px 14px)을 상쇄해 풀블리드 */
+.vocab-hub .wc-hub-top { margin: -12px -14px 0; }
+.vocab-hub .wc-hub-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.vocab-hub .wc-hub-head .eyebrow { flex: 1; margin: 0; }
+.vocab-hub .wc-hub-head .pill-tag { flex-shrink: 0; cursor: pointer; color: var(--w-ink); -webkit-tap-highlight-color: transparent; }
+.vocab-hub .wc-hub-sub { margin: -8px 0 14px; font-size: 11.5px; color: var(--w-sub); font-family: var(--mono); }
+/* 티어·팩·골렘 노드는 <button> — 브라우저 버튼 기본값만 지운다(값은 58-brief 의 .world-node 원문이 정한다) */
+.vocab-hub button.world-node { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.vocab-hub button.world-node:disabled { cursor: default; }
+.vocab-hub .world-node .meta h4 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vocab-hub .world-node .meta p { line-height: 1.45; }
+.vocab-hub .bezel .pill-tag { vertical-align: middle; }
+
+/* 게임: 머리 줄(← 나가기 · 팩 이름) — 카운터 pill 은 목업처럼 가운데 */
+.vocab-game .wc-game-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: -12px 0 10px; }
+.vocab-game .wc-game-top .pill-tag[role="button"] { cursor: pointer; color: var(--w-ink); -webkit-tap-highlight-color: transparent; }
+/* 글자 타일·보기 카드는 <button> — 원문이 정한 padding·font-size·font-family·cursor 는 건드리지 않는다 */
+.vocab-game button.tile { color: var(--w-ink); line-height: 1.2; font-weight: 400; margin: 0; -webkit-tap-highlight-color: transparent; }
+.vocab-game button.tile:disabled { cursor: default; }
+.vocab-game button.opt-card { width: 100%; text-align: left; color: var(--w-ink); font-family: var(--kr-body); font-weight: 400; line-height: 1.45; -webkit-tap-highlight-color: transparent; }
+.vocab-game button.opt-card:disabled { cursor: default; }
+.vocab-game .wc-choices { margin: 14px 0; text-align: left; }
+.vocab-game .wc-hintbox { margin-top: 8px; padding: 8px 12px; text-align: left; font-size: 12.5px; line-height: 1.6;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; color: var(--w-sub); }
+.vocab-game .wc-speak { margin: 14px 0; display: grid; gap: 8px; justify-items: center; }
+.vocab-game .btn-magic:disabled, .vocab-game .btn-ghost:disabled { opacity: .45; cursor: default; }
+/* 오답: 빨간 표시 없이 살짝 흔들리기만(transform 만 · 스프링 이징) + "다시 볼까?" */
+@keyframes wcVocabShake { 0%,100% { transform: translateX(0) } 20% { transform: translateX(-4px) } 40% { transform: translateX(4px) } 60% { transform: translateX(-3px) } 80% { transform: translateX(3px) } }
+.vocab-game .wc-shake { animation: wcVocabShake .45s cubic-bezier(.34,1.4,.64,1); }
+@media (prefers-reduced-motion: reduce) { .vocab-game .wc-shake { animation: none; } }
+
+/* 63-ghost-listen.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   63-ghost-listen.css — U4 16_ghostboss 유령보스전 · 20_listen 리스닝 아케이드 (2026-09-07)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값 무변경(ui_check ⑨-7 대조).
+   .bezel·.btn-magic·.btn-ghost 는 53, .h-display·.pill-tag·.section-pad·.xpbar-* 는 52 조각에 이미 있다(중복 안 함).
+   여기서 새로 옮긴 원문은 .opt-card 계열뿐이다. (.opt-card.wrong 은 빨간 테두리라 README §2-4 금지 취지대로 옮기지 않았다.)
+   ★접합: 선택지 버튼은 engine/QuestionCard(.choice-btn)가 그린다 — 06 e-choice 이식 전까지는 .choice-btn 에 .opt-card 값을 wc- 접합으로 입힌다.
+   금지 준수: mask-image·brightness<1·border-image 없음. 애니메이션은 transform 만.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 선택지 카드 ── */
+.opt-card { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; margin-bottom:10px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:14px;
+  transition:.25s cubic-bezier(.34,1.3,.64,1); }
+@media (hover:hover) and (pointer:fine) {
+  .opt-card:hover { transform:translateX(3px); border-color:var(--w-accent) }
+}
+.opt-card .k { width:26px; height:26px; border-radius:9px; background:rgba(255,255,255,.07); display:flex; align-items:center;
+  justify-content:center; font-family:var(--mono); font-size:11px; color:var(--w-sub); flex-shrink:0; }
+.opt-card.correct { border-color:#3fd18b; background:rgba(63,209,139,.1) }
+
+/* ── ★접합 ── */
+
+/* 16 유령보스 인트로 — app.css 옛 .ghost-screen(padding 16px)은 .section-pad 원문(뒤에 옴)이 덮는다 */
+.ghost-boss .btn-magic:focus-visible, .ghost-boss .btn-ghost:focus-visible, .listen-arcade button:focus-visible { outline:2px solid var(--w-accent2); outline-offset:2px; box-shadow:none; }
+.ghost-boss .btn-ghost { display:block; margin:18px auto 0; }
+/* 유령의 이름·대사(콘텐츠 실데이터)와 문항 수 안내 — 정답지 밖 요소라 sub 톤으로만 */
+.ghost-boss .wc-ghost-quote { margin:18px 0 0; font-size:12px; color:var(--w-sub); line-height:1.6; }
+.ghost-boss .wc-ghost-quote b { color:var(--w-ink); font-weight:700; }
+.ghost-boss .wc-ghost-meta { margin:10px 0 0; font-size:11px; color:var(--w-sub); line-height:1.8; }
+.ghost-boss .wc-ghost-meta .pill-tag { margin-right:6px; }
+
+/* 20 리스닝 아케이드 — 문항 화면. app.css 옛 .arcade(flex·gap 12)는 정답지 여백을 흔들어 블록으로 되돌린다 */
+.arcade.listen-arcade { display:block; gap:0; }
+.listen-arcade .wc-listen-top { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.listen-arcade .wc-listen-back { font-size:22px; line-height:1; padding:2px 8px; color:inherit; background:none; border:0; cursor:pointer; }
+.listen-arcade .wc-listen-top .pill-tag { flex-shrink:0; }
+/* 재생 카드 안 ▶️ ⏸ — 정답지의 글자 그대로를 버튼으로(크기는 부모 26px 상속) */
+.listen-arcade .wc-play { font-size:inherit; line-height:1; padding:0 6px; background:none; border:0; color:inherit; cursor:pointer; }
+.listen-arcade .bezel-inner > * { position:relative; z-index:1; }
+/* QuestionCard 의 프롬프트 상자(🔊 + 문구)는 위 재생 카드가 대신한다 — 숨김. 🐢 천천히 토글은 pill-tag 톤으로 유지 */
+.listen-arcade .wc-listen-q .qcard-q { display:none; }
+/* U4 통합(2026-09-08): QuestionCard 가 06 정답지 `.engine-header` 말풍선을 그리게 되어(엔진 core 이식) 재생 카드와 문장이 중복 → 리스닝에서는 말풍선을 숨긴다(재생·다시 듣기는 카드의 ▶️/⏸) */
+.listen-arcade .wc-listen-q .engine-header { display:none; }
+.listen-arcade .wc-listen-q .slow-toggle { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-family:var(--mono);
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:3px 10px;
+  color:var(--w-sub); font-weight:400; margin:0 0 12px; }
+.listen-arcade .wc-listen-q .slow-toggle.on { border-color:var(--w-accent); color:var(--w-ink); background:rgba(255,255,255,.07); }
+/* 선택지 = .opt-card 값(원문과 동일)을 .choice-btn 에 입힌다. 06 e-choice 에서 QuestionCard 가 .opt-card 를 달면 이 블록은 지운다 */
+.listen-arcade .wc-listen-q .choices { display:block; gap:0; }
+.listen-arcade .wc-listen-q .choice-btn { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; margin-bottom:10px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:14px;
+  transition:.25s cubic-bezier(.34,1.3,.64,1);
+  width:100%; min-height:0; text-align:left; color:var(--w-ink); font-family:var(--kr-body); font-weight:400; box-shadow:none; }
+.listen-arcade .wc-listen-q .choice-btn:active { transform:translateX(3px); box-shadow:none; }
+.listen-arcade .wc-listen-q .choice-btn .key { width:26px; height:26px; border-radius:9px; background:rgba(255,255,255,.07); display:flex; align-items:center;
+  justify-content:center; font-family:var(--mono); font-size:11px; color:var(--w-sub); flex-shrink:0; margin:0; }
+.listen-arcade .wc-listen-q .choice-btn .mark { float:none; margin-left:auto; font-size:12px; color:var(--w-sub); }
+.listen-arcade .wc-listen-q .choice-btn.selected { border-color:var(--w-accent); background:rgba(255,255,255,.07); box-shadow:none; }
+.listen-arcade .wc-listen-q .choice-btn.correct { border-color:#3fd18b; background:rgba(63,209,139,.1); }
+.listen-arcade .wc-listen-q .choice-btn.correct .mark { color:#3fd18b; }
+.listen-arcade .wc-listen-q .choice-btn.answer-reveal { border:1px dashed #3fd18b; background:rgba(255,255,255,.035); }
+.listen-arcade .wc-listen-q .choice-btn.answer-reveal .mark { color:#3fd18b; }
+/* 못 맞힌 보기 = 빨강 없이 흔들림(README 06 규칙 · transform 만) */
+.listen-arcade .wc-listen-q .choice-btn.wrong { border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.05); animation:wcOptShake .4s cubic-bezier(.34,1.4,.64,1); }
+.listen-arcade .wc-listen-q .choice-btn.wrong .mark { color:var(--w-sub); }
+@keyframes wcOptShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+/* 피드백 상자 — 빨간 틴트 대신 카드 톤 */
+.listen-arcade .wc-listen-q .feedback { text-align:left; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.035); }
+.listen-arcade .wc-listen-q .feedback.ok { border-color:#3fd18b; background:rgba(63,209,139,.1); }
+.listen-arcade .wc-listen-q .feedback.no { border-color:rgba(255,255,255,.08); background:rgba(255,255,255,.035); }
+.listen-arcade .wc-listen-q .feedback.no .feedback-meme { color:var(--w-accent2); }
+@media (prefers-reduced-motion: reduce) { .listen-arcade .wc-listen-q .choice-btn.wrong { animation:none } }
+
+/* 64-console-tone.css */
+/* v1.4.57 U5·U6 — 24_c-home · 27_c-rewards · 25_c-weak · 26_c-examscope 관제실(AdminPage) 톤 이식
+   정본: UIUX_추출/screens_golden/mockup_css_full.txt (§2 관제실 v6 블록). 아래 「원문」 블록은 **글자 그대로** — 값 변경 금지(ui_check ②).
+   데스크탑 셸(.console-shell/.c-side/.c-brand/.c-nav-item/.c-main/.c-top)은 채택하지 않는다(README §5 · 요구사항 §4.8 — 모바일 탭 유지).
+   같은 원문 규칙이 65-family-super.css(Family·Super)에도 있다 — 동일 텍스트 중복은 허용(캐스케이드 무해), 값 충돌은 없다.
+   ★접합 규칙은 파일 끝 「★접합」 아래에만 둔다. 원문 셀렉터와 같은 이름의 규칙은 만들지 않는다. */
+
+/* ── 원문 (mockup_css_full.txt 순서 그대로) ── */
+.c-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px}
+.c-card{
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:14px; padding:17px 16px 15px;
+  position:relative; overflow:hidden;
+  box-shadow:0 1px 2px rgba(36,31,22,.04), 0 14px 28px -20px rgba(36,31,22,.22);
+  transition:transform .3s var(--c-ease), box-shadow .3s var(--c-ease);
+}
+.c-card:hover{transform:translateY(-2px); box-shadow:0 4px 10px rgba(36,31,22,.06), 0 20px 34px -18px rgba(36,31,22,.28)}
+.c-card::before{content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--c-accent,var(--c-line))}
+.c-card .kpi{font-size:26px; font-weight:800; font-family:var(--mono); letter-spacing:-.01em}
+.c-card .kpi-lbl{font-size:11px; color:var(--c-sub); margin-top:4px; text-transform:uppercase; letter-spacing:.06em; font-weight:600}
+.c-card .kpi-delta{font-size:10.5px; margin-top:7px; font-family:var(--mono); display:inline-flex; align-items:center; gap:3px}
+.c-card .kpi-delta.up{color:var(--c-teal)}
+.c-card .kpi-delta.down{color:var(--c-rose)}
+.c-panel-box{
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:16px; padding:19px 18px; margin-bottom:16px;
+  box-shadow:0 1px 2px rgba(36,31,22,.03), 0 16px 30px -24px rgba(36,31,22,.2);
+}
+.c-panel-box h4{margin:0 0 13px; font-size:13.5px; letter-spacing:-.005em}
+.c-table{width:100%; border-collapse:collapse; font-size:12.5px}
+.c-table th{text-align:left; color:var(--c-sub); font-weight:600; padding:7px 8px; border-bottom:1px solid var(--c-line); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em}
+.c-table td{padding:9px 8px; border-bottom:1px solid var(--c-line)}
+.c-table tr:last-child td{border-bottom:0}
+.c-bar-track{height:7px; border-radius:99px; background:#efe9d8; overflow:hidden; width:100%; box-shadow:inset 0 1px 2px rgba(36,31,22,.08)}
+.c-bar-fill{height:100%; border-radius:99px; transition:width .6s var(--c-ease)}
+.c-pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; padding:3px 10px 3px 8px; border-radius:99px; font-weight:700}
+.c-pill::before{content:''; width:5px; height:5px; border-radius:99px; background:currentColor}
+.c-pill.warn{background:#fbeadb; color:var(--c-amber)}
+.c-pill.ok{background:#e2f2ee; color:var(--c-teal)}
+.c-pill.risk{background:#f7e3e7; color:var(--c-rose)}
+.heat-grid{display:grid; grid-template-columns:repeat(8,1fr); gap:5px}
+.heat-cell{aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:9px; font-family:var(--mono); color:#fff; box-shadow:inset 0 1px 3px rgba(0,0,0,.15)}
+.c-toggle-row{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--c-line)}
+.c-switch{width:38px; height:22px; border-radius:99px; background:var(--c-line); position:relative; flex-shrink:0; transition:background .3s var(--c-ease); box-shadow:inset 0 1px 3px rgba(36,31,22,.15)}
+.c-switch.on{background:var(--c-violet)}
+.c-switch::after{content:''; position:absolute; width:18px; height:18px; border-radius:99px; background:#fff; top:2px; left:2px; transition:left .3s var(--c-ease); box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.c-switch.on::after{left:18px}
+.c-btn{background:var(--c-ink); color:#fff; border:0; border-radius:10px; padding:9px 17px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:var(--kr-body);
+  transition:transform .18s var(--c-ease), box-shadow .18s var(--c-ease); box-shadow:0 8px 16px -10px rgba(36,31,22,.5);}
+.c-btn:hover{transform:translateY(-1px)}
+.c-btn:active{transform:scale(.97)}
+.c-btn.ghost{background:transparent; color:var(--c-ink); border:1px solid var(--c-line); box-shadow:none}
+.c-btn.ghost:hover{background:rgba(36,31,22,.04)}
+
+/* ── ★접합 ── (원문에 없음. wc-/adm- 도우미 + 토큰 스코프) */
+/* ★ 목업은 토큰(--c-*)을 `.console{}`(데스크탑 셸)에 두는데 그 셸은 채택하지 않으므로 관제실 루트 `.admin` 이 같은 값을 품는다.
+   페이지 배경은 기존 관제실(어두운 톤·다른 탭의 .adm-panel)을 그대로 두고, 카드·표·pill·KPI 만 종이 톤으로 얹는다(요구사항 §4.8 "톤만"). */
+.admin{
+  --c-ink:#241f16; --c-sub:#867a63; --c-line:#e7e0cf; --c-panel:#ffffff;
+  --c-violet:#7c5cff; --c-teal:#1f9e8e; --c-amber:#c98a1f; --c-rose:#c9536b;
+  --c-ease:cubic-bezier(.32,.72,0,1);
+}
+/* ★ 흰 카드 안 글자색·서체 = .console 원문 값(잉크·kr-body). 어두운 페이지 위에 놓이므로 상속에 맡길 수 없다 */
+.admin .c-card, .admin .c-panel-box{ color:var(--c-ink); font-family:var(--kr-body); }
+.admin .c-panel-box h4{ color:var(--c-ink); font-family:var(--kr-body); }
+/* ★ 좁은 폰에서 KPI 4칸 → 2칸(원문 .c-grid 는 4칸 그대로; 65-family-super.css 와 동일 텍스트) */
+@media (max-width:640px){ .c-grid.cg-2{ grid-template-columns:repeat(2,1fr); } }
+/* ★ 히트맵 8칸(원문)은 390px 폰에서 라벨(10px 한글 5자)이 칸 폭 38px 을 넘는다 → 4칸으로 접는다. 셀 규칙(.heat-cell)은 원문 그대로 */
+@media (max-width:640px){ .admin .heat-grid{ grid-template-columns:repeat(4,1fr); } }
+/* ★ 스위치를 실제 버튼으로 쓴다(목업은 장식 div; FamilyDashboard 와 같은 마크업) — 기본 버튼 테두리·여백 제거 */
+button.c-switch{ border:0; padding:0; cursor:pointer; }
+/* ★ 종이 위 입력칸(시험범위 종료일·문구) — 앱 전역 input 톤이 어두워 흰 패널에서 안 보인다 */
+.admin .c-panel-box input.wc-cinput{ background:#fff; color:var(--c-ink); font-family:var(--kr-body); font-size:12.5px; }
+/* ★ 표 안 보조 문구(남은 XP·지급일·메모) — .adm-sub 는 어두운 배경용 색이라 흰 표에서 안 읽힌다 */
+.wc-csub{ display:block; font-size:11px; color:var(--c-sub); margin-top:3px; font-weight:400; }
+/* ★ 표 셀 안 버튼 묶음(수정·삭제·지급) — 폰 폭에서 줄바꿈 + 원문 .c-btn 보다 작은 크기 */
+.wc-cbtns{ display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; }
+.wc-cbtns .c-btn{ padding:6px 10px; font-size:11.5px; white-space:nowrap; }
+.wc-cbtns .c-btn.wc-danger{ color:var(--c-rose); }
+/* ★ 표가 폰 폭을 넘지 않게: 셀 상단 정렬 + 긴 보상 이름 줄바꿈 */
+.admin .c-table th, .admin .c-table td{ vertical-align:top; }
+.admin .c-table td{ word-break:keep-all; overflow-wrap:anywhere; }
+/* ★ 폼 행(GoalForm)이 흰 표 안에 들어갈 때 어두운 카드 톤을 유지하도록 감싼다 */
+.wc-crow-form{ background:var(--surface); color:var(--text-1); border-radius:12px; padding:8px; }
+@media (prefers-reduced-motion: reduce){ .c-card, .c-btn, .c-switch, .c-switch::after, .c-bar-fill{ transition:none !important; } }
+
+/* 65-family-super.css */
+/* v1.4.57 U5 — 28_c-family(가족 대시보드) · 30_c-super(슈퍼 콘솔) 관제실 톤 이식
+   정본: UIUX_추출/screens_golden/mockup_css_full.txt (§2 관제실 v6 블록). 규칙 본문은 **원문 그대로** — 값 변경 금지.
+   목업의 데스크탑 사이드바(.console-shell/.c-side/.c-nav-item/.c-top/.c-brand)는 채택하지 않는다(README §5·요구사항 §4.8).
+   같은 원문 규칙이 64-console-tone.css(AdminPage)에도 있을 수 있다 — 동일 텍스트 중복은 허용, 값 충돌은 불가.
+   ★ 표시 = 접합 규칙(원문에 없음). 원문 셀렉터와 같은 이름의 규칙은 만들지 않는다(ui_check ② 캐스케이드 검사). */
+
+/* ── 원문: 관제실 KPI 그리드·카드 ── */
+.c-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px}
+.c-card{
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:14px; padding:17px 16px 15px;
+  position:relative; overflow:hidden;
+  box-shadow:0 1px 2px rgba(36,31,22,.04), 0 14px 28px -20px rgba(36,31,22,.22);
+  transition:transform .3s var(--c-ease), box-shadow .3s var(--c-ease);
+}
+.c-card:hover{transform:translateY(-2px); box-shadow:0 4px 10px rgba(36,31,22,.06), 0 20px 34px -18px rgba(36,31,22,.28)}
+.c-card::before{content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--c-accent,var(--c-line))}
+.c-card .kpi{font-size:26px; font-weight:800; font-family:var(--mono); letter-spacing:-.01em}
+.c-card .kpi-lbl{font-size:11px; color:var(--c-sub); margin-top:4px; text-transform:uppercase; letter-spacing:.06em; font-weight:600}
+
+/* ── 원문: 패널 박스 ── */
+.c-panel-box{
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:16px; padding:19px 18px; margin-bottom:16px;
+  box-shadow:0 1px 2px rgba(36,31,22,.03), 0 16px 30px -24px rgba(36,31,22,.2);
+}
+.c-panel-box h4{margin:0 0 13px; font-size:13.5px; letter-spacing:-.005em}
+
+/* ── 원문: pill ── */
+.c-pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; padding:3px 10px 3px 8px; border-radius:99px; font-weight:700}
+.c-pill::before{content:''; width:5px; height:5px; border-radius:99px; background:currentColor}
+.c-pill.warn{background:#fbeadb; color:var(--c-amber)}
+.c-pill.ok{background:#e2f2ee; color:var(--c-teal)}
+.c-pill.risk{background:#f7e3e7; color:var(--c-rose)}
+
+/* ── 원문: 토글 행·스위치 ── */
+.c-toggle-row{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--c-line)}
+.c-switch{width:38px; height:22px; border-radius:99px; background:var(--c-line); position:relative; flex-shrink:0; transition:background .3s var(--c-ease); box-shadow:inset 0 1px 3px rgba(36,31,22,.15)}
+.c-switch.on{background:var(--c-violet)}
+.c-switch::after{content:''; position:absolute; width:18px; height:18px; border-radius:99px; background:#fff; top:2px; left:2px; transition:left .3s var(--c-ease); box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.c-switch.on::after{left:18px}
+
+/* ── 원문: 버튼 ── */
+.c-btn{background:var(--c-ink); color:#fff; border:0; border-radius:10px; padding:9px 17px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:var(--kr-body);
+  transition:transform .18s var(--c-ease), box-shadow .18s var(--c-ease); box-shadow:0 8px 16px -10px rgba(36,31,22,.5);}
+.c-btn:hover{transform:translateY(-1px)}
+.c-btn:active{transform:scale(.97)}
+.c-btn.ghost{background:transparent; color:var(--c-ink); border:1px solid var(--c-line); box-shadow:none}
+.c-btn.ghost:hover{background:rgba(36,31,22,.04)}
+
+/* ── 원문: 가족 카드 ── */
+.family-card{display:flex; align-items:center; gap:12px; padding:13px; border:1px solid var(--c-line); border-radius:13px; margin-bottom:8px; background:#fff;
+  box-shadow:0 1px 2px rgba(36,31,22,.03), 0 10px 20px -16px rgba(36,31,22,.18); transition:box-shadow .25s var(--c-ease);}
+.family-card:hover{box-shadow:0 2px 4px rgba(36,31,22,.05), 0 14px 26px -14px rgba(36,31,22,.24)}
+.family-card .fa{width:40px; height:40px; border-radius:12px; background:var(--c-violet); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; box-shadow:0 6px 14px -6px rgba(124,92,255,.6)}
+
+/* ★ 접합 — 목업은 토큰(--c-*)을 `.console{}`(데스크탑 셸)에 두는데 그 셸은 채택하지 않으므로
+   모바일 페이지 루트 `.console-page` 가 같은 값을 그대로 품는다(값은 .console 원문과 동일: 종이 배경·잉크 글자·본문 서체).
+   .app-main 의 안쪽 여백(12/14 + 하단 76+safe-area)을 상쇄해 종이가 화면 끝까지 닿게 한다. */
+.console-page{
+  --c-ink:#241f16; --c-sub:#867a63; --c-line:#e7e0cf; --c-panel:#ffffff;
+  --c-violet:#7c5cff; --c-teal:#1f9e8e; --c-amber:#c98a1f; --c-rose:#c9536b;
+  --c-ease:cubic-bezier(.32,.72,0,1);
+  background:#fbf9f3; color:#241f16; font-family:var(--kr-body);
+  margin:-12px -14px calc(-76px - env(safe-area-inset-bottom));
+  padding:16px 14px 60px; min-height:100dvh; box-sizing:border-box;
+}
+.console-page h3, .console-page h4{ color:var(--c-ink); }
+/* ★ 스위치를 실제 버튼으로 쓴다(목업은 장식 div) — 브라우저 기본 버튼 테두리·여백 제거, 원문 .c-switch 값은 그대로 */
+button.c-switch{ border:0; padding:0; cursor:pointer; }
+/* ★ 종이 위 입력칸 — 옛 인라인 어두운 입력 스타일 대체 */
+.c-input{ padding:10px 12px; font-size:15px; border-radius:10px; border:1px solid var(--c-line); background:#fff; color:var(--c-ink); font-family:var(--kr-body); }
+/* ★ 중립 pill(원문에 ok/warn/risk 3종만 있음) — 요약 칩의 "정보" 톤 */
+.c-pill.sub{ background:var(--c-line); color:var(--c-sub); }
+/* ★ 가족 카드 안에 요약 칩·행동 버튼 줄을 더 넣기 위한 줄바꿈 컨테이너(원문 .family-card 는 한 줄 flex) */
+.family-card.fc-wide{ flex-wrap:wrap; }
+.fc-row{ flex-basis:100%; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+/* ★ 좁은 폰에서 KPI 4칸 → 2칸(원문 .c-grid 는 데스크탑 4칸 그대로 유지) */
+@media (max-width:640px){ .c-grid.cg-2{ grid-template-columns:repeat(2,1fr); } }
+@media (prefers-reduced-motion: reduce){ .c-card, .c-btn, .c-switch, .c-switch::after, .family-card{ transition:none !important; } }
+
+/* 66-u6-features.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   66-u6-features.css — U6 신규 기능 화면 5종 (2026-09-08, v1.4.57)
+     01_onboard(아이 온보딩 아바타) · 10_e-speak(SPEAK 음성인식 전사 대조, stt_ready) · 18_examscope(학생 한정 퀘스트 배너, examscope_ready)
+     17_hospital / 19_perform(월드 15·16 스킨 data-world="exam", ext2_ready) · 29_c-invite(부모측 연결 .c-panel-box 톤)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   이미 다른 조각에 있는 원문은 다시 적지 않는다: .bezel/.btn-magic/.btn-ghost/@keyframes pulse(53) · .eyebrow/.h-display/.pill-tag/.section-pad(52)
+     · .tile-row/.tile/.tile.placed(60·61) · .engine-header/.speech/.progress-dots(60) · .c-panel-box/.c-panel-box h4(65) · [data-world="exam"] 토큰(50).
+   금지 준수: mask-image·1 미만 brightness 필터·border-image 없음. 오답 = 색만(빨간 X·감점 표기 없음).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 10_e-speak · 19_perform 마이크 버튼 (애니메이션 pulse 는 53 조각의 목업 원문 @keyframes) ── */
+.recorder{
+  width:84px; height:84px; border-radius:999px; margin:0 auto; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle,var(--w-accent),var(--w-accent2)); font-size:30px; box-shadow:0 0 0 8px rgba(255,255,255,.05), 0 12px 30px -8px var(--w-glow);
+  animation:pulse 2.4s ease-in-out infinite;
+}
+
+/* ── 원문: 17_hospital 시험 배너 ── */
+.exam-banner{
+  display:flex; align-items:center; gap:10px; background:linear-gradient(135deg, rgba(255,139,107,.18), rgba(255,209,102,.1));
+  border:1px solid rgba(255,139,107,.3); border-radius:16px; padding:12px 14px; font-size:12px; margin-bottom:14px;
+}
+
+/* ── 원문: SPEAK 음성인식 전사 ── */
+.transcript-box{border-radius:16px; padding:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); margin-top:12px}
+.transcript-box .heard-lbl{font-size:10px; color:var(--w-sub); text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px; display:flex; align-items:center; gap:6px}
+.diff-word{display:inline-block; padding:2px 3px; border-radius:5px; margin:1px}
+.diff-word.hit{background:rgba(63,209,139,.18); color:#8be8bb}
+.diff-word.close{background:rgba(255,209,102,.16); color:#ffd166; text-decoration:underline dotted}
+.tech-chip{display:inline-flex; align-items:center; gap:5px; font-size:9.5px; font-family:var(--mono); color:var(--w-sub); border:1px dashed rgba(255,255,255,.15); border-radius:8px; padding:3px 8px; margin-top:10px}
+
+/* ── ★접합 ── */
+/* ★접합: 정답지의 <div>였던 .recorder·.tile·.btn-magic·.btn-ghost 를 <button>으로 쓴다 — 원문이 정하지 않는 속성만 리셋(원문 값은 원문 규칙이 이긴다) */
+button.recorder { border: 0; padding: 0; color: inherit; font-family: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+button.recorder:disabled { cursor: default; opacity: .55; animation: none; }
+/* ★접합: 녹음 중·전사 중 상태 — README §5 규칙(transform·opacity 만). 녹음 중은 박동을 빠르게, 전사 중은 멈춤 */
+button.recorder.rec { animation-duration: .9s; }
+button.recorder.busy { animation: none; opacity: .8; }
+.speak-stt .btn-magic:disabled, .onboard .btn-magic:disabled, .examscope .btn-magic:disabled { opacity: .45; cursor: default; }
+.speak-stt .btn-magic, .speak-stt .btn-ghost, .onboard .btn-magic, .examscope .btn-magic { -webkit-tap-highlight-color: transparent; }
+.speak-stt .btn-magic:focus-visible, .speak-stt .btn-ghost:focus-visible, .speak-stt button.recorder:focus-visible,
+.onboard .btn-magic:focus-visible, .onboard button.tile:focus-visible, .examscope .btn-magic:focus-visible { outline: 2px solid var(--w-accent2); outline-offset: 2px; }
+/* ★접합: 전사 문장은 <button class="speak-target"> 가 아니라 정답지 bezel 안 <p> — 옛 app.css .speak-target 은 쓰지 않는다. 문장을 누르면 다시 듣기 */
+.speak-stt .stt-target { cursor: pointer; margin: 0; }
+.speak-stt .stt-note { min-height: 1.4em; }
+@media (prefers-reduced-motion: reduce) { .recorder, button.recorder.rec { animation: none; } }
+
+/* ★접합: 01_onboard — <button class="tile"> 리셋(60 조각 .tile 원문이 padding·배경·글꼴을 정한다) · 이름 고르기 줄 */
+.onboard button.tile { color: var(--w-ink); line-height: 1.4; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+.onboard button.tile.placed { color: #0b0e1a; }
+.onboard .onboard-input::placeholder { color: var(--w-sub); }
+.onboard .onboard-err { color: #ffd166; font-size: 12px; margin: 10px 0 0; }
+.onboard .btn.ghost.wide { margin-top: 4px; }
+/* 정답지 01 에는 공통 상단바가 없다 — 온보딩(아이 연결)이 열려 있는 동안만 셸 상단바를 숨긴다(58-brief 와 같은 방식, App 로직 무변경) */
+body:has(.onboard) .wtopbar { display: none; }
+
+/* ★접합: 18_examscope — 허브 지도 위에 얹는다. 원문 .section-pad 의 하단 100px(폰 스크롤 여백)은 지도 높이를 잡아먹으므로 이 자리에서만 좁힌다 */
+.worldmap > .examscope.section-pad { padding-bottom: 8px; }
+.examscope .examscope-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+
+/* ★접합: 17_hospital / 19_perform — 월드 15·16 모듈은 StepRunner 루트가 data-world="exam"(50 조각의 산호·금 토큰).
+   문장 카드의 '아픈 단어'는 C1 콘텐츠가 <em> 으로 저작하면 정답지 인라인(#ff8b6b · underline wavy)으로 그려진다 — 지금 콘텐츠에는 없다(정직 기록). */
+.steprunner[data-world="exam"] .exam-head { text-align: center; padding: 10px 20px 0; }
+.steprunner[data-world="exam"] .qcard-text em, .steprunner[data-world="exam"] .speech em, .steprunner[data-world="exam"] .ordergame .bezel-inner p em {
+  color: #ff8b6b; text-decoration: underline wavy; font-style: normal; }
