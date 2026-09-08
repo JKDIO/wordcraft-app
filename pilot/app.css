@@ -3186,6 +3186,144 @@ body:has(.brief) { overflow-x:hidden; }
 .brief-terrain .pill-tag { position:absolute; bottom:10px; left:20px; cursor:pointer; color:var(--w-ink); }
 .brief .ghost-replay { margin:-6px 0 12px; }
 
+/* 59-badgedex.css */
+/* ============================================================
+   WordCraft 뱃지 도감 v2 — 디자인 시스템 적용(2026-09-08, 정답지 31_badgedex)
+   내용·산식·동작(v1.4.27~34)은 그대로, 껍데기만 교체한다.
+   의존: 50-uiux-system.css 토큰(--w-*), .bezel/.bezel-inner/.pill-tag/.h-display/.btn-ghost/.xpbar-*/.world-node .orb
+   금지 항목(README 참조): 마스크 이미지 · 어둡게 하는 filter · 새 의존성
+   ============================================================ */
+
+/* ── 머리 ── */
+.dex{padding-top:8px}
+.dex-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 0 12px}
+.dex-head .h-display{font-size:18px; margin:0}
+.dex-head .pill-tag{font-size:11px; color:var(--w-accent2); border-color:rgba(255,209,102,.3); background:rgba(255,209,102,.08)}
+.dex-stale{display:block; margin:-4px 0 12px; padding:8px 12px; border-radius:14px; font-size:11px; line-height:1.5; color:var(--w-sub);
+  background:rgba(255,255,255,.04); border:1px dashed rgba(255,255,255,.14)}
+
+/* ── 장비창(룬 기사 카드) — 기존 .loadout(128px 픽셀) 대체: 페인터리 전신 기사 = base + 부위 오버레이(6슬롯×4등급) 실시간 겹치기 ── */
+.dex-hero{margin-bottom:12px}
+.dex-hero .bezel-inner{padding:14px 14px 14px; text-align:center}
+.dex-hero .bezel-inner::after{display:none} /* 기본 코너 글로우는 카드가 길어 세로 경계가 드러난다 — 마법진 글로우로 대체 */
+.dex-stage{position:relative; height:262px; display:flex; align-items:flex-end; justify-content:center; margin:-2px 0 4px}
+/* 바닥 마법진(원근 타원) — mask 미사용: 타원(overflow:hidden) 안에서 정사각 conic(::before)만 돌고, ::after 가 안쪽을 덮어 테두리만 남긴다 */
+.dex-ring{position:absolute; left:50%; bottom:10px; width:212px; height:64px; margin-left:-106px; border-radius:50%; overflow:hidden; opacity:.95}
+.dex-ring::before{content:''; position:absolute; left:50%; top:50%; width:260px; height:260px; margin:-130px 0 0 -130px;
+  background:conic-gradient(from 0deg, var(--w-accent), transparent 30%, var(--w-accent2) 55%, transparent 80%, var(--w-accent)); animation:dexSpin 9s linear infinite}
+.dex-ring::after{content:''; position:absolute; inset:3px; border-radius:50%; background:radial-gradient(ellipse at 50% 50%, var(--w-glow), var(--w-panel) 74%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.dex-ring i{position:absolute; inset:13px 24px; border-radius:50%; border:1px dashed rgba(255,255,255,.18); z-index:1}
+@keyframes dexSpin{to{transform:rotate(360deg)}}
+.dex-glow{position:absolute; left:50%; top:18px; width:220px; height:220px; margin-left:-110px; border-radius:50%;
+  background:radial-gradient(circle, var(--w-glow), transparent 66%); opacity:.55}
+/* 꾸준함(오라 슬롯) 등급이 오를수록 글로우가 세진다 — 오라는 그림이 아니라 빛으로 표현(오버레이 슬롯 없음) */
+.dex-hero[data-aura="0"] .dex-glow{opacity:.35} .dex-hero[data-aura="2"] .dex-glow{opacity:.7} .dex-hero[data-aura="3"] .dex-glow{opacity:.85} .dex-hero[data-aura="4"] .dex-glow{opacity:1; width:260px; margin-left:-130px}
+/* 전신 기사 896:1200 — 절대배치 img 겹치기(캔버스 합성 아님, L8) */
+.dex-knight{position:relative; width:186px; height:249px; margin-bottom:22px; filter:drop-shadow(0 16px 18px rgba(0,0,0,.55))}
+.dex-knight img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; -webkit-user-drag:none}
+.dex-knight.is-loading img{opacity:0}
+.dex-art-fallback{position:relative; display:flex; align-items:center; justify-content:center; height:249px; margin-bottom:14px}
+.dex-name{margin:6px 0 10px}
+.dex-name b{display:block; font-family:var(--kr-display); font-weight:400; font-size:20px; letter-spacing:.02em;
+  background:linear-gradient(180deg,#fff,var(--w-accent2)); -webkit-background-clip:text; background-clip:text; color:transparent}
+.dex-name span{display:block; margin-top:4px; font-size:11.5px; color:var(--w-sub); line-height:1.45}
+.dex-bar{position:relative; margin:0 6px 14px}
+.dex-bar .xpbar-track{height:10px}
+.dex-bar em{display:block; margin-top:5px; font-style:normal; font-family:var(--mono); font-size:10.5px; color:var(--w-sub); text-align:right}
+
+/* 장비 슬롯 11칸 — 3열, 등급 t0~t4 (loadout.ts TIER_NAME: 빈 슬롯·낡은·강철·룬각인·전설) */
+.dex-slots{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; text-align:left}
+.dex-slot{--tc:rgba(255,255,255,.35); --tb:rgba(255,255,255,.12); --tbg:rgba(255,255,255,.03); --tg:transparent;
+  position:relative; display:flex; flex-direction:column; gap:2px; padding:10px 10px 9px; border-radius:16px; cursor:pointer; text-align:left;
+  background:var(--tbg); border:1px solid var(--tb); box-shadow:0 0 0 0 var(--tg); color:var(--w-ink); font-family:var(--kr-body);
+  transition:.3s cubic-bezier(.34,1.4,.64,1)}
+.dex-slot:active{transform:scale(.97)}
+.dex-slot .em{font-size:22px; line-height:1; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+.dex-slot b{font-size:12.5px; margin-top:4px}
+.dex-slot small{font-size:9.5px; color:var(--w-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.dex-slot .cnt{position:absolute; right:9px; top:9px; font-style:normal; font-family:var(--mono); font-size:10px; color:var(--tc)}
+.dex-slot .tbar{display:block; height:4px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:5px}
+.dex-slot .tbar i{display:block; height:100%; border-radius:99px; background:var(--tc)}
+.dex-slot.t0 .em{filter:grayscale(1) opacity(.35)}
+.dex-slot.t1{--tc:#d9a066; --tb:rgba(217,160,102,.45); --tbg:rgba(138,90,59,.14)}
+.dex-slot.t2{--tc:#8fd4ff; --tb:rgba(143,212,255,.45); --tbg:rgba(143,212,255,.10); --tg:rgba(143,212,255,.18)}
+.dex-slot.t3{--tc:#b98bff; --tb:rgba(185,139,255,.55); --tbg:rgba(124,92,255,.14); --tg:rgba(124,92,255,.22); box-shadow:0 0 14px -2px var(--tg)}
+.dex-slot.t4{--tc:#ffd166; --tb:rgba(255,209,102,.7); --tbg:linear-gradient(155deg,rgba(255,209,102,.22),rgba(255,180,84,.08)); --tg:rgba(255,209,102,.3); box-shadow:0 0 18px -2px var(--tg)}
+.dex-slot.t4::after{content:'★'; position:absolute; right:8px; bottom:7px; font-size:9px; color:#ffd166}
+/* 등급 상승 연출(기존 .ls-up 대응) — 한 번만 */
+.dex-slot.is-up{animation:dexUp 1.2s cubic-bezier(.34,1.4,.64,1) 2}
+@keyframes dexUp{0%,100%{transform:scale(1)} 40%{transform:scale(1.06); box-shadow:0 0 26px 2px var(--w-glow)}}
+.dex-tip{margin:12px 2px 0; font-size:10.5px; color:var(--w-sub); line-height:1.5; text-align:left}
+.dex-artfail{margin:0; font-size:11px; color:var(--w-sub); line-height:1.5}
+
+/* 기사 갤러리 진입 */
+.dex-gallery{width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 6px 11px 16px; margin:0 0 14px}
+.dex-gallery .arrow{width:30px; height:30px; border-radius:999px; background:rgba(255,255,255,.08); display:inline-flex; align-items:center; justify-content:center; font-size:13px}
+
+/* 툴바 */
+.dex-toolbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 2px 10px}
+.dex-toolbar p{margin:0; flex:1; font-size:11px; color:var(--w-sub); line-height:1.4}
+.dex-toolbar .pill-tag{cursor:pointer; font-family:var(--kr-body); font-weight:700; color:var(--w-ink); white-space:nowrap}
+
+/* 분야 11개 — .world-node 어휘 */
+.dex-group{border-radius:20px; margin-bottom:10px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); overflow:hidden;
+  transition:.3s cubic-bezier(.34,1.2,.64,1)}
+.dex-group.is-full{border-color:rgba(255,209,102,.4); background:linear-gradient(135deg,rgba(255,209,102,.10),rgba(255,255,255,.02))}
+.dex-group.is-open{border-color:rgba(255,255,255,.14)}
+.dex-group-head{width:100%; display:flex; align-items:center; gap:9px; padding:11px 12px; background:transparent; border:0; color:var(--w-ink);
+  font-family:var(--kr-body); text-align:left; cursor:pointer}
+.dex-group-head .orb{width:42px; height:42px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
+  background:linear-gradient(155deg,var(--w-accent),transparent); box-shadow:0 8px 18px -6px var(--w-glow)}
+.dex-group.is-zero .orb{background:rgba(255,255,255,.06); box-shadow:none; filter:grayscale(1) opacity(.6)}
+.dex-group.is-full .orb{background:linear-gradient(155deg,var(--w-accent2),transparent)}
+.dex-group-head .meta{flex:1; min-width:0}
+.dex-group-head .meta h4{margin:0 0 3px; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.dex-group-head .meta p{margin:0; font-size:10.5px; color:var(--w-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.dex-group-head .gbar{width:38px; height:5px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; flex-shrink:0}
+.dex-group-head .gbar i{display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--w-accent),var(--w-accent2))}
+.dex-group.is-full .gbar i{background:var(--w-accent2)}
+.dex-group-head .prog{font-family:var(--mono); font-size:11px; color:var(--w-accent2); width:30px; text-align:right; flex-shrink:0}
+.dex-group-head .chev{width:24px; height:24px; flex-shrink:0; border-radius:999px; background:rgba(255,255,255,.06); display:inline-flex; align-items:center; justify-content:center;
+  font-size:11px; color:var(--w-sub); transition:.3s cubic-bezier(.34,1.4,.64,1)}
+.dex-group.is-open .chev{transform:rotate(180deg); background:var(--w-accent); color:#0b0e1a}
+
+/* 뱃지 카드 3열 */
+.dex-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:2px 10px 12px}
+.dex-badge{display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; padding:12px 6px 10px; border-radius:16px;
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); color:var(--w-ink); font-family:var(--kr-body); cursor:default;
+  transition:.3s cubic-bezier(.34,1.4,.64,1)}
+.dex-badge .bo{width:44px; height:44px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:22px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08)}
+.dex-badge b{font-size:11.5px; line-height:1.25}
+.dex-badge small{font-size:9.5px; color:var(--w-sub); line-height:1.4}
+.dex-badge.got{border-color:rgba(255,209,102,.35); background:linear-gradient(165deg,rgba(255,209,102,.12),rgba(255,255,255,.02))}
+.dex-badge.got .bo{background:linear-gradient(155deg,rgba(255,209,102,.35),rgba(124,92,255,.25)); border-color:rgba(255,209,102,.5); box-shadow:0 8px 18px -6px rgba(255,209,102,.45)}
+.dex-badge.lock{cursor:pointer}
+.dex-badge.lock .bo{filter:grayscale(1) opacity(.55)}
+.dex-badge.lock b, .dex-badge.lock small{color:var(--w-sub)}
+.dex-badge.lock:active{transform:scale(.97)}
+.dex-badge.lock.revealed{border-color:rgba(185,139,255,.5); background:rgba(124,92,255,.10)}
+.dex-badge.lock.revealed .bo{filter:none; border-color:rgba(185,139,255,.6); background:rgba(124,92,255,.22)}
+.dex-badge.lock.revealed b{color:var(--w-ink)}
+.dex-badge .hint{color:#d8d4ee; font-size:9.5px}
+.dex-badge .bprog{width:100%; height:6px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:4px}
+.dex-badge .bprog i{display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--w-accent),var(--w-accent2))}
+.dex-badge .bnum{font-style:normal; font-family:var(--mono); font-size:9.5px; color:var(--w-accent2); margin-top:1px}
+@media (max-width:370px){ .dex-grid,.dex-slots{gap:6px} .dex-slot{padding:9px 8px 8px} .dex-badge{padding:10px 4px 9px} }
+
+/* 59b-badgedex-glue.css */
+/* ============================================================
+   59b-badgedex-glue.css — 뱃지 도감 v2 ★접합★ (2026-09-08, v1.4.56)
+   59-badgedex.css(정답지 원문, sha 고정)는 손대지 않고 앱 트리에 붙일 때 필요한 것만 여기에 둔다.
+   ============================================================ */
+/* A6: 도감 블록 좌우 = 화면 가장자리 20px. .app-main 이 14px 을 이미 주므로 그만큼 되돌려 이중 패딩을 없앤다 */
+.profile .dex.section-pad{margin-left:-14px; margin-right:-14px}
+
+/* 기사 갤러리(21_runes) 포트레이트 = base + 오버레이 스택. .portrait-clip / .compare-slider .before·.after 는 정답지대로 position 이 잡혀 있다 */
+.knight-stack{position:absolute; inset:0}
+.knight-stack img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 12%; display:block; -webkit-user-drag:none}
+
 /* 60-engine-core.css */
 /* ═══════════════════════════════════════════════════════════════════════════════
    60-engine-core.css — U4 엔진 코어 5화면: 04_e-story · 05_e-learn · 06_e-choice · 09_e-quiz(보스 관문) · 12_respawn (2026-09-07)
