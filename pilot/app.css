@@ -3119,7 +3119,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, .app *::-webkit-scrollbar, .ma
 .slot-row .meta p { margin:0; font-size:10px; color:var(--w-sub) }
 .compare-slider { position:relative; height:150px; border-radius:16px; overflow:hidden; margin-top:8px }
 .compare-slider .before, .compare-slider .after { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:70px }
-.compare-slider .before { background:linear-gradient(155deg,#3a3428,#1c1810); filter:grayscale(.6) brightness(.7) }
+.compare-slider .before { background:linear-gradient(155deg,#3a3428,#1c1810) } /* Dio님 결정 2026-09-08: 정답지 원문의 grayscale(.6) brightness(.7) 제거 — '이전 등급' 기사도 어둡게 하지 않는다 */
 .compare-slider .after { background:linear-gradient(155deg,var(--w-accent),var(--w-accent2)); clip-path:inset(0 0 0 55%) }
 .compare-slider .handle-bar { position:absolute; top:0; bottom:0; left:55%; width:3px; background:#fff; box-shadow:0 0 10px rgba(255,255,255,.6) }
 .compare-slider .handle-bar::after { content:'↔'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; background:#fff; color:#111; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:13px }
@@ -3613,3 +3613,234 @@ body:has(.brief) { overflow-x:hidden; }
 .listen-arcade .wc-listen-q .feedback.no { border-color:rgba(255,255,255,.08); background:rgba(255,255,255,.035); }
 .listen-arcade .wc-listen-q .feedback.no .feedback-meme { color:var(--w-accent2); }
 @media (prefers-reduced-motion: reduce) { .listen-arcade .wc-listen-q .choice-btn.wrong { animation:none } }
+
+/* 64-console-tone.css */
+/* v1.4.57 U5·U6 — 24_c-home · 27_c-rewards · 25_c-weak · 26_c-examscope 관제실(AdminPage) 톤 이식
+   정본: UIUX_추출/screens_golden/mockup_css_full.txt (§2 관제실 v6 블록). 아래 「원문」 블록은 **글자 그대로** — 값 변경 금지(ui_check ②).
+   데스크탑 셸(.console-shell/.c-side/.c-brand/.c-nav-item/.c-main/.c-top)은 채택하지 않는다(README §5 · 요구사항 §4.8 — 모바일 탭 유지).
+   같은 원문 규칙이 65-family-super.css(Family·Super)에도 있다 — 동일 텍스트 중복은 허용(캐스케이드 무해), 값 충돌은 없다.
+   ★접합 규칙은 파일 끝 「★접합」 아래에만 둔다. 원문 셀렉터와 같은 이름의 규칙은 만들지 않는다. */
+
+/* ── 원문 (mockup_css_full.txt 순서 그대로) ── */
+.c-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px}
+.c-card{
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:14px; padding:17px 16px 15px;
+  position:relative; overflow:hidden;
+  box-shadow:0 1px 2px rgba(36,31,22,.04), 0 14px 28px -20px rgba(36,31,22,.22);
+  transition:transform .3s var(--c-ease), box-shadow .3s var(--c-ease);
+}
+.c-card:hover{transform:translateY(-2px); box-shadow:0 4px 10px rgba(36,31,22,.06), 0 20px 34px -18px rgba(36,31,22,.28)}
+.c-card::before{content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--c-accent,var(--c-line))}
+.c-card .kpi{font-size:26px; font-weight:800; font-family:var(--mono); letter-spacing:-.01em}
+.c-card .kpi-lbl{font-size:11px; color:var(--c-sub); margin-top:4px; text-transform:uppercase; letter-spacing:.06em; font-weight:600}
+.c-card .kpi-delta{font-size:10.5px; margin-top:7px; font-family:var(--mono); display:inline-flex; align-items:center; gap:3px}
+.c-card .kpi-delta.up{color:var(--c-teal)}
+.c-card .kpi-delta.down{color:var(--c-rose)}
+.c-panel-box{
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:16px; padding:19px 18px; margin-bottom:16px;
+  box-shadow:0 1px 2px rgba(36,31,22,.03), 0 16px 30px -24px rgba(36,31,22,.2);
+}
+.c-panel-box h4{margin:0 0 13px; font-size:13.5px; letter-spacing:-.005em}
+.c-table{width:100%; border-collapse:collapse; font-size:12.5px}
+.c-table th{text-align:left; color:var(--c-sub); font-weight:600; padding:7px 8px; border-bottom:1px solid var(--c-line); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em}
+.c-table td{padding:9px 8px; border-bottom:1px solid var(--c-line)}
+.c-table tr:last-child td{border-bottom:0}
+.c-bar-track{height:7px; border-radius:99px; background:#efe9d8; overflow:hidden; width:100%; box-shadow:inset 0 1px 2px rgba(36,31,22,.08)}
+.c-bar-fill{height:100%; border-radius:99px; transition:width .6s var(--c-ease)}
+.c-pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; padding:3px 10px 3px 8px; border-radius:99px; font-weight:700}
+.c-pill::before{content:''; width:5px; height:5px; border-radius:99px; background:currentColor}
+.c-pill.warn{background:#fbeadb; color:var(--c-amber)}
+.c-pill.ok{background:#e2f2ee; color:var(--c-teal)}
+.c-pill.risk{background:#f7e3e7; color:var(--c-rose)}
+.heat-grid{display:grid; grid-template-columns:repeat(8,1fr); gap:5px}
+.heat-cell{aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:9px; font-family:var(--mono); color:#fff; box-shadow:inset 0 1px 3px rgba(0,0,0,.15)}
+.c-toggle-row{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--c-line)}
+.c-switch{width:38px; height:22px; border-radius:99px; background:var(--c-line); position:relative; flex-shrink:0; transition:background .3s var(--c-ease); box-shadow:inset 0 1px 3px rgba(36,31,22,.15)}
+.c-switch.on{background:var(--c-violet)}
+.c-switch::after{content:''; position:absolute; width:18px; height:18px; border-radius:99px; background:#fff; top:2px; left:2px; transition:left .3s var(--c-ease); box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.c-switch.on::after{left:18px}
+.c-btn{background:var(--c-ink); color:#fff; border:0; border-radius:10px; padding:9px 17px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:var(--kr-body);
+  transition:transform .18s var(--c-ease), box-shadow .18s var(--c-ease); box-shadow:0 8px 16px -10px rgba(36,31,22,.5);}
+.c-btn:hover{transform:translateY(-1px)}
+.c-btn:active{transform:scale(.97)}
+.c-btn.ghost{background:transparent; color:var(--c-ink); border:1px solid var(--c-line); box-shadow:none}
+.c-btn.ghost:hover{background:rgba(36,31,22,.04)}
+
+/* ── ★접합 ── (원문에 없음. wc-/adm- 도우미 + 토큰 스코프) */
+/* ★ 목업은 토큰(--c-*)을 `.console{}`(데스크탑 셸)에 두는데 그 셸은 채택하지 않으므로 관제실 루트 `.admin` 이 같은 값을 품는다.
+   페이지 배경은 기존 관제실(어두운 톤·다른 탭의 .adm-panel)을 그대로 두고, 카드·표·pill·KPI 만 종이 톤으로 얹는다(요구사항 §4.8 "톤만"). */
+.admin{
+  --c-ink:#241f16; --c-sub:#867a63; --c-line:#e7e0cf; --c-panel:#ffffff;
+  --c-violet:#7c5cff; --c-teal:#1f9e8e; --c-amber:#c98a1f; --c-rose:#c9536b;
+  --c-ease:cubic-bezier(.32,.72,0,1);
+}
+/* ★ 흰 카드 안 글자색·서체 = .console 원문 값(잉크·kr-body). 어두운 페이지 위에 놓이므로 상속에 맡길 수 없다 */
+.admin .c-card, .admin .c-panel-box{ color:var(--c-ink); font-family:var(--kr-body); }
+.admin .c-panel-box h4{ color:var(--c-ink); font-family:var(--kr-body); }
+/* ★ 좁은 폰에서 KPI 4칸 → 2칸(원문 .c-grid 는 4칸 그대로; 65-family-super.css 와 동일 텍스트) */
+@media (max-width:640px){ .c-grid.cg-2{ grid-template-columns:repeat(2,1fr); } }
+/* ★ 히트맵 8칸(원문)은 390px 폰에서 라벨(10px 한글 5자)이 칸 폭 38px 을 넘는다 → 4칸으로 접는다. 셀 규칙(.heat-cell)은 원문 그대로 */
+@media (max-width:640px){ .admin .heat-grid{ grid-template-columns:repeat(4,1fr); } }
+/* ★ 스위치를 실제 버튼으로 쓴다(목업은 장식 div; FamilyDashboard 와 같은 마크업) — 기본 버튼 테두리·여백 제거 */
+button.c-switch{ border:0; padding:0; cursor:pointer; }
+/* ★ 종이 위 입력칸(시험범위 종료일·문구) — 앱 전역 input 톤이 어두워 흰 패널에서 안 보인다 */
+.admin .c-panel-box input.wc-cinput{ background:#fff; color:var(--c-ink); font-family:var(--kr-body); font-size:12.5px; }
+/* ★ 표 안 보조 문구(남은 XP·지급일·메모) — .adm-sub 는 어두운 배경용 색이라 흰 표에서 안 읽힌다 */
+.wc-csub{ display:block; font-size:11px; color:var(--c-sub); margin-top:3px; font-weight:400; }
+/* ★ 표 셀 안 버튼 묶음(수정·삭제·지급) — 폰 폭에서 줄바꿈 + 원문 .c-btn 보다 작은 크기 */
+.wc-cbtns{ display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; }
+.wc-cbtns .c-btn{ padding:6px 10px; font-size:11.5px; white-space:nowrap; }
+.wc-cbtns .c-btn.wc-danger{ color:var(--c-rose); }
+/* ★ 표가 폰 폭을 넘지 않게: 셀 상단 정렬 + 긴 보상 이름 줄바꿈 */
+.admin .c-table th, .admin .c-table td{ vertical-align:top; }
+.admin .c-table td{ word-break:keep-all; overflow-wrap:anywhere; }
+/* ★ 폼 행(GoalForm)이 흰 표 안에 들어갈 때 어두운 카드 톤을 유지하도록 감싼다 */
+.wc-crow-form{ background:var(--surface); color:var(--text-1); border-radius:12px; padding:8px; }
+@media (prefers-reduced-motion: reduce){ .c-card, .c-btn, .c-switch, .c-switch::after, .c-bar-fill{ transition:none !important; } }
+
+/* 65-family-super.css */
+/* v1.4.57 U5 — 28_c-family(가족 대시보드) · 30_c-super(슈퍼 콘솔) 관제실 톤 이식
+   정본: UIUX_추출/screens_golden/mockup_css_full.txt (§2 관제실 v6 블록). 규칙 본문은 **원문 그대로** — 값 변경 금지.
+   목업의 데스크탑 사이드바(.console-shell/.c-side/.c-nav-item/.c-top/.c-brand)는 채택하지 않는다(README §5·요구사항 §4.8).
+   같은 원문 규칙이 64-console-tone.css(AdminPage)에도 있을 수 있다 — 동일 텍스트 중복은 허용, 값 충돌은 불가.
+   ★ 표시 = 접합 규칙(원문에 없음). 원문 셀렉터와 같은 이름의 규칙은 만들지 않는다(ui_check ② 캐스케이드 검사). */
+
+/* ── 원문: 관제실 KPI 그리드·카드 ── */
+.c-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px}
+.c-card{
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:14px; padding:17px 16px 15px;
+  position:relative; overflow:hidden;
+  box-shadow:0 1px 2px rgba(36,31,22,.04), 0 14px 28px -20px rgba(36,31,22,.22);
+  transition:transform .3s var(--c-ease), box-shadow .3s var(--c-ease);
+}
+.c-card:hover{transform:translateY(-2px); box-shadow:0 4px 10px rgba(36,31,22,.06), 0 20px 34px -18px rgba(36,31,22,.28)}
+.c-card::before{content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--c-accent,var(--c-line))}
+.c-card .kpi{font-size:26px; font-weight:800; font-family:var(--mono); letter-spacing:-.01em}
+.c-card .kpi-lbl{font-size:11px; color:var(--c-sub); margin-top:4px; text-transform:uppercase; letter-spacing:.06em; font-weight:600}
+
+/* ── 원문: 패널 박스 ── */
+.c-panel-box{
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:16px; padding:19px 18px; margin-bottom:16px;
+  box-shadow:0 1px 2px rgba(36,31,22,.03), 0 16px 30px -24px rgba(36,31,22,.2);
+}
+.c-panel-box h4{margin:0 0 13px; font-size:13.5px; letter-spacing:-.005em}
+
+/* ── 원문: pill ── */
+.c-pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; padding:3px 10px 3px 8px; border-radius:99px; font-weight:700}
+.c-pill::before{content:''; width:5px; height:5px; border-radius:99px; background:currentColor}
+.c-pill.warn{background:#fbeadb; color:var(--c-amber)}
+.c-pill.ok{background:#e2f2ee; color:var(--c-teal)}
+.c-pill.risk{background:#f7e3e7; color:var(--c-rose)}
+
+/* ── 원문: 토글 행·스위치 ── */
+.c-toggle-row{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--c-line)}
+.c-switch{width:38px; height:22px; border-radius:99px; background:var(--c-line); position:relative; flex-shrink:0; transition:background .3s var(--c-ease); box-shadow:inset 0 1px 3px rgba(36,31,22,.15)}
+.c-switch.on{background:var(--c-violet)}
+.c-switch::after{content:''; position:absolute; width:18px; height:18px; border-radius:99px; background:#fff; top:2px; left:2px; transition:left .3s var(--c-ease); box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.c-switch.on::after{left:18px}
+
+/* ── 원문: 버튼 ── */
+.c-btn{background:var(--c-ink); color:#fff; border:0; border-radius:10px; padding:9px 17px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:var(--kr-body);
+  transition:transform .18s var(--c-ease), box-shadow .18s var(--c-ease); box-shadow:0 8px 16px -10px rgba(36,31,22,.5);}
+.c-btn:hover{transform:translateY(-1px)}
+.c-btn:active{transform:scale(.97)}
+.c-btn.ghost{background:transparent; color:var(--c-ink); border:1px solid var(--c-line); box-shadow:none}
+.c-btn.ghost:hover{background:rgba(36,31,22,.04)}
+
+/* ── 원문: 가족 카드 ── */
+.family-card{display:flex; align-items:center; gap:12px; padding:13px; border:1px solid var(--c-line); border-radius:13px; margin-bottom:8px; background:#fff;
+  box-shadow:0 1px 2px rgba(36,31,22,.03), 0 10px 20px -16px rgba(36,31,22,.18); transition:box-shadow .25s var(--c-ease);}
+.family-card:hover{box-shadow:0 2px 4px rgba(36,31,22,.05), 0 14px 26px -14px rgba(36,31,22,.24)}
+.family-card .fa{width:40px; height:40px; border-radius:12px; background:var(--c-violet); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; box-shadow:0 6px 14px -6px rgba(124,92,255,.6)}
+
+/* ★ 접합 — 목업은 토큰(--c-*)을 `.console{}`(데스크탑 셸)에 두는데 그 셸은 채택하지 않으므로
+   모바일 페이지 루트 `.console-page` 가 같은 값을 그대로 품는다(값은 .console 원문과 동일: 종이 배경·잉크 글자·본문 서체).
+   .app-main 의 안쪽 여백(12/14 + 하단 76+safe-area)을 상쇄해 종이가 화면 끝까지 닿게 한다. */
+.console-page{
+  --c-ink:#241f16; --c-sub:#867a63; --c-line:#e7e0cf; --c-panel:#ffffff;
+  --c-violet:#7c5cff; --c-teal:#1f9e8e; --c-amber:#c98a1f; --c-rose:#c9536b;
+  --c-ease:cubic-bezier(.32,.72,0,1);
+  background:#fbf9f3; color:#241f16; font-family:var(--kr-body);
+  margin:-12px -14px calc(-76px - env(safe-area-inset-bottom));
+  padding:16px 14px 60px; min-height:100dvh; box-sizing:border-box;
+}
+.console-page h3, .console-page h4{ color:var(--c-ink); }
+/* ★ 스위치를 실제 버튼으로 쓴다(목업은 장식 div) — 브라우저 기본 버튼 테두리·여백 제거, 원문 .c-switch 값은 그대로 */
+button.c-switch{ border:0; padding:0; cursor:pointer; }
+/* ★ 종이 위 입력칸 — 옛 인라인 어두운 입력 스타일 대체 */
+.c-input{ padding:10px 12px; font-size:15px; border-radius:10px; border:1px solid var(--c-line); background:#fff; color:var(--c-ink); font-family:var(--kr-body); }
+/* ★ 중립 pill(원문에 ok/warn/risk 3종만 있음) — 요약 칩의 "정보" 톤 */
+.c-pill.sub{ background:var(--c-line); color:var(--c-sub); }
+/* ★ 가족 카드 안에 요약 칩·행동 버튼 줄을 더 넣기 위한 줄바꿈 컨테이너(원문 .family-card 는 한 줄 flex) */
+.family-card.fc-wide{ flex-wrap:wrap; }
+.fc-row{ flex-basis:100%; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+/* ★ 좁은 폰에서 KPI 4칸 → 2칸(원문 .c-grid 는 데스크탑 4칸 그대로 유지) */
+@media (max-width:640px){ .c-grid.cg-2{ grid-template-columns:repeat(2,1fr); } }
+@media (prefers-reduced-motion: reduce){ .c-card, .c-btn, .c-switch, .c-switch::after, .family-card{ transition:none !important; } }
+
+/* 66-u6-features.css */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   66-u6-features.css — U6 신규 기능 화면 5종 (2026-09-08, v1.4.57)
+     01_onboard(아이 온보딩 아바타) · 10_e-speak(SPEAK 음성인식 전사 대조, stt_ready) · 18_examscope(학생 한정 퀘스트 배너, examscope_ready)
+     17_hospital / 19_perform(월드 15·16 스킨 data-world="exam", ext2_ready) · 29_c-invite(부모측 연결 .c-panel-box 톤)
+   원문: UIUX_추출/screens_golden/mockup_css_full.txt — 값은 한 자도 바꾸지 않았다(ui_check ⑨-7 대조).
+   이미 다른 조각에 있는 원문은 다시 적지 않는다: .bezel/.btn-magic/.btn-ghost/@keyframes pulse(53) · .eyebrow/.h-display/.pill-tag/.section-pad(52)
+     · .tile-row/.tile/.tile.placed(60·61) · .engine-header/.speech/.progress-dots(60) · .c-panel-box/.c-panel-box h4(65) · [data-world="exam"] 토큰(50).
+   금지 준수: mask-image·1 미만 brightness 필터·border-image 없음. 오답 = 색만(빨간 X·감점 표기 없음).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 원문: 10_e-speak · 19_perform 마이크 버튼 (애니메이션 pulse 는 53 조각의 목업 원문 @keyframes) ── */
+.recorder{
+  width:84px; height:84px; border-radius:999px; margin:0 auto; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle,var(--w-accent),var(--w-accent2)); font-size:30px; box-shadow:0 0 0 8px rgba(255,255,255,.05), 0 12px 30px -8px var(--w-glow);
+  animation:pulse 2.4s ease-in-out infinite;
+}
+
+/* ── 원문: 17_hospital 시험 배너 ── */
+.exam-banner{
+  display:flex; align-items:center; gap:10px; background:linear-gradient(135deg, rgba(255,139,107,.18), rgba(255,209,102,.1));
+  border:1px solid rgba(255,139,107,.3); border-radius:16px; padding:12px 14px; font-size:12px; margin-bottom:14px;
+}
+
+/* ── 원문: SPEAK 음성인식 전사 ── */
+.transcript-box{border-radius:16px; padding:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); margin-top:12px}
+.transcript-box .heard-lbl{font-size:10px; color:var(--w-sub); text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px; display:flex; align-items:center; gap:6px}
+.diff-word{display:inline-block; padding:2px 3px; border-radius:5px; margin:1px}
+.diff-word.hit{background:rgba(63,209,139,.18); color:#8be8bb}
+.diff-word.close{background:rgba(255,209,102,.16); color:#ffd166; text-decoration:underline dotted}
+.tech-chip{display:inline-flex; align-items:center; gap:5px; font-size:9.5px; font-family:var(--mono); color:var(--w-sub); border:1px dashed rgba(255,255,255,.15); border-radius:8px; padding:3px 8px; margin-top:10px}
+
+/* ── ★접합 ── */
+/* ★접합: 정답지의 <div>였던 .recorder·.tile·.btn-magic·.btn-ghost 를 <button>으로 쓴다 — 원문이 정하지 않는 속성만 리셋(원문 값은 원문 규칙이 이긴다) */
+button.recorder { border: 0; padding: 0; color: inherit; font-family: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+button.recorder:disabled { cursor: default; opacity: .55; animation: none; }
+/* ★접합: 녹음 중·전사 중 상태 — README §5 규칙(transform·opacity 만). 녹음 중은 박동을 빠르게, 전사 중은 멈춤 */
+button.recorder.rec { animation-duration: .9s; }
+button.recorder.busy { animation: none; opacity: .8; }
+.speak-stt .btn-magic:disabled, .onboard .btn-magic:disabled, .examscope .btn-magic:disabled { opacity: .45; cursor: default; }
+.speak-stt .btn-magic, .speak-stt .btn-ghost, .onboard .btn-magic, .examscope .btn-magic { -webkit-tap-highlight-color: transparent; }
+.speak-stt .btn-magic:focus-visible, .speak-stt .btn-ghost:focus-visible, .speak-stt button.recorder:focus-visible,
+.onboard .btn-magic:focus-visible, .onboard button.tile:focus-visible, .examscope .btn-magic:focus-visible { outline: 2px solid var(--w-accent2); outline-offset: 2px; }
+/* ★접합: 전사 문장은 <button class="speak-target"> 가 아니라 정답지 bezel 안 <p> — 옛 app.css .speak-target 은 쓰지 않는다. 문장을 누르면 다시 듣기 */
+.speak-stt .stt-target { cursor: pointer; margin: 0; }
+.speak-stt .stt-note { min-height: 1.4em; }
+@media (prefers-reduced-motion: reduce) { .recorder, button.recorder.rec { animation: none; } }
+
+/* ★접합: 01_onboard — <button class="tile"> 리셋(60 조각 .tile 원문이 padding·배경·글꼴을 정한다) · 이름 고르기 줄 */
+.onboard button.tile { color: var(--w-ink); line-height: 1.4; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+.onboard button.tile.placed { color: #0b0e1a; }
+.onboard .onboard-input::placeholder { color: var(--w-sub); }
+.onboard .onboard-err { color: #ffd166; font-size: 12px; margin: 10px 0 0; }
+.onboard .btn.ghost.wide { margin-top: 4px; }
+/* 정답지 01 에는 공통 상단바가 없다 — 온보딩(아이 연결)이 열려 있는 동안만 셸 상단바를 숨긴다(58-brief 와 같은 방식, App 로직 무변경) */
+body:has(.onboard) .wtopbar { display: none; }
+
+/* ★접합: 18_examscope — 허브 지도 위에 얹는다. 원문 .section-pad 의 하단 100px(폰 스크롤 여백)은 지도 높이를 잡아먹으므로 이 자리에서만 좁힌다 */
+.worldmap > .examscope.section-pad { padding-bottom: 8px; }
+.examscope .examscope-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+
+/* ★접합: 17_hospital / 19_perform — 월드 15·16 모듈은 StepRunner 루트가 data-world="exam"(50 조각의 산호·금 토큰).
+   문장 카드의 '아픈 단어'는 C1 콘텐츠가 <em> 으로 저작하면 정답지 인라인(#ff8b6b · underline wavy)으로 그려진다 — 지금 콘텐츠에는 없다(정직 기록). */
+.steprunner[data-world="exam"] .exam-head { text-align: center; padding: 10px 20px 0; }
+.steprunner[data-world="exam"] .qcard-text em, .steprunner[data-world="exam"] .speech em, .steprunner[data-world="exam"] .ordergame .bezel-inner p em {
+  color: #ff8b6b; text-decoration: underline wavy; font-style: normal; }
