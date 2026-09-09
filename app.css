@@ -3852,7 +3852,9 @@ body:has(.onboard) .wtopbar { display: none; }
    방법: 앱 전체 컨테이너(.app)에 위 안전영역만큼 padding-top. 브라우저(값 0)에서는 아무것도 달라지지 않는다.
          WebView 가 env() 를 0 으로 보고하는 경우(WebView<140, capacitor#8103)는 index.html 프로브가 --wc-inset-top-fallback:32px 를 넣는다 — max() 로 둘 중 큰 값.
    범위: .app 컨테이너 · 토스트 · 스플래시 건너뛰기 버튼(이미 env 사용)만. 화면 개별 레이아웃 무변경. */
-:root { --wc-inset-top: env(safe-area-inset-top, 0px); --wc-inset-top-fallback: 0px; }
+:root { --wc-inset-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)); --wc-inset-top-fallback: 0px; }
+/* v1.4.61: Capacitor 8(앱이 쓰는 버전, 8.5.1)은 네이티브 여백 옵션(adjustMarginsForEdgeToEdge)을 없애고 System Bars 플러그인이
+   문서 루트에 --safe-area-inset-top 을 주입한다(capacitorjs.com/docs/updating/8-0). 그래서 그 변수를 먼저 읽고, 없으면 env(), 둘 다 0이면 프로브의 32px. */
 .app { padding-top: max(var(--wc-inset-top), var(--wc-inset-top-fallback)); }
 .toast { top: calc(14px + max(var(--wc-inset-top), var(--wc-inset-top-fallback))); }
 .splash-skip { top: calc(max(var(--wc-inset-top), var(--wc-inset-top-fallback)) + 44px); }
